@@ -15,6 +15,7 @@ import 'buyers_screen.dart';
 import 'reports_screen.dart';
 import 'search_screen.dart';
 import 'property_form_screen.dart';
+import 'mortgage_application_screen.dart';
 
 /// Role shell parity with web sidebars + same data via same APIs.
 class HomeScreen extends StatefulWidget {

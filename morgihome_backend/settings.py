@@ -209,7 +209,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFiles'
 
 WHITENOISE_MAX_AGE = 31536000
 WHITENOISE_STRICT_IGNORE = []
@@ -300,81 +300,21 @@ CORS_PREFLIGHT_MAX_AGE = 86400
 CONTENT_SECURITY_POLICY = {
     'DIRECTIVES': {
         'base-uri': ("'self'",),
-        'connect-src': (
-            "'self'",
-            'https://cdn.jsdelivr.net',
-            'https://cdn.tailwindcss.com',
-            'https://unpkg.com',
-        ),
+        'connect-src': ("'self'", 'https://unpkg.com', 'https://cdn.jsdelivr.net', 'https://cdn.tailwindcss.com'),
         'default-src': ("'self'",),
-        'font-src': (
-            "'self'",
-            'data:',
-            'https:',
-            'https://cdn.jsdelivr.net',
-            'https://unpkg.com',
-        ),
+        'font-src': ("'self'", 'data:', 'https:', 'https://cdn.jsdelivr.net', 'https://unpkg.com'),
         'form-action': ("'self'",),
         'frame-src': ("'none'",),
-        'img-src': (
-            "'self'",
-            'data:',
-            'blob:',
-            'https:',
-            'http:',
-            'https://i.pravatar.cc',
-            'https://cdn.jsdelivr.net',
-            'https://unpkg.com',
-        ),
+        'img-src': ("'self'", 'data:', 'blob:', 'https:', 'http:', 'https://i.pravatar.cc', 'https://cdn.jsdelivr.net', 'https://unpkg.com'),
         'object-src': ("'none'",),
-        'script-src': (
-            "'self'",
-            "'unsafe-inline'",     # Ruhusu inline scripts
-            "'unsafe-eval'",       # Ruhusu eval (kwa baadhi ya libraries)
-            'https:',
-            'https://cdn.jsdelivr.net',
-            'https://cdn.tailwindcss.com',
-            'https://unpkg.com',
-        ),
-        'script-src-elem': (
-            "'self'",
-            "'unsafe-inline'",     # Ruhusu inline scripts
-            'https:',
-            'https://cdn.jsdelivr.net',
-            'https://cdn.tailwindcss.com',
-            'https://unpkg.com',
-        ),
-        'style-src': (
-            "'self'",
-            "'unsafe-inline'",     # Ruhusu inline styles
-            'https:',
-            'https://cdn.jsdelivr.net',
-            'https://cdn.tailwindcss.com',
-            'https://unpkg.com',
-        ),
-        'style-src-elem': (
-            "'self'",
-            "'unsafe-inline'",     # Ruhusu inline styles
-            'https:',
-            'https://cdn.jsdelivr.net',
-            'https://cdn.tailwindcss.com',
-            'https://unpkg.com',
-        ),
+        'script-src': ("'self'", "'unsafe-inline'", 'https:', 'https://cdn.tailwindcss.com', 'https://cdn.jsdelivr.net', 'https://unpkg.com'),
+        'style-src': ("'self'", "'unsafe-inline'", 'https:', 'https://cdn.jsdelivr.net', 'https://cdn.tailwindcss.com', 'https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css', 'https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/light/style.css', 'https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css', 'https://unpkg.com'),
+        'style-src-elem': ("'self'", "'unsafe-inline'", 'https:', 'https://cdn.jsdelivr.net', 'https://cdn.tailwindcss.com', 'https://unpkg.com'),
     },
-    'EXCLUDE_URLS': [
-        '/admin/',
-        '/admin-secure/',
-        '/swagger/',
-        '/redoc/',
-    ],
+    'EXCLUDE_URLS': ['/admin/', '/admin-secure/', '/swagger/', '/redoc/'],
 }
 
-CSP_EXCLUDE_URLS = [
-    '/admin/',
-    '/admin-secure/',
-    '/swagger/',
-    '/redoc/',
-]
+CSP_EXCLUDE_URLS = ['/admin/', '/admin-secure/', '/swagger/', '/redoc/']
 
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
