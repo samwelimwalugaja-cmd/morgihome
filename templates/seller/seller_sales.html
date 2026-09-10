@@ -1,0 +1,84 @@
+{% extends 'seller/seller_base.html' %}
+{% load humanize %}
+{% block title %}Sales - MorgiHome{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h3 class="page-title">
+    <span class="page-title-icon text-white me-2" style="background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%) !important;"><i class="mdi mdi-cash-multiple"></i></span> Sales
+  </h3>
+  <nav aria-label="breadcrumb">
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/seller/dashboard/">Dashboard</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Sales</li>
+    </ul>
+  </nav>
+</div>
+
+<div class="row">
+  <div class="col-md-4 grid-margin stretch-card">
+    <div class="card" style="border-top:3px solid #0077B6;">
+      <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div><p class="text-muted mb-0" style="font-size:11px; letter-spacing:1px;">TOTAL SALES</p><h3 class="mb-0" style="font-weight:800;">{{ sales|length }}</h3><p class="text-muted mb-0" style="font-size:11px;">Completed deals</p></div>
+          <div style="width:44px; height:44px; border-radius:12px; background:rgba(0,119,182,0.12); display:flex; align-items:center; justify-content:center;"><i class="mdi mdi-cart-check" style="color:#0077B6; font-size:22px;"></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 grid-margin stretch-card">
+    <div class="card" style="border-top:3px solid #00d25b;">
+      <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div><p class="text-muted mb-0" style="font-size:11px; letter-spacing:1px;">TOTAL REVENUE</p><h4 class="mb-0" style="font-weight:800; color:#00d25b; font-size:18px;">TZS {{ total_revenue|default:0|intcomma }}</h4><p class="text-muted mb-0" style="font-size:11px;">All time</p></div>
+          <div style="width:44px; height:44px; border-radius:12px; background:rgba(0,210,91,0.12); display:flex; align-items:center; justify-content:center;"><i class="mdi mdi-cash" style="color:#00d25b; font-size:22px;"></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 grid-margin stretch-card">
+    <div class="card" style="border-top:3px solid #ffc107;">
+      <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div><p class="text-muted mb-0" style="font-size:11px; letter-spacing:1px;">AVG SALE PRICE</p><h4 class="mb-0" style="font-weight:800; font-size:18px;">TZS {{ avg_price|default:0|intcomma }}</h4><p class="text-muted mb-0" style="font-size:11px;">Per deal</p></div>
+          <div style="width:44px; height:44px; border-radius:12px; background:rgba(255,193,7,0.12); display:flex; align-items:center; justify-content:center;"><i class="mdi mdi-chart-line" style="color:#ffc107; font-size:22px;"></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="card-title" style="font-weight:700;">Completed Sales</h4>
+        <p class="text-muted" style="font-size:13px;">Executed contracts — money in your pocket.</p>
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr><th>Property</th><th>Buyer</th><th>Sale Price</th><th>Date</th><th>Contract</th></tr>
+            </thead>
+            <tbody>
+              {% for sale in sales %}
+              <tr>
+                <td><p class="mb-0" style="font-weight:600; font-size:13px;">{{ sale.mortgage.property.title }}</p><p class="text-muted mb-0" style="font-size:11px;">{{ sale.mortgage.property.location }}</p></td>
+                <td style="font-size:13px;">{{ sale.customer.get_full_name|default:"Customer" }}</td>
+                <td style="font-weight:700; color:#00d25b;">TZS {{ sale.mortgage.loan_amount|intcomma }}</td>
+                <td class="text-muted" style="font-size:12px;">{{ sale.executed_date|date:"d M Y"|default:sale.created_at|date:"d M Y" }}</td>
+                <td style="font-family:monospace; font-size:12px;">#CTR-{{ sale.id }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="5" class="text-center py-5">
+                <div class="mx-auto mb-2 d-flex align-items-center justify-content-center" style="width:64px; height:64px; border-radius:50%; background:rgba(0,210,91,0.1);"><i class="mdi mdi-cash-remove" style="font-size:30px; color:#00d25b;"></i></div>
+                <p class="text-muted mb-0">No sales yet. Completed sales will appear here after contracts are executed.</p>
+              </td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

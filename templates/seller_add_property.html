@@ -1,0 +1,53 @@
+{% extends 'plainadmin/base.html' %}
+{% load static %}
+{% block title %}Add Property - Seller{% endblock %}
+{% block extra_css %}<link href="{% static 'css/mortgage_application_form.css' %}?v=1" rel="stylesheet">{% endblock %}
+{% block content %}
+<div class="pagetitle"><div class="d-flex align-items-center justify-content-between flex-wrap gap-2"><div><h1>🏘️ Add New Property</h1><nav><ol class="breadcrumb"><li class="breadcrumb-item"><a href="/dashboard/">Dashboard</a></li><li class="breadcrumb-item"><a href="/seller/properties/">My Properties</a></li><li class="breadcrumb-item active">Add Property</li></ol></nav><p class="text-muted small">Fill in all house details - 5 Steps - Seller sees only their own houses</p></div><a href="/seller/properties/" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i> My Properties</a></div></div>
+<section class="section">
+  <div id="spAlert" class="alert d-none" role="alert"></div>
+  <form id="sellerAddForm" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    <div class="card">
+      <div class="card-header" style="background:#f8fafc;border-bottom:2px solid #0077B6"><h5 class="card-title mb-0"><i class="bi bi-house-add me-2" style="color:#0077B6"></i> Add New Property</h5><p class="text-muted small mb-0 mt-1">Your house details - visible to customers and banks</p></div>
+      <div class="card-body">
+        <div class="form-section mb-4"><h6 class="form-section-title" style="color:#0A2B4E;font-weight:700"><span class="badge me-2" style="background:#0077B6">1</span> Basic Information</h6>
+          <div class="row g-3">
+            <div class="col-md-6"><label class="form-label">Title * <small class="text-muted">- House Name</small></label><input id="spTitle" name="title" class="form-control" placeholder="Modern Villa Mikocheni" required></div>
+            <div class="col-md-6"><label class="form-label">Price (TZS) *</label><input id="spPrice" name="price" type="number" class="form-control" placeholder="250000000" required min="1000000"></div>
+            <div class="col-md-6"><label class="form-label">Location *</label><input id="spLocation" name="location" class="form-control" placeholder="Dar es Salaam - Mikocheni" required></div>
+            <div class="col-md-6"><label class="form-label">Area (sqm) *</label><input id="spArea" name="area" type="number" class="form-control" placeholder="200" required></div>
+          </div>
+        </div>
+        <div class="form-section mb-4"><h6 class="form-section-title" style="color:#0A2B4E;font-weight:700"><span class="badge me-2" style="background:#0077B6">2</span> Classification</h6>
+          <div class="row g-3">
+            <div class="col-md-6"><label class="form-label">Property Type *</label><select id="spType" name="property_type" class="form-select" required><option value="house">House</option><option value="apartment">Apartment</option><option value="land">Land</option><option value="commercial">Commercial</option></select></div>
+            <div class="col-md-6"><label class="form-label">Status *</label><select id="spStatus" name="status" class="form-select" required><option value="available">Available</option><option value="pending">Pending</option><option value="sold">Sold</option><option value="rented">Rented</option></select></div>
+          </div>
+        </div>
+        <div class="form-section mb-4"><h6 class="form-section-title" style="color:#0A2B4E;font-weight:700"><span class="badge me-2" style="background:#0077B6">3</span> Features & Plot No.</h6>
+          <div class="row g-3">
+            <div class="col-md-4"><label class="form-label">Bedrooms</label><input id="spBeds" name="bedrooms" type="number" class="form-control" value="3" min="0"></div>
+            <div class="col-md-4"><label class="form-label">Bathrooms</label><input id="spBaths" name="bathrooms" type="number" class="form-control" value="2" min="0"></div>
+            <div class="col-md-4"><label class="form-label">Plot No.</label><input id="spNapa" name="napa" class="form-control" placeholder="NMB/MK/12345"></div>
+          </div>
+        </div>
+        <div class="form-section mb-4"><h6 class="form-section-title" style="color:#0A2B4E;font-weight:700"><span class="badge me-2" style="background:#0077B6">4</span> Description</h6>
+          <div class="row g-3"><div class="col-12"><label class="form-label">House Description *</label><textarea id="spDesc" name="description" class="form-control" rows="4" placeholder="Write a detailed description of the house, its features and benefits..." required></textarea></div></div>
+        </div>
+        <div class="form-section"><h6 class="form-section-title" style="color:#0A2B4E;font-weight:700"><span class="badge me-2" style="background:#0077B6">5</span> Images (5 max) + Cover</h6>
+          <div class="row g-3"><div class="col-12">
+            <label class="form-label">House Photos (choose up to 5 - JPG/PNG, max 5MB each)</label>
+            <input id="spImages" name="images" type="file" class="form-control" accept=".jpg,.jpeg,.png,.webp" multiple>
+            <div class="form-text">Choose up to 5 photos. Choose one to be the <strong>Cover</strong> shown to banks and customers in the listing.</div>
+            <div id="spPreview" class="mt-3 row g-2"></div>
+            <div id="spCoverHelp" class="form-text mt-2 d-none"><i class="bi bi-star-fill me-1" style="color:#FFC107"></i> Click <strong>★</strong> on a photo to set it as the cover</div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card"><div class="card-body d-flex gap-2 justify-content-end flex-wrap"><a href="/seller/properties/" class="btn btn-secondary" style="background:#0A2B4E;border-color:#0A2B4E;min-width:120px"><i class="bi bi-x-lg me-1"></i> Cancel</a><button id="spSubmit" type="submit" class="btn btn-primary" style="background:#0077B6;border-color:#0077B6;min-width:160px"><i class="bi bi-cloud-upload me-1"></i> Submit Property</button></div></div>
+  </form>
+</section>
+{% endblock %}
+{% block extra_js %}<script src="{% static 'js/seller_add_property.js' %}?v=2"></script>{% endblock %}

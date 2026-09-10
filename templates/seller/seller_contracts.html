@@ -1,0 +1,57 @@
+{% extends 'seller/seller_base.html' %}
+{% load humanize %}
+{% block title %}My Contracts - MorgiHome{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h3 class="page-title">
+    <span class="page-title-icon text-white me-2" style="background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%) !important;"><i class="mdi mdi-file-document-box"></i></span> My Contracts
+  </h3>
+  <nav aria-label="breadcrumb">
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/seller/dashboard/">Dashboard</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Contracts <span class="badge badge-outline-primary ms-2">{{ contracts|length }} agreements</span></li>
+    </ul>
+  </nav>
+</div>
+
+<div class="row">
+  <div class="col-12 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="card-title" style="font-weight:700;">Sales Agreements</h4>
+        <p class="text-muted" style="font-size:13px;">Your property sales agreements — track every signature.</p>
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr><th>Contract</th><th>Property</th><th>Buyer</th><th>Amount</th><th>Signatures</th><th>Status</th><th class="text-end">File</th></tr>
+            </thead>
+            <tbody>
+              {% for c in contracts %}
+              <tr>
+                <td><p class="mb-0" style="font-weight:700; font-family:monospace;">#CTR-{{ c.id }}</p><p class="text-muted mb-0" style="font-size:11px;">{{ c.created_at|date:"d M Y" }}</p></td>
+                <td><p class="mb-0" style="font-weight:600; font-size:13px;">{{ c.mortgage.property.title }}</p><p class="text-muted mb-0" style="font-size:11px;">{{ c.mortgage.property.location }}</p></td>
+                <td style="font-size:13px;">{{ c.customer.get_full_name|default:"Customer" }}</td>
+                <td style="font-weight:700; color:#0077B6;">TZS {{ c.mortgage.loan_amount|intcomma }}</td>
+                <td style="font-size:12px; white-space:nowrap;">
+                  <span class="{% if c.customer_signed %}text-success{% else %}text-muted{% endif %}"><i class="mdi {% if c.customer_signed %}mdi-check-circle{% else %}mdi-checkbox-blank-circle-outline{% endif %}"></i> Customer</span><br>
+                  <span class="{% if c.seller_signed %}text-success{% else %}text-warning{% endif %}"><i class="mdi {% if c.seller_signed %}mdi-check-circle{% else %}mdi-checkbox-blank-circle-outline{% endif %}"></i> Seller (you)</span><br>
+                  <span class="{% if c.bank_signed %}text-success{% else %}text-muted{% endif %}"><i class="mdi {% if c.bank_signed %}mdi-check-circle{% else %}mdi-checkbox-blank-circle-outline{% endif %}"></i> Bank</span>
+                </td>
+                <td><span class="badge {% if c.status == 'executed' %}badge-outline-success{% elif c.status == 'signed' %}badge-outline-primary{% else %}badge-outline-warning{% endif %}">{{ c.get_status_display }}</span></td>
+                <td class="text-end">{% if c.contract_file %}<a href="{{ c.contract_file.url }}" class="btn btn-sm btn-outline-primary" title="Download"><i class="mdi mdi-download"></i> PDF</a>{% else %}<span class="text-muted" style="font-size:12px;">—</span>{% endif %}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="7" class="text-center py-5">
+                <div class="mx-auto mb-2 d-flex align-items-center justify-content-center" style="width:64px; height:64px; border-radius:50%; background:rgba(0,119,182,0.1);"><i class="mdi mdi-file-document-outline" style="font-size:30px; color:#0077B6;"></i></div>
+                <p class="text-muted mb-0">No contracts yet. Agreements will appear here once buyers move forward.</p>
+              </td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

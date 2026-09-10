@@ -1,0 +1,16 @@
+{
+  "name": "morgihome-bank",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MorgiHome Bank Dashboard - Shadcn Admin + Tailwind production build",
+  "scripts": {
+    "build": "tailwindcss -i ./static/src/input.css -o ./static/bank/css/tailwind.css --minify",
+    "watch": "tailwindcss -i ./static/src/input.css -o ./static/bank/css/tailwind.css --watch",
+    "build:dev": "tailwindcss -i ./static/src/input.css -o ./static/bank/css/tailwind.css"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.10",
+    "postcss": "^8.4.41",
+    "autoprefixer": "^10.4.20"
+  }
+}

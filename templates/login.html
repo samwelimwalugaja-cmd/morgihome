@@ -1,0 +1,120 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Login - MorgiHome</title>
+  <meta name="description" content="Login to your MorgiHome account">
+
+  <link href="{% static 'images/favicon.ico' %}?v=4" rel="icon" sizes="48x48">
+  <link href="{% static 'images/favicon-32x32.png' %}?v=4" rel="icon" type="image/png" sizes="32x32">
+  <link href="{% static 'images/favicon-16x16.png' %}?v=4" rel="icon" type="image/png" sizes="16x16">
+  <link href="{% static 'images/apple-touch-icon.png' %}?v=4" rel="apple-touch-icon" type="image/png">
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap" rel="stylesheet">
+  <link href="{% static 'vendors/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+  <link href="{% static 'css/auth.css' %}?v=102" rel="stylesheet">
+  <link href="{% static 'css/toast.css' %}" rel="stylesheet">
+</head>
+
+<body>
+
+  <div class="auth-shell">
+
+    <aside class="auth-aside">
+      <div class="auth-brand">
+        <div class="logo"><i class="bi bi-house-heart-fill"></i></div>
+        <div class="name">MorgiHome</div>
+      </div>
+
+      <div class="auth-aside-body">
+        <span class="auth-aside-eyebrow">MorgiHome · Easy Mortgages</span>
+        <h1>Own Your Dream Home with Easy Mortgages</h1>
+        <p>MorgiHome connects buyers, sellers, banks, real estate companies and lawyers on one secure digital platform.</p>
+        <div class="auth-quote">
+          "MorgiHome made buying my home easy — every step was clear and secure."
+          <div class="auth-quote-author">
+            <div class="av">JM</div>
+            <div>Janeth Mushi · MorgiHome Client, Dar es Salaam</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="auth-aside-footer">
+        <span>© 2026 MORGIHOME</span>
+        <span>BUILT IN TANZANIA</span>
+      </div>
+    </aside>
+
+    <main class="auth-main">
+      <div class="auth-main-top">
+        <a href="{% url 'home' %}" class="auth-back">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
+          Back to Home
+        </a>
+        <div class="switch-link">New here? <a href="{% url 'signup_page' %}">Create account</a></div>
+      </div>
+
+      <div class="auth-card">
+        <h2>Welcome back</h2>
+        <p class="sub">Log in to your MorgiHome account to continue your home ownership journey.</p>
+
+        <form id="login-form" class="auth-form">
+          {% csrf_token %}
+          <div class="field" id="field-email">
+            <label class="field-label" for="email">Email Address</label>
+            <div class="input-icon">
+              <span class="ico"><i class="bi bi-envelope"></i></span>
+              <input id="email" class="input" type="email" placeholder="john.doe@example.com" autocomplete="email" required>
+            </div>
+            <div class="field-error" id="email-error"></div>
+          </div>
+
+          <div class="field" id="field-password">
+            <div class="field-row">
+              <label class="field-label" for="password">Password</label>
+              <a href="#">Forgot?</a>
+            </div>
+            <div class="input-icon has-eye">
+              <span class="ico"><i class="bi bi-lock"></i></span>
+              <input id="password" class="input" type="password" placeholder="••••••••" autocomplete="current-password" required>
+              <button type="button" class="eye-btn" data-target="password" aria-label="Show password" aria-controls="password"><i class="bi bi-eye"></i></button>
+            </div>
+            <div class="field-error" id="password-error"></div>
+          </div>
+
+          <label class="check"><input type="checkbox" id="remember" checked> <span class="box"></span> Remember me for 30 days</label>
+
+          <button type="submit" class="btn btn--primary auth-submit">Log In
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"></path></svg>
+          </button>
+        </form>
+
+        <div class="auth-divider">or continue with</div>
+
+        <div class="social-row single">
+          <a class="social-btn" href="#" aria-label="Continue with Google" style="grid-column: 1 / -1; max-width: 320px; margin: 0 auto; width: 100%;">
+            <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22 12.2c0-.7-.06-1.4-.18-2.04H12v3.86h5.62a4.81 4.81 0 0 1-2.08 3.16v2.62h3.36C20.85 17.96 22 15.36 22 12.2z"></path><path fill="#34A853" d="M12 22c2.7 0 4.96-.9 6.62-2.4l-3.36-2.62c-.94.62-2.12.98-3.26.98-2.5 0-4.62-1.7-5.38-3.96H3.16v2.7A10 10 0 0 0 12 22z"></path><path fill="#FBBC05" d="M6.62 13.98a6 6 0 0 1 0-3.96V7.32H3.16a10 10 0 0 0 0 9.36z"></path><path fill="#EA4335" d="M12 6.04c1.46 0 2.78.5 3.82 1.5l2.86-2.86A10 10 0 0 0 12 2 10 10 0 0 0 3.16 7.32l3.46 2.7C7.38 7.74 9.5 6.04 12 6.04z"></path></svg>
+            Continue with Google
+          </a>
+        </div>
+      </div>
+
+      <div class="auth-main-bottom">By logging in you agree to <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.</div>
+    </main>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="{% static 'js/toast.js' %}?v=103"></script>
+  <script src="{% static 'js/auth.js' %}?v=103"></script>
+
+</body>
+
+</html>

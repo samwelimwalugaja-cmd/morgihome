@@ -1,0 +1,165 @@
+{% extends 'plainadmin/base.html' %}
+{% load static %}
+{% block title %}Verification Status - MorgiHome{% endblock %}
+{% block content %}
+<div class="pagetitle">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div>
+      <h1>Verification Status</h1>
+      <nav><ol class="breadcrumb mb-0"><li class="breadcrumb-item"><a href="/dashboard/">Home</a></li><li class="breadcrumb-item active">Verification</li></ol></nav>
+    </div>
+  </div>
+</div>
+
+<section class="section">
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <div class="card text-center">
+        <div class="card-body">
+          <div id="verifyOverallIcon" style="width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:32px;background:#FFF3CD;color:#856404">⏳</div>
+          <h5 id="verifyOverallTitle">Checking...</h5>
+          <p class="text-muted small" id="verifyOverallDesc">Loading verification status</p>
+          <div class="progress" style="height:8px"><div id="verifyProgress" class="progress-bar" style="width:0%"></div></div>
+          <small class="text-muted mt-2 d-block" id="verifyProgressText">0% Complete</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-body">
+          <h6 class="card-title mb-3">Verification Steps</h6>
+          <div class="list-group">
+            <div class="list-group-item d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center gap-3">
+                <div id="emailIcon" class="rounded-circle d-flex align-items-center justify-content-center" style="width:40px;height:40px;background:#FFF3CD;color:#856404"><i class="bi bi-envelope"></i></div>
+                <div>
+                  <h6 class="mb-0">Email Verification</h6>
+                  <small class="text-muted" id="emailStatusText">Pending</small>
+                </div>
+              </div>
+              <div>
+                <span id="emailBadge" class="badge bg-warning">Pending</span>
+                <button id="resendEmailBtn" class="btn btn-sm btn-outline-primary ms-2">Resend Email</button>
+                <a href="/verify/email/" class="btn btn-sm btn-primary ms-1" style="background:#0077B6;border-color:#0077B6">Verify</a>
+              </div>
+            </div>
+            <div class="list-group-item d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center gap-3">
+                <div id="phoneIcon" class="rounded-circle d-flex align-items-center justify-content-center" style="width:40px;height:40px;background:#FFF3CD;color:#856404"><i class="bi bi-phone"></i></div>
+                <div>
+                  <h6 class="mb-0">Phone Verification</h6>
+                  <small class="text-muted" id="phoneStatusText">Pending</small>
+                </div>
+              </div>
+              <div>
+                <span id="phoneBadge" class="badge bg-warning">Pending</span>
+                <a href="/verify/phone/" class="btn btn-sm btn-primary ms-2" style="background:#0077B6;border-color:#0077B6">Verify</a>
+              </div>
+            </div>
+            <div class="list-group-item d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center gap-3">
+                <div id="identityIcon" class="rounded-circle d-flex align-items-center justify-content-center" style="width:40px;height:40px;background:#E9ECEF;color:#6C757D"><i class="bi bi-card-image"></i></div>
+                <div>
+                  <h6 class="mb-0">Identity Verification</h6>
+                  <small class="text-muted" id="identityStatusText">Not Submitted</small>
+                </div>
+              </div>
+              <div>
+                <span id="identityBadge" class="badge bg-secondary">Not Submitted</span>
+                <a href="/verify/identity/" class="btn btn-sm btn-primary ms-2" style="background:#0077B6;border-color:#0077B6">Upload</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card mt-4">
+        <div class="card-header"><h6 class="card-title mb-0">Verification Required Actions</h6></div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead><tr><th>Action</th><th>Required Verification</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td>View Properties</td><td><span class="badge bg-success">Email Verified</span></td><td id="reqViewProps">—</td></tr>
+                <tr><td>Apply for Mortgage</td><td><span class="badge bg-primary">Fully Verified (Email + Phone)</span></td><td id="reqApply">—</td></tr>
+                <tr><td>List Property (Seller)</td><td><span class="badge bg-warning text-dark">Fully + Identity</span></td><td id="reqList">—</td></tr>
+                <tr><td>Approve Mortgage (Bank)</td><td><span class="badge bg-warning text-dark">Fully + Identity</span></td><td id="reqApprove">—</td></tr>
+                <tr><td>Make Payment</td><td><span class="badge bg-primary">Fully Verified</span></td><td id="reqPay">—</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function(){
+  const API='/api/';
+  function authHeaders(){ const t=localStorage.getItem('access'); const h={'Content-Type':'application/json'}; if(t) h['Authorization']='Bearer '+t; return h; }
+  async function loadStatus(){
+    try{
+      const res=await fetch(API+'verify/status/', {headers: authHeaders()});
+      if(!res.ok) throw new Error('Failed');
+      const data=await res.json();
+      // Overall
+      const level=data.verification_level;
+      const overallIcon=document.getElementById('verifyOverallIcon');
+      const overallTitle=document.getElementById('verifyOverallTitle');
+      const overallDesc=document.getElementById('verifyOverallDesc');
+      const progress=document.getElementById('verifyProgress');
+      const progressText=document.getElementById('verifyProgressText');
+      let pct=0;
+      if(data.email_verified) pct+=34;
+      if(data.phone_verified) pct+=33;
+      if(data.identity_verified) pct+=33;
+      if(level==='fully_verified'){ pct=100; overallIcon.textContent='✅'; overallIcon.style.background='#D4EDDA'; overallIcon.style.color='#155724'; overallTitle.textContent='Fully Verified'; overallDesc.textContent='You can use the system fully'; progress.className='progress-bar bg-success'; }
+      else if(level==='partially_verified'){ overallIcon.textContent='⏳'; overallIcon.style.background='#FFF3CD'; overallTitle.textContent='Partially Verified'; overallDesc.textContent='Complete remaining steps'; progress.className='progress-bar bg-warning'; }
+      else { overallIcon.textContent='❌'; overallIcon.style.background='#F8D7DA'; overallTitle.textContent='Not Verified'; overallDesc.textContent='Please verify your account'; progress.className='progress-bar bg-danger'; }
+      progress.style.width=pct+'%';
+      progressText.textContent=pct+'% Complete ('+level.replace('_',' ')+')';
+
+      // Email
+      const emailBadge=document.getElementById('emailBadge');
+      const emailIcon=document.getElementById('emailIcon');
+      const emailText=document.getElementById('emailStatusText');
+      if(data.email_verified){ emailBadge.textContent='Verified'; emailBadge.className='badge bg-success'; emailIcon.style.background='#D4EDDA'; emailIcon.style.color='#155724'; emailText.textContent='✅ Verified'; }
+      else { emailBadge.textContent='Pending'; emailBadge.className='badge bg-warning'; emailIcon.style.background='#FFF3CD'; emailText.textContent='⏳ Pending'; }
+
+      // Phone
+      const phoneBadge=document.getElementById('phoneBadge');
+      const phoneIcon=document.getElementById('phoneIcon');
+      const phoneText=document.getElementById('phoneStatusText');
+      if(data.phone_verified){ phoneBadge.textContent='Verified'; phoneBadge.className='badge bg-success'; phoneIcon.style.background='#D4EDDA'; phoneText.textContent='✅ Verified'; }
+      else { phoneBadge.textContent='Pending'; phoneBadge.className='badge bg-warning'; phoneText.textContent='⏳ Pending'; }
+
+      // Identity
+      const idBadge=document.getElementById('identityBadge');
+      const idIcon=document.getElementById('identityIcon');
+      const idText=document.getElementById('identityStatusText');
+      const statusMap={not_submitted:{label:'Not Submitted',cls:'bg-secondary',icon:'📤'},pending:{label:'Pending',cls:'bg-warning',icon:'⏳'},verified:{label:'Verified',cls:'bg-success',icon:'✅'},rejected:{label:'Rejected',cls:'bg-danger',icon:'❌'}};
+      const s=statusMap[data.identity_status]||statusMap.not_submitted;
+      idBadge.textContent=s.label; idBadge.className='badge '+s.cls;
+      idText.textContent=s.icon+' '+s.label;
+      if(data.identity_verified){ idIcon.style.background='#D4EDDA'; } else if(data.identity_status==='pending'){ idIcon.style.background='#FFF3CD'; } else { idIcon.style.background='#E9ECEF'; }
+
+      // Requirements
+      document.getElementById('reqViewProps').innerHTML=data.email_verified?'<span class="text-success">✅ Allowed</span>':'<span class="text-danger">❌ Email required</span>';
+      document.getElementById('reqApply').innerHTML=(data.email_verified&&data.phone_verified)?'<span class="text-success">✅ Allowed</span>':'<span class="text-danger">❌ Fully verified required</span>';
+      document.getElementById('reqList').innerHTML=data.is_verified?'<span class="text-success">✅ Allowed</span>':'<span class="text-danger">❌ Fully + Identity required</span>';
+      document.getElementById('reqApprove').innerHTML=data.is_verified?'<span class="text-success">✅ Allowed</span>':'<span class="text-danger">❌ Fully + Identity required</span>';
+      document.getElementById('reqPay').innerHTML=(data.email_verified&&data.phone_verified)?'<span class="text-success">✅ Allowed</span>':'<span class="text-danger">❌ Fully verified required</span>';
+
+    }catch(e){ console.error(e); }
+  }
+  document.getElementById('resendEmailBtn')?.addEventListener('click', async ()=>{
+    try{
+      const res=await fetch('/api/verify/email/send/', {method:'POST', headers: authHeaders()});
+      const data=await res.json();
+      showToast(data.message||'Email sent','success');
+    }catch(e){ showToast(e.message,'error'); }
+  });
+  loadStatus();
+})();
+</script>
+{% endblock %}

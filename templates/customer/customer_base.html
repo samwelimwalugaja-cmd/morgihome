@@ -1,0 +1,456 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>{% block title %}Mortgage Applicant - MorgiHome{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'corona/vendors/mdi/css/materialdesignicons.min.css' %}">
+  <link rel="stylesheet" href="{% static 'corona/vendors/ti-icons/css/themify-icons.css' %}">
+  <link rel="stylesheet" href="{% static 'corona/vendors/css/vendor.bundle.base.css' %}">
+  <link rel="stylesheet" href="{% static 'corona/vendors/font-awesome/css/font-awesome.min.css' %}">
+  <link rel="stylesheet" href="{% static 'corona/vendors/jvectormap/jquery-jvectormap.css' %}">
+  <link rel="stylesheet" href="{% static 'corona/vendors/flag-icon-css/css/flag-icons.min.css' %}">
+  <link rel="stylesheet" href="{% static 'corona/vendors/owl-carousel-2/owl.carousel.min.css' %}">
+  <link rel="stylesheet" href="{% static 'corona/vendors/owl-carousel-2/owl.theme.default.min.css' %}">
+  <link rel="stylesheet" href="{% static 'corona/css/style.css' %}">
+  <link href="{% static 'images/favicon.ico' %}?v=4" rel="icon" sizes="48x48">
+  <link href="{% static 'images/favicon-32x32.png' %}?v=4" rel="icon" type="image/png" sizes="32x32">
+  <link href="{% static 'images/favicon-16x16.png' %}?v=4" rel="icon" type="image/png" sizes="16x16">
+  <link href="{% static 'images/apple-touch-icon.png' %}?v=4" rel="apple-touch-icon" type="image/png">
+  <style>
+    html, body { background:#000 !important; margin:0 !important; }
+    .container-scroller { background:#000 !important; }
+    .page-body-wrapper { background:#000 !important; min-height:100vh !important; }
+    .main-panel { background:#000 !important; width:100% !important; max-width:100% !important; }
+    .content-wrapper { background:#000 !important; padding:20px 20px 20px 20px !important; width:100% !important; max-width:100% !important; }
+    .container-fluid.page-body-wrapper { padding-left:0 !important; padding-right:0 !important; }
+    .footer { background:#000 !important; border-top:1px solid #191c24 !important; }
+    .bg-primary { background-color: #0077B6 !important; }
+    .text-primary { color: #0077B6 !important; }
+    .btn-primary { background-color: #0077B6 !important; border-color: #0077B6 !important; color: #fff !important; }
+    .sidebar .nav .nav-item.active > .nav-link { background: #0077B6 !important; color: #fff !important; border-radius: 6px; }
+    .sidebar .nav .nav-item.active > .nav-link i { color: #fff !important; }
+    .sidebar .nav .nav-item .nav-link:hover { background: rgba(0,119,182,0.15) !important; }
+    /* MorgiHome brand - aligned to the top */
+    .morgi-brand { display:flex; align-items:center; gap:10px; padding:12px 16px 10px 16px; margin:0; flex-shrink:0; border-bottom:1px solid #191c24; }
+    .morgi-brand .brand-icon { width:32px; height:32px; background:#0077B6; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:16px; }
+    .morgi-brand .brand-text { font-weight:800; font-size:17px; letter-spacing:0.5px; color:#fff; line-height:1; }
+    .morgi-brand .brand-sub { font-size:9px; letter-spacing:1.5px; color:#6c7293; margin-top:1px; }
+    /* Sidebar - FIXED with inner SCROLL so the bottom links stay visible */
+    .sidebar {
+      position: fixed !important;
+      height: 100vh !important;
+      width: 243px !important;
+      top: 0;
+      left: 0;
+      z-index: 1030;
+      display:flex !important;
+      flex-direction:column !important;
+      overflow:hidden !important;
+      background:#191c24 !important;
+    }
+    .sidebar .nav {
+      flex:1 1 auto !important;
+      overflow-y:auto !important;
+      overflow-x:hidden !important;
+      max-height:none !important;
+      padding:6px 0 16px 0 !important;
+      flex-wrap:nowrap !important;
+      display:block !important;
+    }
+    /* profile aligned to the top */
+    .sidebar .nav .nav-item.profile { margin:0 !important; padding:10px 0 10px 0 !important; border-bottom:1px solid #2c2e33; }
+    .sidebar .nav .nav-item.profile .profile-desc { padding:6px 12px !important; }
+    .sidebar .nav .nav-category { padding:8px 16px 4px 16px !important; margin:0 !important; }
+    .sidebar .nav .nav-item.menu-items .nav-link { padding:8px 16px !important; }
+    /* scrollbar for the sidebar */
+    .sidebar .nav::-webkit-scrollbar { width:5px; }
+    .sidebar .nav::-webkit-scrollbar-track { background:#191c24; }
+    .sidebar .nav::-webkit-scrollbar-thumb { background:#2c2e33; border-radius:3px; }
+    .sidebar .nav::-webkit-scrollbar-thumb:hover { background:#3a3a3a; }
+    /* ensure page content offset for fixed sidebar - no blank space on the sides */
+    @media (min-width: 992px) {
+      .page-body-wrapper { margin-left:243px !important; padding-left:0 !important; width:calc(100% - 243px) !important; transition: all 0.25s ease !important; }
+      .navbar.fixed-top { left:243px !important; width:calc(100% - 243px) !important; right:0 !important; transition: all 0.25s ease !important; }
+      .main-panel { margin-left:0 !important; width:100% !important; }
+      body.sidebar-icon-only .page-body-wrapper { margin-left:70px !important; width:calc(100% - 70px) !important; }
+      body.sidebar-icon-only .navbar.fixed-top { left:70px !important; width:calc(100% - 70px) !important; }
+      body.sidebar-icon-only .sidebar { width:70px !important; }
+      body.sidebar-icon-only .sidebar .morgi-brand .brand-text, body.sidebar-icon-only .sidebar .morgi-brand .brand-sub, body.sidebar-icon-only .sidebar .nav .menu-title, body.sidebar-icon-only .sidebar .nav .profile-name, body.sidebar-icon-only .sidebar .nav .nav-category { display:none !important; }
+      body.sidebar-icon-only .sidebar .nav .nav-link { justify-content:center !important; padding:12px 8px !important; }
+    }
+    @media (max-width: 991px) {
+      .sidebar { transform:translateX(-100%); }
+      .sidebar.active { transform:translateX(0); }
+      .page-body-wrapper { margin-left:0 !important; width:100% !important; }
+    }
+    /* Remove the blank space of container-fluid */
+    .container-fluid { padding-left:0 !important; padding-right:0 !important; }
+    /* icons fix - ensure visible */
+    .sidebar .nav .nav-link .menu-icon i { font-size:18px !important; line-height:1; display:inline-block !important; visibility:visible !important; opacity:1 !important; }
+    .sidebar .nav .nav-link .menu-title { font-size:13px; }
+    .count.bg-danger { background:#ff3b30 !important; }
+    /* file input fix for profile */
+    input[type="file"].form-control, .form-control[type="file"] { background:#2c2e33 !important; border-color:#444 !important; color:#fff !important; }
+    input[type="file"].form-control::file-selector-button, .form-control[type="file"]::file-selector-button,
+    input[type="file"].form-control::-webkit-file-upload-button, .form-control[type="file"]::-webkit-file-upload-button {
+      background:#0077B6 !important; color:#fff !important; border:none !important; padding:6px 14px !important; border-radius:6px !important; margin-right:12px !important; cursor:pointer !important;
+    }
+    /* Mobile dropdown fix - prevent overflow outside screen */
+    @media (max-width: 576px) {
+      .navbar .navbar-nav .dropdown .navbar-dropdown {
+        position: fixed !important;
+        top: 70px !important;
+        left: 10px !important;
+        right: 10px !important;
+        width: auto !important;
+        max-width: calc(100vw - 20px) !important;
+        transform: none !important;
+      }
+      .navbar-profile-name { display:none !important; }
+    }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <div class="container-scroller">
+    <!-- Sidebar -->
+    <nav class="sidebar sidebar-offcanvas" id="sidebar">
+      <div class="morgi-brand">
+        <div class="brand-icon"><i class="mdi mdi-home-city"></i></div>
+        <div>
+          <div class="brand-text">MorgiHome</div>
+          <div class="brand-sub">MORTGAGE PORTAL</div>
+        </div>
+      </div>
+      <ul class="nav">
+        <li class="nav-item profile">
+          <div class="profile-desc">
+            <div class="profile-pic">
+              <div class="count-indicator">
+                {% if user.profile_image %}
+                  <img class="img-xs rounded-circle" src="{{ user.profile_image.url }}" alt="">
+                {% else %}
+                  <div class="img-xs rounded-circle d-flex align-items-center justify-content-center text-white" style="width:38px; height:38px; background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%); font-weight:700; font-size:14px;">{{ user.initials|default:"M" }}</div>
+                {% endif %}
+                <span class="count bg-success"></span>
+              </div>
+              <div class="profile-name">
+                <h5 class="mb-0 font-weight-normal">{% if user.is_authenticated %}{{ user.get_full_name|default:user.email }}{% else %}Guest{% endif %}</h5>
+                <span>{% if user.is_authenticated %}Mortgage Applicant{% else %}Visitor{% endif %}</span>
+              </div>
+            </div>
+            <a href="#" id="profile-dropdown" data-bs-toggle="dropdown"><i class="mdi mdi-dots-vertical"></i></a>
+            <div class="dropdown-menu dropdown-menu-right sidebar-dropdown preview-list" aria-labelledby="profile-dropdown">
+              <a href="/customer/profile/" class="dropdown-item preview-item">
+                <div class="preview-thumbnail"><div class="preview-icon bg-dark rounded-circle"><i class="mdi mdi-account-outline text-primary"></i></div></div>
+                <div class="preview-item-content"><p class="preview-subject ellipsis mb-1 text-small">Profile</p></div>
+              </a>
+              <div class="dropdown-divider"></div>
+              <a href="#" onclick="coronaLogout(); return false;" class="dropdown-item preview-item">
+                <div class="preview-thumbnail"><div class="preview-icon bg-dark rounded-circle"><i class="mdi mdi-logout text-danger"></i></div></div>
+                <div class="preview-item-content"><p class="preview-subject ellipsis mb-1 text-small">Logout</p></div>
+              </a>
+            </div>
+          </div>
+        </li>
+        <li class="nav-item nav-category"><span class="nav-link">Brain-Wave Group</span></li>
+        
+        <li class="nav-item menu-items {% if request.path == '/customer/dashboard/' %}active{% endif %}">
+          <a class="nav-link" href="/customer/dashboard/"><span class="menu-icon"><i class="mdi mdi-speedometer"></i></span><span class="menu-title">Dashboard</span></a>
+        </li>
+        <li class="nav-item menu-items {% if request.path == '/customer/properties/' or '/properties/' in request.path %}active{% endif %}">
+          <a class="nav-link" href="/customer/properties/"><span class="menu-icon"><i class="mdi mdi-home"></i></span><span class="menu-title">Properties</span></a>
+        </li>
+        <li class="nav-item menu-items {% if '/customer/apply' in request.path %}active{% endif %}">
+          <a class="nav-link" data-bs-toggle="collapse" href="#applyMortgageSub" aria-expanded="{% if '/customer/apply' in request.path %}true{% else %}false{% endif %}" aria-controls="applyMortgageSub"><span class="menu-icon"><i class="mdi mdi-plus-circle"></i></span><span class="menu-title">Apply Mortgage</span><i class="menu-arrow"></i></a>
+          <div class="collapse {% if '/customer/apply' in request.path %}show{% endif %}" id="applyMortgageSub">
+            <ul class="nav flex-column sub-menu">
+              <li class="nav-item"><a class="nav-link" href="/customer/apply/?type=residential">Residential Mortgage</a></li>
+              <li class="nav-item"><a class="nav-link" href="/customer/apply/?type=construction">Home Construction</a></li>
+              <li class="nav-item"><a class="nav-link" href="/customer/apply/?type=renovation">Renovation Mortgage</a></li>
+              <li class="nav-item"><a class="nav-link" href="/customer/apply/?type=land">Land Purchase</a></li>
+              <li class="nav-item"><a class="nav-link" href="/customer/apply/?type=commercial">Commercial Property</a></li>
+            </ul>
+          </div>
+        </li>
+        <li class="nav-item menu-items {% if request.path == '/customer/applications/' or '/customer/track' in request.path %}active{% endif %}">
+          <a class="nav-link" href="/customer/applications/"><span class="menu-icon"><i class="mdi mdi-file-document"></i></span><span class="menu-title">My Applications</span></a>
+        </li>
+        <li class="nav-item menu-items {% if request.path == '/customer/contracts/' %}active{% endif %}">
+          <a class="nav-link" href="/customer/contracts/"><span class="menu-icon"><i class="mdi mdi-file-document-outline"></i></span><span class="menu-title">My Contracts</span></a>
+        </li>
+        <li class="nav-item menu-items {% if request.path == '/customer/repayment/' or '/customer/pay' in request.path %}active{% endif %}">
+          <a class="nav-link" href="/customer/repayment/"><span class="menu-icon"><i class="mdi mdi-calendar-clock"></i></span><span class="menu-title">Repayment Schedule</span></a>
+        </li>
+        <li class="nav-item menu-items {% if request.path == '/customer/verify-property/' %}active{% endif %}">
+          <a class="nav-link" href="/customer/verify-property/"><span class="menu-icon"><i class="mdi mdi-home-search"></i></span><span class="menu-title">Property Verification</span></a>
+        </li>
+        <li class="nav-item menu-items {% if request.path == '/customer/bank-requirements/' %}active{% endif %}">
+          <a class="nav-link" data-bs-toggle="collapse" href="#bankReqSub" aria-expanded="false" aria-controls="bankReqSub"><span class="menu-icon"><i class="mdi mdi-bank"></i></span><span class="menu-title">Bank Requirements</span><i class="menu-arrow"></i></a>
+          <div class="collapse" id="bankReqSub">
+            <ul class="nav flex-column sub-menu">
+              <li class="nav-item"><a class="nav-link" href="/customer/bank-requirements/">All Banks</a></li>
+              <li class="nav-item"><a class="nav-link" href="/customer/bank-requirements/?bank=crdb">CRDB Bank</a></li>
+              <li class="nav-item"><a class="nav-link" href="/customer/bank-requirements/?bank=nmb">NMB Bank</a></li>
+              <li class="nav-item"><a class="nav-link" href="/customer/bank-requirements/?bank=ncba">NCBA Bank</a></li>
+              <li class="nav-item"><a class="nav-link" href="/customer/bank-requirements/?bank=nbc">NBC Bank</a></li>
+              <li class="nav-item"><a class="nav-link" href="/customer/bank-requirements/?bank=tcb">TCB Bank</a></li>
+              <li class="nav-item"><a class="nav-link" href="/customer/bank-requirements/?bank=mwanqa">Mwanqa Hakika Bank</a></li>
+            </ul>
+          </div>
+        </li>
+        <li class="nav-item nav-category"><span class="nav-link">System</span></li>
+        <li class="nav-item menu-items {% if request.path == '/customer/profile/' %}active{% endif %}"><a class="nav-link" href="/customer/profile/"><span class="menu-icon"><i class="mdi mdi-account"></i></span><span class="menu-title">Profile</span></a></li>
+        <li class="nav-item menu-items"><a class="nav-link" href="#" onclick="coronaLogout(); return false;"><span class="menu-icon"><i class="mdi mdi-logout"></i></span><span class="menu-title">Logout</span></a></li>
+      </ul>
+    </nav>
+
+    <div class="container-fluid page-body-wrapper">
+      <!-- Navbar -->
+      <nav class="navbar p-0 fixed-top d-flex flex-row">
+        <div class="navbar-brand-wrapper d-flex d-lg-none align-items-center justify-content-center">
+          <a class="navbar-brand brand-logo-mini" href="/" style="color:#fff; font-weight:800; font-size:18px;">MH</a>
+        </div>
+        <div class="navbar-menu-wrapper flex-grow d-flex align-items-stretch">
+          <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-toggle="minimize"><span class="mdi mdi-menu"></span></button>
+          <ul class="navbar-nav w-100">
+            <li class="nav-item w-100">
+              <form class="nav-link mt-2 mt-md-0 d-none d-lg-flex search" onsubmit="return false;">
+                <input type="text" id="coronaSearch" class="form-control" placeholder="Search..." onkeypress="if(event.key==='Enter'){ const q=this.value.trim(); if(q) window.location.href='/customer/search/?q='+encodeURIComponent(q); }">
+              </form>
+            </li>
+          </ul>
+          <ul class="navbar-nav navbar-nav-right">
+            <li class="nav-item nav-settings d-none d-lg-block">
+              <a class="nav-link" href="#"><i class="mdi mdi-view-grid"></i></a>
+            </li>
+            <li class="nav-item dropdown border-left">
+              <a class="nav-link count-indicator dropdown-toggle" id="notificationDropdown" href="#" data-bs-toggle="dropdown" style="position:relative;">
+                <i class="mdi mdi-bell"></i>
+                <span id="custNotifCount" style="display:none; position:absolute; top:6px; right:8px; min-width:17px; height:17px; padding:0 4px; background:#fc424a; color:#fff; font-size:10px; font-weight:700; line-height:17px; text-align:center; border-radius:20px; border:2px solid #191c24;"></span>
+              </a>
+              <div class="dropdown-menu dropdown-menu-end navbar-dropdown preview-list" aria-labelledby="notificationDropdown">
+                <h6 class="p-3 mb-0">Notifications</h6>
+                <div class="dropdown-divider"></div>
+                <div id="custNotifList">
+                  <div class="text-center py-4">
+                    <i class="mdi mdi-bell-off-outline" style="font-size:32px; color:#6c7293;"></i>
+                    <p class="text-muted mt-2 mb-0" style="font-size:13px;">No notifications</p>
+                    <small class="text-muted" style="font-size:11px;">Bank review updates will appear here live.</small>
+                  </div>
+                </div>
+                <div class="dropdown-divider"></div>
+                <a href="/customer/notifications/" class="dropdown-item preview-item" style="justify-content:center;"><p class="p-0 mb-0 text-center text-primary">See all notifications</p></a>
+              </div>
+            </li>
+            <li class="nav-item dropdown">
+              <a class="nav-link" id="profileDropdown" href="#" data-bs-toggle="dropdown">
+                <div class="navbar-profile">
+                  {% if user.profile_image %}
+                    <img class="img-xs rounded-circle" src="{{ user.profile_image.url }}" alt="">
+                  {% else %}
+                    <div class="img-xs rounded-circle d-flex align-items-center justify-content-center text-white me-2" style="width:32px; height:32px; background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%); font-weight:700; font-size:13px;">{{ user.initials|default:"M" }}</div>
+                  {% endif %}
+                  <p class="mb-0 d-none d-sm-block navbar-profile-name">{% if user.is_authenticated %}{{ user.get_full_name|default:user.email }}{% else %}Guest{% endif %}</p>
+                  <i class="mdi mdi-menu-down d-none d-sm-block"></i>
+                </div>
+              </a>
+              <div class="dropdown-menu dropdown-menu-end navbar-dropdown preview-list" aria-labelledby="profileDropdown">
+                <h6 class="p-3 mb-0">Profile</h6>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item preview-item" href="/customer/profile/"><div class="preview-thumbnail"><div class="preview-icon bg-dark rounded-circle"><i class="mdi mdi-account-outline text-success"></i></div></div><div class="preview-item-content"><p class="preview-subject mb-1">Profile</p></div></a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item preview-item" href="#" onclick="coronaLogout(); return false;"><div class="preview-thumbnail"><div class="preview-icon bg-dark rounded-circle"><i class="mdi mdi-logout text-danger"></i></div></div><div class="preview-item-content"><p class="preview-subject mb-1">Log out</p></div></a>
+              </div>
+            </li>
+          </ul>
+          <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button" data-toggle="offcanvas"><span class="mdi mdi-format-line-spacing"></span></button>
+        </div>
+      </nav>
+
+      <!-- Main Panel -->
+      <div class="main-panel">
+        <div class="content-wrapper">
+          {% block content %}{% endblock %}
+        </div>
+        <footer class="footer">
+          <div class="d-sm-flex justify-content-center justify-content-sm-between">
+            <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Copyright © 2026 <a href="/">MorgiHome</a> by <strong>Brain-Wave Group</strong>. All rights reserved.</span>
+            <span class="text-muted float-none float-sm-end d-block mt-1 mt-sm-0 text-center">Brain-Wave • Innovation Group</span>
+          </div>
+        </footer>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action feedback: every server action shows a SweetAlert - nothing happens silently. -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  {% if messages %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function(){
+      {% for message in messages %}
+      Swal.fire({
+        icon: '{% if 'success' in message.tags %}success{% elif 'error' in message.tags %}error{% elif 'warning' in message.tags %}warning{% else %}info{% endif %}',
+        title: '{{ message|escapejs }}',
+        toast: true, position: 'top-end', showConfirmButton: false, timer: 5000, timerProgressBar: true
+      });
+      {% endfor %}
+    });
+  </script>
+  {% endif %}
+  <script src="{% static 'corona/vendors/js/vendor.bundle.base.js' %}"></script>
+  <script src="{% static 'corona/vendors/chart.js/chart.umd.js' %}"></script>
+  <script src="{% static 'corona/vendors/jvectormap/jquery-jvectormap.min.js' %}"></script>
+  <script src="{% static 'corona/vendors/jvectormap/jquery-jvectormap-world-mill-en.js' %}"></script>
+  <script src="{% static 'corona/vendors/owl-carousel-2/owl.carousel.min.js' %}"></script>
+  <script src="{% static 'corona/js/off-canvas.js' %}"></script>
+  <script src="{% static 'corona/js/misc.js' %}"></script>
+  <script src="{% static 'corona/js/settings.js' %}"></script>
+  <script src="{% static 'corona/js/todolist.js' %}"></script>
+  <script src="{% static 'corona/js/dashboard.js' %}"></script>
+  <script>
+    (function(){
+      var isAuthenticated = {% if user.is_authenticated %}true{% else %}false{% endif %};
+      var isProtected = /^\/(customer|seller|realestate|lawyer|bank|profile)\//.test(window.location.pathname) || window.location.pathname === '/profile/';
+      if(!isAuthenticated && isProtected){
+        var hasToken = false;
+        try{ hasToken = !!localStorage.getItem('access') || !!localStorage.getItem('token'); }catch(e){}
+        if(!hasToken){ window.location.replace('/login/'); return; }
+      }
+      window.addEventListener('pageshow', function(e){
+        if(e.persisted || (performance.getEntriesByType('navigation')[0] && performance.getEntriesByType('navigation')[0].type === 'back_forward')){
+          var stillAuth = {% if user.is_authenticated %}true{% else %}false{% endif %};
+          try{ if(!localStorage.getItem('access') && !stillAuth) stillAuth = false; }catch(e){}
+          if(!stillAuth && isProtected){ window.location.replace('/login/'); }
+        }
+      });
+      if(performance.getEntriesByType('navigation')[0]?.type === 'back_forward' && !isAuthenticated && isProtected){
+        window.location.replace('/login/');
+      }
+    })();
+    function coronaLogout(){
+      try{ localStorage.clear(); sessionStorage.clear(); }catch(e){}
+      try{ history.pushState(null, '', '/login/'); history.replaceState(null, '', '/login/'); }catch(e){}
+      window.location.replace('/login/');
+      setTimeout(function(){ try{ window.history.pushState(null, '', '/login/'); }catch(e){} }, 100);
+    }
+    // Live customer notifications: every bank review stage (documents, CRB,
+    // valuation, credit, approval) is logged server-side, so the bell shows e.g.
+    // "now application MORG-RES-000001 is at the CRB review stage".
+    (function(){
+      var list = document.getElementById('custNotifList');
+      var badge = document.getElementById('custNotifCount');
+      if(!list) return;
+      function esc(s){ var d=document.createElement('div'); d.textContent=(s||''); return d.innerHTML; }
+      fetch('/api/auth/notifications/', {credentials:'same-origin'})
+        .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+        .then(function(data){
+          var items = (data && data.notifications) || [];
+          var unread = (data && data.unread) || 0;
+          if(!items.length) return; // keep the empty state
+          if(badge){
+            if(unread > 0){ badge.style.display=''; badge.textContent = unread > 9 ? '9+' : String(unread); }
+            else { badge.style.display='none'; }
+          }
+          list.innerHTML = items.slice(0,5).map(function(n){
+            return '<a class="dropdown-item preview-item" href="/customer/notifications/">' +
+              '<div class="preview-thumbnail"><div class="preview-icon bg-dark rounded-circle"><i class="mdi mdi-bank text-primary"></i></div></div>' +
+              '<div class="preview-item-content"><p class="preview-subject ellipsis mb-1 text-small">' + esc(n.title) + '</p>' +
+              '<p class="text-small text-muted">' + esc(n.message).substring(0,90) + '</p></div></div></a>';
+          }).join('');
+        })
+        .catch(function(){});
+    })();
+    // External Apply links without mortgage type -> ask user which mortgage type
+    document.addEventListener('click', function(e){
+      const a = e.target.closest('a[href*="/customer/apply"]');
+      if(!a) return;
+      // allow sidebar links that already have ?type= to go directly
+      const href = a.getAttribute('href')||'';
+      const hasType = href.includes('type=') || href.includes('mortgage_type=');
+      // check if this is a sidebar submenu link (already has type) -> skip chooser
+      const isSidebarSub = a.closest('#applyMortgageSub') || a.closest('#sidebar');
+      if(hasType || isSidebarSub) return;
+      // For external buttons (e.g. in properties page, dashboard, etc.) ask type
+      // Don't intercept if Ctrl/Cmd click etc
+      if(e.ctrlKey || e.metaKey || e.shiftKey) return;
+      e.preventDefault();
+      // Use SweetAlert if available, else native prompt
+      function chooseTypeAndGo(){
+        function doSwal(){
+          Swal.fire({
+            title: 'Which mortgage type are you applying for?',
+            input: 'select',
+            inputOptions: {
+              'residential': 'Residential Mortgage — Buy house/apartment',
+              'construction': 'Home Construction — Build new house',
+              'renovation': 'Renovation — Semi Finish',
+              'land': 'Land Purchase — Buy land/plot',
+              'commercial': 'Commercial Property'
+            },
+            inputPlaceholder: 'Select mortgage type',
+            showCancelButton: true,
+            confirmButtonText: 'Continue',
+            confirmButtonColor: '#0077B6',
+            cancelButtonText: 'Cancel',
+            inputValidator: (value) => { if(!value) return 'Please select a type'; }
+          }).then((result)=>{
+            if(result.isConfirmed && result.value){
+              let url = href;
+              // preserve existing query if any
+              const sep = url.includes('?') ? '&' : '?';
+              url = url + sep + 'type=' + encodeURIComponent(result.value);
+              window.location.href = url;
+            }
+          });
+        }
+        if(typeof Swal!=='undefined'){
+          doSwal();
+        } else {
+          const s=document.createElement('script');
+          s.src='https://cdn.jsdelivr.net/npm/sweetalert2@11';
+          s.onload=doSwal;
+          s.onerror=function(){
+            const v = prompt('Enter mortgage type: residential, construction, renovation, land, commercial','residential');
+            if(v){
+              let url = href;
+              const sep = url.includes('?') ? '&' : '?';
+              url = url + sep + 'type=' + encodeURIComponent(v);
+              window.location.href = url;
+            }
+          };
+          document.head.appendChild(s);
+        }
+      }
+      chooseTypeAndGo();
+    });
+    // Sidebar - rely on Corona's misc.js (minimize) + off-canvas.js (mobile). We only add an overlay for mobile without affecting desktop.
+    document.addEventListener('DOMContentLoaded', function(){
+      var sidebar=document.getElementById('sidebar');
+      // Mobile overlay sync - off-canvas.js toggles .active, we sync the overlay
+      function syncOverlay(){
+        var overlay=document.getElementById('sidebarOverlay');
+        if(!overlay){
+          overlay=document.createElement('div');
+          overlay.id='sidebarOverlay';
+          overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1029;display:none;';
+          overlay.addEventListener('click', function(){ sidebar.classList.remove('active'); overlay.style.display='none'; });
+          document.body.appendChild(overlay);
+        }
+        // off-canvas toggles .active asynchronously, check after 10ms
+        setTimeout(function(){ overlay.style.display = sidebar.classList.contains('active') ? 'block' : 'none'; }, 10);
+      }
+      document.querySelectorAll('[data-toggle="offcanvas"], .navbar-toggler-right').forEach(function(btn){
+        btn.addEventListener('click', syncOverlay);
+      });
+      // Also, desktop minimize clicks should not leave an overlay behind
+      document.querySelectorAll('[data-toggle="minimize"]').forEach(function(btn){
+        btn.addEventListener('click', function(){ var ov=document.getElementById('sidebarOverlay'); if(ov) ov.style.display='none'; });
+      });
+    });
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,119 @@
+{% extends 'customer/customer_base.html' %}
+{% load static %}
+{% block title %}Property Verification - MorgiHome{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h3 class="page-title">
+    <span class="page-title-icon bg-gradient-primary text-white me-2" style="background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%) !important;"><i class="mdi mdi-home-search"></i></span> Property Verification
+  </h3>
+  <nav aria-label="breadcrumb">
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item active" aria-current="page">Mortgage Applicant / Property Verification</li>
+    </ul>
+  </nav>
+</div>
+
+<div class="row">
+  <div class="col-12 grid-margin stretch-card">
+    <div class="card" style="border-top: 4px solid #0077B6;">
+      <div class="card-body text-center py-5">
+        <div class="mx-auto d-flex align-items-center justify-content-center rounded-circle mb-4" style="width:80px; height:80px; background: linear-gradient(135deg, #0077B6 15%, #0A2B4E 85%); color:white;">
+          <i class="mdi mdi-shield-check" style="font-size:42px;"></i>
+        </div>
+        <h4 class="card-title mb-2">Verify Property Ownership</h4>
+        <p class="text-muted mx-auto" style="max-width:650px;">
+          Copy the <strong>Title Number / Plot No / NAPA Code</strong> from the property posted by the seller and verify it on the official <strong>Ministry of Lands, Housing and Human Settlements</strong> portal (e-Ardhi). This confirms the title deed is genuine and valid before you proceed with your mortgage application.
+        </p>
+
+        <!-- Main action button - organized as requested -->
+        <div class="card mx-auto mt-4" style="max-width:720px; background:#0f0f0f; border:1px solid #2c2e33; border-radius:12px;">
+          <div class="card-body p-4 text-center">
+            <h6 style="font-weight:700;"><i class="mdi mdi-file-document-check" style="color:#0077B6;"></i> How to Verify Your Property</h6>
+            <p class="text-muted" style="font-size:13px;">Copy the <strong>Title Number / NAPA / Plot No</strong> from the property you want (found on <a href="/customer/properties/" style="color:#0077B6;">Properties</a> details page), then click the button below to go to the official portal.</p>
+            <a href="https://eardhi.lands.go.tz/" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-lg mt-2" style="background:#0077B6; border-color:#0077B6; font-weight:700; border-radius:10px; padding:14px 32px; font-size:16px; box-shadow:0 4px 20px rgba(0,119,182,0.3);">
+              <i class="mdi mdi-shield-check me-2"></i> Go to e-Ardhi Portal — Verify Document
+            </a>
+            <p class="text-muted mt-3 mb-0" style="font-size:12px;"><i class="mdi mdi-information-outline me-1"></i> Link: <code style="background:#191c24; padding:4px 8px; border-radius:6px;">https://eardhi.lands.go.tz/</code> — Official Ministry of Lands, Housing and Human Settlements</p>
+            <div class="alert mt-3 text-start" style="background:rgba(0,119,182,0.08); border:1px solid rgba(0,119,182,0.15); border-radius:8px; font-size:13px;">
+              <strong style="color:#fff;"><i class="mdi mdi-map-marker-check" style="color:#0077B6;"></i> Instructions:</strong>
+              <ol class="text-muted mb-0 mt-2" style="padding-left:18px; font-size:13px; line-height:1.8;">
+                <li>Copy the <strong>Title / NAPA code</strong> from the property details (e.g. <code>NAPA-001</code> or <code>Plot 123 Block A</code>).</li>
+                <li>Click the button above — a new tab will open at <strong>https://eardhi.lands.go.tz/</strong>.</li>
+                <li>In the portal navigation, click <strong>Verify Document</strong>.</li>
+                <li>Paste the code you copied into the field and submit — you will see the official document information and can confirm it is verified. <strong>Verification only — no need to download a certificate.</strong></li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <!-- Steps - English only -->
+        <div class="row mt-5 text-start">
+          <div class="col-md-4 grid-margin stretch-card">
+            <div class="card" style="background:#191c24; border:1px solid #2c2e33;">
+              <div class="card-body">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                  <span class="rounded-circle d-flex align-items-center justify-content-center text-white" style="width:36px; height:36px; background:#0077B6; font-weight:bold;">1</span>
+                  <h6 class="mb-0">Copy Property Code</h6>
+                </div>
+                <p class="text-muted mb-0" style="font-size:13px;">Go to <a href="/customer/properties/" style="color:#0077B6;">Properties Dashboard</a> or <a href="/properties/" target="_blank" style="color:#0077B6;">Public Listings</a> → View Details → copy the <strong>Title Number / NAPA / Plot No</strong>. This is the code you will verify.</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 grid-margin stretch-card">
+            <div class="card" style="background:#191c24; border:1px solid #2c2e33;">
+              <div class="card-body">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                  <span class="rounded-circle d-flex align-items-center justify-content-center text-white" style="width:36px; height:36px; background:#0077B6; font-weight:bold;">2</span>
+                  <h6 class="mb-0">Go to Portal & Verify</h6>
+                </div>
+                <p class="text-muted mb-0" style="font-size:13px;">Click the <strong>Go to e-Ardhi Portal — Verify Document</strong> button above. On the portal, click <strong>Verify Document</strong> in the navigation, then paste the code you copied.</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 grid-margin stretch-card">
+            <div class="card" style="background:#191c24; border:1px solid #2c2e33;">
+              <div class="card-body">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                  <span class="rounded-circle d-flex align-items-center justify-content-center text-white" style="width:36px; height:36px; background:#0A2B4E; font-weight:bold;">3</span>
+                  <h6 class="mb-0">View Official Information</h6>
+                </div>
+                <p class="text-muted mb-0" style="font-size:13px;">The portal will display the official title information so you can confirm it is valid and authentic. This is a <strong>verification only</strong> step — you do not need to download any certificate. Keep the verified information for your application.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert mt-3 text-start" style="background:rgba(0,119,182,0.12); border:1px solid rgba(0,119,182,0.25); border-radius:8px;">
+          <div class="d-flex gap-3">
+            <i class="mdi mdi-lightbulb-outline" style="font-size:22px; color:#0077B6; margin-top:2px;"></i>
+            <div>
+              <strong style="color:#fff;">Tip:</strong>
+              <span class="text-muted" style="font-size:13px;"> If you do not have the title code, contact the seller or Real Estate agent. MorgiHome does not store your title — verification is performed only via the official e-Ardhi system.</span>
+            </div>
+          </div>
+        </div>
+        <div class="alert mt-2 text-start" style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.2); border-radius:8px;">
+          <small style="color:#cbd5e1;"><i class="mdi mdi-information-outline" style="color:#10b981;"></i> <strong>Alternative:</strong> You can also click <a href="https://eardhi.lands.go.tz/login" target="_blank" style="color:#0077B6;">e-Ardhi Login</a> and manually choose <em>Verify Document</em> from the navigation menu, then enter the code yourself.</small>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  document.querySelectorAll('a[href*="eardhi.lands.go.tz"]').forEach(function(a){
+    a.addEventListener('click', function(){
+      setTimeout(function(){
+        Swal.fire({icon:'info', title:'Redirecting to e-Ardhi', text:'Official portal is opening in a new tab. Click Verify Document after it loads.', confirmButtonColor:'#0077B6', timer:5000, toast:true, position:'top-end', showConfirmButton:false});
+      }, 400);
+    });
+  });
+});
+</script>
+{% endblock %}

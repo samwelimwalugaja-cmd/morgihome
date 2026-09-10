@@ -1,0 +1,291 @@
+{% extends 'realestate/realestate_base.html' %}
+{% load humanize %}
+{% block title %}Real Estate Profile - Corona{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Fix file input visibility - Corona dark theme */
+  .form-control[type="file"] {
+    color: #fff !important;
+    background: #2c2e33 !important;
+    border: 1px solid #444 !important;
+    padding: 8px !important;
+  }
+  .form-control[type="file"]::file-selector-button {
+    background: #0077B6 !important;
+    color: white !important;
+    border: none !important;
+    padding: 6px 12px !important;
+    border-radius: 4px !important;
+    margin-right: 12px !important;
+    cursor: pointer;
+  }
+  .form-control[type="file"]::-webkit-file-upload-button {
+    background: #0077B6 !important;
+    color: white !important;
+    border: none !important;
+    padding: 6px 12px !important;
+    border-radius: 4px !important;
+    margin-right: 12px !important;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+<div class="row"><div class="col-12">
+  {% for message in messages %}
+  <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-danger{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  {% endfor %}
+</div></div>
+{% endif %}
+<div class="page-header">
+  <h3 class="page-title">
+    <span class="page-title-icon bg-gradient-primary text-white me-2"><i class="mdi mdi-office-building"></i></span> Real Estate Profile
+  </h3>
+  <nav aria-label="breadcrumb">
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item active" aria-current="page">Real Estate / Profile — <span class="text-primary">Your Profile Only</span></li>
+    </ul>
+  </nav>
+</div>
+
+<!-- Cover Header - Fixed: increased height and padding to prevent cut -->
+<div class="row">
+  <div class="col-12 grid-margin stretch-card">
+    <div class="card" style="overflow: hidden; border: none;">
+      <div style="height: 160px; background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%); position: relative;">
+        <div style="position: absolute; bottom: -45px; left: 30px; display: flex; align-items: flex-end; gap: 20px; max-width: calc(100% - 60px);">
+          {% if user.profile_image %}
+            <img src="{{ user.profile_image.url }}" alt="{{ user.get_full_name }}" class="rounded-circle" style="width: 110px; height: 110px; object-fit: cover; border: 4px solid #191c24; box-shadow: 0 4px 20px rgba(0,0,0,0.3); flex-shrink: 0;">
+          {% else %}
+            <div class="rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 110px; height: 110px; background: linear-gradient(135deg, #00d25b 0%, #0090e7 100%); font-size: 42px; font-weight: bold; border: 4px solid #191c24; box-shadow: 0 4px 20px rgba(0,0,0,0.3); flex-shrink: 0;">{{ user.initials|default:"R" }}</div>
+          {% endif %}
+          <div style="margin-bottom: 15px; min-width: 0; flex: 1; padding-bottom: 5px;">
+            <h3 class="mb-1" style="color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); font-size: 22px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{% if user.is_authenticated %}{{ user.get_full_name|default:user.email }}{% else %}Guest Real Estate{% endif %}</h3>
+            <p class="mb-0" style="color: rgba(255,255,255,0.95); font-size: 13px; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><i class="mdi mdi-email"></i> {% if user.is_authenticated %}{{ user.email }}{% else %}guest@morgihome.co.tz{% endif %} <span class="d-none d-md-inline">•</span> <br class="d-md-none"><i class="mdi mdi-office-building"></i> Real Estate Company</p>
+          </div>
+        </div>
+        <div style="position: absolute; top: 20px; right: 20px;">
+          <span class="badge badge-outline-light" style="background: rgba(255,255,255,0.2); color: white; border-color: rgba(255,255,255,0.3); backdrop-filter: blur(10px);">{{ user.verification_level_display|default:"Not Verified" }}</span>
+        </div>
+      </div>
+      <div class="card-body" style="padding-top: 75px;">
+        <div class="row text-center">
+          <div class="col-4">
+            <h3 class="mb-0 text-primary">{{ my_properties_count|default:"0" }}</h3>
+            <small class="text-muted">My Properties</small>
+          </div>
+          <div class="col-4" style="border-left: 1px solid #2c2e33; border-right: 1px solid #2c2e33;">
+            <h3 class="mb-0 text-success">{{ my_applications_count|default:"0" }}</h3>
+            <small class="text-muted">Applications</small>
+          </div>
+          <div class="col-4">
+            <h3 class="mb-0" style="color: #ffab00;">{{ my_contracts_count|default:"0" }}</h3>
+            <small class="text-muted">Contracts</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-4 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="card-title"><i class="mdi mdi-camera text-primary"></i> Profile Photo</h4>
+        <div class="text-center mb-4">
+          {% if user.profile_image %}
+            <img src="{{ user.profile_image.url }}" alt="{{ user.get_full_name }}" class="rounded-circle mb-3" style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #0077B6;">
+          {% else %}
+            <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center text-white" style="width: 120px; height: 120px; background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%); font-size: 48px; font-weight: bold;">{{ user.initials|default:"R" }}</div>
+          {% endif %}
+          <h5>{% if user.is_authenticated %}{{ user.get_full_name|default:user.email }}{% else %}Guest Real Estate{% endif %}</h5>
+          <p class="text-muted"><i class="mdi mdi-shield-check"></i> {{ user.get_role_display|default:"Real Estate" }}</p>
+          <span class="badge {% if user.is_verified %}badge-outline-success{% else %}badge-outline-warning{% endif %}">{{ user.verification_level_display|default:"Not Verified" }}</span>
+        </div>
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="form-group">
+            <label><i class="mdi mdi-upload"></i> Change Photo</label>
+            <input type="file" name="profile_image" accept="image/*" class="form-control">
+            <small class="text-muted">JPG, PNG • Max 5MB</small>
+          </div>
+          <button type="submit" class="btn btn-primary w-100" style="background:#0077B6; border-color:#0077B6;"><i class="mdi mdi-cloud-upload"></i> Upload Photo</button>
+        </form>
+        <div class="mt-4">
+          <h6><i class="mdi mdi-information text-primary"></i> Quick Info</h6>
+          <div class="d-flex justify-content-between py-2 border-bottom" style="border-color: #2c2e33 !important;"><span class="text-muted">Member Since</span><span>{{ user.date_joined|date:"M Y"|default:"—" }}</span></div>
+          <div class="d-flex justify-content-between py-2 border-bottom" style="border-color: #2c2e33 !important;"><span class="text-muted">Phone</span><span>{{ user.phone_number|default:"—" }}</span></div>
+          <div class="d-flex justify-content-between py-2"><span class="text-muted">Pending Apps</span><span class="badge badge-outline-warning">{{ my_pending_count|default:"0" }}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="card-title"><i class="mdi mdi-account-details text-primary"></i> Company Information</h4>
+        <p class="card-description">Your Real Estate company details — <span class="text-primary">this is your private profile, customers cannot see it</span></p>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label><i class="mdi mdi-account"></i> First Name</label>
+              <div class="form-control" style="background: #2c2e33; border: 1px solid #444; color: #fff; padding: 10px;">{{ user.first_name|default:"—" }}</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label>Last Name</label>
+              <div class="form-control" style="background: #2c2e33; border: 1px solid #444; color: #fff; padding: 10px;">{{ user.last_name|default:"—" }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label><i class="mdi mdi-email"></i> Email</label>
+              <div class="form-control" style="background: #2c2e33; border: 1px solid #444; color: #fff; padding: 10px;">{% if user.is_authenticated %}{{ user.email }}{% else %}—{% endif %}</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label><i class="mdi mdi-phone"></i> Phone</label>
+              <div class="form-control" style="background: #2c2e33; border: 1px solid #444; color: #fff; padding: 10px;">{{ user.phone_number|default:"—" }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label><i class="mdi mdi-shield"></i> Role</label>
+              <div class="form-control" style="background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%); border: none; color: white; padding: 10px; font-weight: bold;">{{ user.get_role_display|default:"Real Estate" }}</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label><i class="mdi mdi-calendar"></i> Member Since</label>
+              <div class="form-control" style="background: #2c2e33; border: 1px solid #444; color: #fff; padding: 10px;">{{ user.date_joined|date:"d M Y"|default:"—" }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mt-4" style="background: #191c24; border: 1px solid #2c2e33;">
+          <div class="card-body">
+            <h4 class="card-title"><i class="mdi mdi-shield-check text-success"></i> Verification Status</h4>
+            <div class="preview-list">
+              <div class="preview-item border-bottom">
+                <div class="preview-thumbnail"><div class="preview-icon bg-dark rounded-circle"><i class="mdi mdi-file-document text-primary"></i></div></div>
+                <div class="preview-item-content d-flex flex-grow">
+                  <div class="flex-grow">
+                    <h6 class="preview-subject">Business License</h6>
+                    <p class="text-muted mb-0">Business License</p>
+                  </div>
+                  <div class="me-auto text-sm-right pt-2">
+                    <span class="badge {% if user.business_license_verified %}badge-outline-success{% else %}badge-outline-warning{% endif %}">{% if user.business_license_verified %}Verified ✓{% else %}Pending ⏳{% endif %}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="preview-item">
+                <div class="preview-thumbnail"><div class="preview-icon bg-dark rounded-circle"><i class="mdi mdi-office-building text-info"></i></div></div>
+                <div class="preview-item-content d-flex flex-grow">
+                  <div class="flex-grow">
+                    <h6 class="preview-subject">Company Registration</h6>
+                    <p class="text-muted mb-0">Company Registration</p>
+                  </div>
+                  <div class="me-auto text-sm-right pt-2">
+                    <span class="badge {% if user.company_registration_verified %}badge-outline-success{% else %}badge-outline-warning{% endif %}">{% if user.company_registration_verified %}Verified ✓{% else %}Pending ⏳{% endif %}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal" style="background:#0077B6; border-color:#0077B6;"><i class="mdi mdi-pencil"></i> Edit Profile</button>
+          <button type="button" class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#changePasswordModal"><i class="mdi mdi-key"></i> Change Password</button>
+          <a href="/realestate/dashboard/" class="btn btn-outline-secondary"><i class="mdi mdi-view-dashboard"></i> Dashboard</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background: #191c24; border: 1px solid #2c2e33;">
+      <div class="modal-header" style="border-bottom: 1px solid #2c2e33;">
+        <h5 class="modal-title" id="editProfileModalLabel"><i class="mdi mdi-account-edit text-primary"></i> Edit Profile</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="form-group">
+            <label>First Name</label>
+            <input type="text" name="first_name" value="{{ user.first_name }}" class="form-control" style="background: #2c2e33; border: 1px solid #444; color: #fff;">
+          </div>
+          <div class="form-group">
+            <label>Last Name</label>
+            <input type="text" name="last_name" value="{{ user.last_name }}" class="form-control" style="background: #2c2e33; border: 1px solid #444; color: #fff;">
+          </div>
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="text" name="phone_number" value="{{ user.phone_number }}" class="form-control" style="background: #2c2e33; border: 1px solid #444; color: #fff;">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" value="{{ user.email }}" class="form-control" style="background: #2c2e33; border: 1px solid #444; color: #fff;" disabled>
+            <small class="text-muted">Email cannot be changed</small>
+          </div>
+        </div>
+        <div class="modal-footer" style="border-top: 1px solid #2c2e33;">
+          <button type="button" class="btn btn-dark" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="background:#0077B6;">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background: #191c24; border: 1px solid #2c2e33;">
+      <div class="modal-header" style="border-bottom: 1px solid #2c2e33;">
+        <h5 class="modal-title" id="changePasswordModalLabel"><i class="mdi mdi-key-change text-primary"></i> Change Password</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post" action="/api/auth/change-password/">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Current Password <span class="text-danger">*</span></label>
+            <input type="password" name="current_password" class="form-control" style="background: #2c2e33; border: 1px solid #444; color: #fff;" placeholder="Enter current password" required>
+          </div>
+          <div class="form-group">
+            <label>New Password <span class="text-danger">*</span></label>
+            <input type="password" name="new_password" class="form-control" style="background: #2c2e33; border: 1px solid #444; color: #fff;" placeholder="Enter new password" required>
+            <small class="text-muted">Minimum 12 characters</small>
+          </div>
+          <div class="form-group">
+            <label>Confirm New Password <span class="text-danger">*</span></label>
+            <input type="password" name="confirm_password" class="form-control" style="background: #2c2e33; border: 1px solid #444; color: #fff;" placeholder="Confirm new password" required>
+          </div>
+        </div>
+        <div class="modal-footer" style="border-top: 1px solid #2c2e33;">
+          <button type="button" class="btn btn-dark" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="background:#0077B6;">Change Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

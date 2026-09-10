@@ -1,0 +1,178 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>FAQ - MorgiHome</title>
+  <link href="{% static 'images/favicon.ico' %}?v=4" rel="icon">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="{% static 'vendors/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+<link href="{% static 'vendors/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+<link href="{% static 'vendors/aos/aos.css' %}" rel="stylesheet">
+<link href="{% static 'css/main.css' %}?v=15" rel="stylesheet">
+</head>
+<body>
+<header id="header" class="header d-flex align-items-center fixed-top" style="background: #181b28;">
+  <div class="container position-relative d-flex align-items-center justify-content-between">
+    <a href="{% url 'home' %}" class="logo d-flex align-items-center"><img src="{% static 'images/morgihome-official-logo.png' %}" alt="MorgiHome" style="max-height:44px; width:auto;"></a>
+    <nav id="navmenu" class="navmenu">
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/#about">About</a></li>
+        <li><a href="/#services">Services</a></li>
+        <li class="dropdown"><a href="#"><span>Properties</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
+          <ul>
+            <li><a href="/properties/?property_type=house">Residential Properties</a></li>
+            <li><a href="/properties/?property_type=commercial">Commercial Properties</a></li>
+            <li><a href="/properties/?property_type=land">Land &amp; Plots</a></li>
+            <li><a href="/properties/">Featured Properties</a></li>
+            <li><a href="/properties/?property_type=apartment">Apartments</a></li>
+          </ul>
+        </li>
+        <li class="dropdown"><a href="#" class="active"><span>More</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
+          <ul>
+            <li><a href="/#how-it-works">How It Works</a></li>
+            <li><a href="/faq/" class="active">FAQ</a></li>
+            <li><a href="/#contact">Contact</a></li>
+          </ul>
+        </li>
+        <li><a href="/#contact">Contact</a></li>
+      </ul>
+      <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+    </nav>
+    <div class="header-auth d-flex align-items-center gap-2">
+      <a href="{% url 'login_page' %}" class="btn-login">Login</a>
+      <a href="{% url 'signup_page' %}" class="btn-signup">Sign Up</a>
+    </div>
+  </div>
+</header>
+
+<main class="main" style="padding-top:90px;">
+  <section class="page-title" style="padding:60px 0 40px; background: var(--background-color);">
+    <div class="container text-center" data-aos="fade-up">
+      <h1 style="font-weight:800;">Frequently Asked Questions</h1>
+      <p style="color:#8f95ab; max-width:640px; margin:10px auto 0;">Everything you need to know about mortgages, properties and MorgiHome</p>
+      <div class="mt-4"><a href="{% url 'signup_page' %}" class="btn btn-primary" style="background:var(--accent-color); border:none; border-radius:50px; padding:10px 28px; font-weight:600;">Apply for Mortgage</a></div>
+    </div>
+  </section>
+
+  <section class="faq section" style="padding-top:30px;">
+    <div class="container" data-aos="fade-up">
+      <div class="row">
+        <div class="col-lg-8 mx-auto">
+          <div class="faq-container">
+            <div class="faq-item faq-active">
+              <h3>1. What documents do I need to apply for a mortgage?</h3>
+              <div class="faq-content"><p>Valid ID (NIDA/passport), proof of income (3 payslips or business statements), 3-month bank statements, employer letter, employment contract, and certified copy of title deed. Your bank will provide the full checklist after pre-approval.</p></div>
+              <i class="faq-toggle bi bi-chevron-right"></i>
+            </div>
+            <div class="faq-item">
+              <h3>2. How long does mortgage approval take?</h3>
+              <div class="faq-content"><p>Once documents are complete, banks typically decide within 5–14 business days. Valuation and legal review add 3–7 days. MorgiHome tracks each step so you see live status.</p></div>
+              <i class="faq-toggle bi bi-chevron-right"></i>
+            </div>
+            <div class="faq-item">
+              <h3>3. Does MorgiHome charge any fees?</h3>
+              <div class="faq-content"><p>Browsing, calculator and initial consultation are free. Bank processing fees (0–1.5%), valuation and legal fees are paid directly to the bank/lawyer and are shown before you apply.</p></div>
+              <i class="faq-toggle bi bi-chevron-right"></i>
+            </div>
+            <div class="faq-item">
+              <h3>4. Are the properties on MorgiHome verified?</h3>
+              <div class="faq-content"><p>Yes. Every listing is inspected by licensed real estate professionals and title is verified via e-Ardhi before publishing. Look for the “Verified” badge.</p></div>
+              <i class="faq-toggle bi bi-chevron-right"></i>
+            </div>
+            <div class="faq-item">
+              <h3>5. Can I sell my home through MorgiHome?</h3>
+              <div class="faq-content"><p>Yes. Register as Property Seller, create a listing with photos and documents, and our team will verify and publish it to thousands of buyers and mortgage applicants.</p></div>
+              <i class="faq-toggle bi bi-chevron-right"></i>
+            </div>
+            <div class="faq-item">
+              <h3>6. Is my data secure on MorgiHome?</h3>
+              <div class="faq-content"><p>Absolutely. We use Argon2 hashing, JWT, HTTPS/HSTS, and encrypted storage. Documents are stored securely and only shared with your chosen bank and lawyer.</p></div>
+              <i class="faq-toggle bi bi-chevron-right"></i>
+            </div>
+            <div class="faq-item">
+              <h3>7. What types of mortgages are available?</h3>
+              <div class="faq-content"><p>Purchase (buy house/apartment), Refinance/Equity Release, Semi-Finish (complete at lintel stage), and Construction (build in 5 stages). NMB example: 10M–700M, construction up to 200M, max 15 years at 17%.</p></div>
+              <i class="faq-toggle bi bi-chevron-right"></i>
+            </div>
+            <div class="faq-item">
+              <h3>8. Do I need a down payment?</h3>
+              <div class="faq-content"><p>Yes, typically 10% for purchase loans (bank finances up to 90%). Down payment can be higher to lower monthly instalment — use the calculator on the homepage.</p></div>
+              <i class="faq-toggle bi bi-chevron-right"></i>
+            </div>
+            <div class="faq-item">
+              <h3>9. Can I apply if I am self-employed?</h3>
+              <div class="faq-content"><p>Yes. Self-employed and business owners are welcome. Provide business registration (BRELA), 6–12 month statements, and proof of steady income. MorgiHome supports both salaried and business profiles.</p></div>
+              <i class="faq-toggle bi bi-chevron-right"></i>
+            </div>
+            <div class="faq-item">
+              <h3>10. What happens if I miss a payment?</h3>
+              <div class="faq-content"><p>Contact your bank immediately. Late fees may apply and it can affect your credit score. MorgiHome sends reminders via the Repayment Schedule and you can arrange a plan with the bank.</p></div>
+              <i class="faq-toggle bi bi-chevron-right"></i>
+            </div>
+            <div class="faq-item">
+              <h3>11. How do I check my application status?</h3>
+              <div class="faq-content"><p>Log in → My Applications → Track. You will see: Submitted → CRB Check → Valuation → Credit Assessment → Approval → Disbursement with dates.</p></div>
+              <i class="faq-toggle bi bi-chevron-right"></i>
+            </div>
+            <div class="faq-item">
+              <h3>12. Can I pay off my mortgage early?</h3>
+              <div class="faq-content"><p>Yes. Early repayment is allowed with no penalty at most partner banks (e.g., NMB). You save on interest — confirm with your bank for the final settlement amount.</p></div>
+              <i class="faq-toggle bi bi-chevron-right"></i>
+            </div>
+          </div>
+          <div class="text-center mt-5">
+            <p style="color:#8f95ab;">Still have questions?</p>
+            <a href="/#contact" class="btn btn-outline-light" style="border-radius:50px; padding:10px 24px;">Contact Us</a>
+            <a href="{% url 'signup_page' %}" class="btn btn-primary ms-2" style="background:var(--accent-color); border:none; border-radius:50px; padding:10px 24px;">Apply Now</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="footer" class="footer dark-background">
+  <div class="copyright text-center py-4"><div class="container">&copy; <strong>MorgiHome</strong> All Rights Reserved &bull; <a href="/faq/">FAQ</a> &bull; <a href="/#contact">Contact</a></div></div>
+</footer>
+
+<script src="{% static 'vendors/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'vendors/aos/aos.js' %}"></script>
+<script src="{% static 'js/main.js' %}?v=11"></script>
+<script>
+  // Ensure AOS visible even if main.js fails
+  document.addEventListener('DOMContentLoaded', function(){
+    try{ if(window.AOS) AOS.init({duration:600, once:true}); }catch(e){}
+    // Fallback: make sure the FAQ is visible even if AOS fails to load
+    document.querySelectorAll('[data-aos]').forEach(function(el){ el.style.opacity='1'; el.style.transform='none'; });
+    // Preloader hide
+    var pre=document.getElementById('preloader'); if(pre) pre.style.display='none';
+  });
+  // FAQ toggle + also allow click on toggle icon
+  document.querySelectorAll('.faq-item h3, .faq-item .faq-toggle').forEach(function(el){
+    el.addEventListener('click', function(){
+      var item=this.closest('.faq-item');
+      var was=item.classList.contains('faq-active');
+      document.querySelectorAll('.faq-item').forEach(function(i){ i.classList.remove('faq-active'); });
+      if(!was) item.classList.add('faq-active');
+    });
+  });
+  // Mobile nav toggle (same as index)
+  (function(){
+    var t=document.querySelector('.mobile-nav-toggle');
+    var n=document.querySelector('#navmenu');
+    if(t && n){
+      t.addEventListener('click', function(){
+        document.body.classList.toggle('mobile-nav-active');
+        this.classList.toggle('bi-list'); this.classList.toggle('bi-x');
+      });
+      n.querySelectorAll('.toggle-dropdown').forEach(function(dd){
+        dd.addEventListener('click', function(e){ e.preventDefault(); var ul=this.closest('.dropdown').querySelector('ul'); if(ul) ul.classList.toggle('dropdown-active'); });
+      });
+    }
+  })();
+</script>
+</body>
+</html>

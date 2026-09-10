@@ -1,0 +1,202 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="h-full" suppressHydrationWarning>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}MorgiHome - Apex Dashboard{% endblock %}</title>
+  <!-- Apex Dashboard (DashboardPack) - Preserve exact theme as live-demo 391333 -->
+  <script>(function(){try{var t=localStorage.getItem("apex-theme")||"system";var d=t==="dark"||(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);var r=document.documentElement;r.classList.add(d?"dark":"light");r.style.colorScheme=d?"dark":"light"}catch(e){document.documentElement.classList.add("light")}})();
+  (function(){try{var d=localStorage.getItem("apex-density");if(d&&["compact","comfortable","spacious"].includes(d)){document.documentElement.classList.add("density-"+d)}else{document.documentElement.classList.add("density-comfortable")}}catch(e){document.documentElement.classList.add("density-comfortable")}})();
+  (function(){try{var c=localStorage.getItem("apex-color-preset");if(["emerald","blue","violet","rose","orange","slate"].indexOf(c)!==-1){document.documentElement.setAttribute("data-color-preset",c)}else{document.documentElement.setAttribute("data-color-preset","blue")}}catch(e){}})();
+  (function(){try{var A=["sidebar","sidebar-mini","sidebar-compact","sidebar-float","topnav","topnav-hybrid"];var l=localStorage.getItem("apex-layout");document.documentElement.classList.add("layout-"+(A.indexOf(l)!==-1?l:"sidebar"))}catch(e){document.documentElement.classList.add("layout-sidebar")}})();
+  (function(){try{var b=localStorage.getItem("apex-container");if(b==="boxed"){document.documentElement.classList.add("container-boxed")}else{document.documentElement.classList.add("container-fluid")}}catch(e){document.documentElement.classList.add("container-fluid")}})();
+  (function(){try{var r=localStorage.getItem("apex-direction");if(r==="rtl"){document.documentElement.dir="rtl";document.documentElement.classList.add("dir-rtl")}else{document.documentElement.dir="ltr";document.documentElement.classList.add("dir-ltr")}}catch(e){document.documentElement.dir="ltr";document.documentElement.classList.add("dir-ltr")}})();</script>
+  <meta name="theme-color" content="#fbfbfc" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+  <!-- Tailwind Production + Apex shadcn -->
+  <link rel="stylesheet" href="{% static 'bank/css/tailwind.css' %}?v=20260903-3">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="{% static 'images/favicon.ico' %}?v=4" rel="icon" sizes="48x48">
+  <link href="{% static 'images/favicon-32x32.png' %}?v=4" rel="icon" type="image/png" sizes="32x32">
+  <link href="{% static 'images/favicon-16x16.png' %}?v=4" rel="icon" type="image/png" sizes="16x16">
+  <link href="{% static 'images/apple-touch-icon.png' %}?v=4" rel="apple-touch-icon" type="image/png">
+  <link rel="stylesheet" href="{% static 'bank/css/morgihome.css' %}?v=20260903-3">
+  <style>
+    *{font-family:'Inter',sans-serif}
+    /* MorgiHome Primary override on Apex blue preset - keep Apex theme intact, only change primary to MorgiHome */
+    :root{ --primary: #0077B6; --primary-foreground: #fff; --sidebar-primary: #0077B6; }
+    [data-color-preset="blue"]{ --primary: #0077B6; --sidebar-primary: #0077B6; }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="h-full antialiased bg-background text-foreground __variable_489c90 __variable_508d3e" style="background: var(--morgi-bg, #fbfbfc); color: var(--morgi-text, #0f172a);">
+  <div class="flex h-screen overflow-hidden" data-slot="app-wrapper">
+    <!-- Sidebar - Desktop - Apex Dashboard style (DashboardPack) - EXACT layout, only data changed -->
+    <aside id="sidebar" data-slot="sidebar" class="hidden lg:flex w-[260px] flex-col shrink-0 overflow-y-auto border-r border-sidebar-border bg-sidebar text-sidebar-foreground" style="background: var(--morgi-sidebar, #f8fafc);">
+      <div class="h-[64px] flex items-center gap-3 px-6 border-b border-sidebar-border shrink-0" style="border-color: var(--morgi-border, #e2e8f0);">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary" style="background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%);"><i data-lucide="zap" class="h-4 w-4 text-primary-foreground" style="color:white"></i></div>
+        <div>
+          <h1 class="font-bold text-[15px] leading-none tracking-tight">MorgiHome</h1>
+          <p class="text-xs text-muted-foreground" style="color: var(--morgi-muted, #64748b);">{% block portal_name %}Portal{% endblock %}</p>
+        </div>
+      </div>
+      <nav class="flex-1 px-3 py-4 space-y-6 overflow-y-auto" data-slot="sidebar-nav">
+        {% block sidebar_nav %}{% endblock %}
+        <div>
+          <p class="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/60">System</p>
+          <ul class="space-y-0.5">
+            <li><a href="{% url 'profile_page' %}" class="group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground {% if request.resolver_match.url_name == 'profile_page' %}bg-sidebar-accent text-sidebar-foreground{% endif %}"><i data-lucide="user-round" class="h-[18px] w-[18px] shrink-0"></i><span data-slot="nav-label" class="flex-1">Profile</span></a></li>
+            <li><a href="#" onclick="morgiLogout(); return false;" class="group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground text-red-600 dark:text-red-400"><i data-lucide="log-out" class="h-[18px] w-[18px]"></i><span class="flex-1">Logout</span></a></li>
+          </ul>
+        </div>
+      </nav>
+      <div class="border-t border-sidebar-border p-3" style="border-color: var(--morgi-border, #e2e8f0);">
+        <div class="flex items-center gap-2">
+          <a href="{% url 'profile_page' %}" class="flex flex-1 items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-sidebar-accent/50">
+            {% if user.profile_image %}
+              <img src="{{ user.profile_image.url }}" alt="{{ user.get_full_name }}" class="h-8 w-8 shrink-0 rounded-full object-cover">
+            {% else %}
+              <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sidebar-primary/80 to-sidebar-primary text-[11px] font-bold text-sidebar-primary-foreground" style="background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%);">{{ user.initials|default:"M" }}</div>
+            {% endif %}
+            <div class="flex flex-1 flex-col min-w-0">
+              <span class="text-sm font-medium text-sidebar-foreground truncate">{{ user.get_full_name|default:"User" }}</span>
+              <span class="text-[11px] text-sidebar-foreground/60 truncate">{{ user.email|default:"user@morgihome.co.tz" }}</span>
+            </div>
+          </a>
+          <button aria-label="Log out" onclick="morgiLogout(); return false;" class="rounded-md p-1.5 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"><i data-lucide="log-out" class="h-4 w-4"></i></button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Mobile Sidebar -->
+    <div id="mobile-overlay" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden"></div>
+    <aside id="mobile-sidebar" data-slot="sidebar" class="fixed inset-y-0 left-0 w-[280px] z-50 transform -translate-x-full transition-transform duration-200 lg:hidden flex flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border" style="background: var(--morgi-sidebar, #f8fafc);">
+      <div class="h-[64px] flex items-center justify-between px-6 border-b border-sidebar-border">
+        <div class="flex items-center gap-3">
+          <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary" style="background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%);"><i data-lucide="zap" class="h-4 w-4 text-white"></i></div>
+          <span class="font-bold">MorgiHome</span>
+        </div>
+        <button id="close-sidebar" class="flex h-7 w-7 items-center justify-center rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent"><i data-lucide="x" class="h-4 w-4"></i></button>
+      </div>
+      <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        {% block mobile_nav %}{% endblock %}
+        <div class="my-2 border-t border-sidebar-border"></div>
+        <a href="{% url 'profile_page' %}" class="group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent/50"><i data-lucide="user-round" class="h-5 w-5"></i> Profile</a>
+        <a href="#" onclick="morgiLogout(); return false;" class="group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-red-600"><i data-lucide="log-out" class="h-5 w-5"></i> Logout</a>
+      </nav>
+    </aside>
+
+    <!-- Main -->
+    <div class="flex flex-1 flex-col min-w-0 overflow-hidden" data-slot="app-content">
+      <!-- Header - Apex style -->
+      <div data-slot="app-header" class="sticky top-0 z-30">
+        <header class="flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-xl sm:px-6" style="background: var(--morgi-card, #fff);">
+          <div class="flex items-center gap-3">
+            <button id="open-sidebar" aria-label="Open menu" class="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground lg:hidden"><i data-lucide="menu" class="h-5 w-5"></i></button>
+            <div data-slot="app-brand-inline" class="hidden items-center gap-2.5 lg:flex">
+              <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary" style="background: #0077B6;"><i data-lucide="zap" class="h-4 w-4 text-primary-foreground" style="color:white"></i></div>
+              <span class="text-sm font-bold tracking-tight">Apex</span>
+              <div class="mx-1 h-6 w-px bg-border"></div>
+            </div>
+            <div class="hidden sm:block">
+              <h2 class="text-sm font-semibold">{% block page_title %}Dashboard{% endblock %}</h2>
+              <p class="text-xs text-muted-foreground hidden lg:block">{% block breadcrumb %}Home / Dashboard{% endblock %}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="relative hidden h-9 w-72 items-center rounded-lg border border-input bg-muted/40 ps-9 pe-4 text-start text-sm text-muted-foreground hover:bg-muted/60 sm:flex" onclick="document.getElementById('globalSearch')?.focus()"><i data-lucide="search" class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"></i>Search anything...<kbd class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded border border-border bg-muted px-1.5 text-[10px] font-medium">⌘K</kbd></button>
+            <div class="hidden md:flex items-center gap-2 morgi-input rounded-lg px-3 py-2 w-[280px] lg:hidden">
+              <i data-lucide="search" class="w-4 h-4 text-muted-foreground"></i>
+              <input id="globalSearch" type="text" placeholder="Search..." class="bg-transparent outline-none text-sm flex-1 placeholder:text-muted-foreground" onkeypress="if(event.key==='Enter'){ const q=this.value.trim(); if(q) window.location.href='/properties/?q='+encodeURIComponent(q); }">
+            </div>
+            <button id="theme-toggle" aria-label="Toggle theme" class="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"><i id="icon-moon" data-lucide="moon" class="h-4 w-4 dark:hidden"></i><i id="icon-sun" data-lucide="sun" class="h-4 w-4 hidden dark:block"></i></button>
+            <button aria-label="Customize theme" class="hidden sm:flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"><i data-lucide="palette" class="h-4 w-4"></i></button>
+            <button aria-label="Notifications" class="relative flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"><i data-lucide="bell" class="h-4 w-4"></i><span class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-primary"></span></button>
+            <div class="hidden sm:flex items-center gap-3 pl-3 border-l border-border ml-1">
+              {% if user.profile_image %}
+                <img src="{{ user.profile_image.url }}" alt="avatar" class="w-8 h-8 rounded-full object-cover">
+              {% else %}
+                <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary" style="background: #0077B611; color:#0077B6;">{{ user.initials|default:"M" }}</div>
+              {% endif %}
+              <div class="hidden lg:block text-left">
+                <p class="text-sm font-medium leading-none">{{ user.get_full_name|default:"User" }}</p>
+                <p class="text-xs text-muted-foreground">{{ user.get_role_display|default:"Customer" }}</p>
+              </div>
+            </div>
+          </div>
+        </header>
+        <!-- TopNav - Apex style (hidden on mobile, visible lg for Overview/Commerce etc - kept minimal) -->
+        <nav data-slot="app-topnav" aria-label="Main navigation (top)" class="hidden border-b border-border bg-background/80 backdrop-blur-xl lg:block">
+          <div class="flex h-11 items-center gap-1 px-6">
+            <span class="text-xs font-medium text-primary">Overview</span>
+            <span class="mx-2 h-4 w-px bg-border"></span>
+            <span class="text-xs text-muted-foreground">Apex Dashboard • DashboardPack (livedemo 391333) • MorgiHome • Primary #0077B6 / Secondary #0A2B4E</span>
+          </div>
+        </nav>
+      </div>
+      <main id="main-content" class="min-w-0 flex-1 overflow-y-auto p-4 sm:p-6" style="background: #fbfbfc;" data-slot="app-main">
+        {% block content %}{% endblock %}
+      </main>
+      <footer class="border-t border-border bg-card px-6 py-3 text-center text-xs text-muted-foreground hidden lg:block">
+        © 2026 MorgiHome • Built with Apex Dashboard (DashboardPack) • Primary #0077B6 • Secondary #0A2B4E
+      </footer>
+    </div>
+  </div>
+
+  <!-- Feedback Button - Exact as DashboardPack Apex (bottom right) -->
+  <button id="feedbackBtn" class="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-lg hover:bg-primary/90 transition-all duration-200 hover:scale-105" style="background: #0077B6; color: white;" aria-label="Feedback">
+    <i data-lucide="message-circle" class="h-4 w-4"></i>
+    <span>Feedback</span>
+  </button>
+  <!-- Feedback Modal -->
+  <div id="feedbackModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+    <div class="w-full max-w-md rounded-xl border bg-card p-6 shadow-xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold">Send Feedback</h3>
+        <button onclick="document.getElementById('feedbackModal').classList.add('hidden'); document.getElementById('feedbackModal').classList.remove('flex');" class="rounded-md p-1 hover:bg-accent"><i data-lucide="x" class="h-4 w-4"></i></button>
+      </div>
+      <textarea placeholder="Tell us what you think..." class="morgi-input w-full rounded-lg p-3 text-sm min-h-[100px]"></textarea>
+      <div class="mt-4 flex justify-end gap-2">
+        <button onclick="document.getElementById('feedbackModal').classList.add('hidden'); document.getElementById('feedbackModal').classList.remove('flex');" class="btn-secondary px-4 py-2 rounded-lg text-sm">Cancel</button>
+        <button onclick="document.getElementById('feedbackModal').classList.add('hidden'); document.getElementById('feedbackModal').classList.remove('flex'); if(window.showToast) showToast('Thank you for your feedback!','success'); else alert('Thank you for your feedback!');" class="btn-primary px-4 py-2 rounded-lg text-sm" style="background:#0077B6; color:white;">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="{% static 'bank/js/theme.js' %}"></script>
+  <script>
+    lucide.createIcons();
+    // Apex theme toggle - also sync with apex-theme key
+    const themeBtn=document.getElementById('theme-toggle');
+    if(themeBtn) themeBtn.addEventListener('click', function(){
+      const isDark=document.documentElement.classList.contains('dark');
+      const next=isDark?'light':'dark';
+      try{ localStorage.setItem('apex-theme', next); localStorage.setItem('theme', next); }catch(e){}
+      document.documentElement.classList.toggle('dark', next==='dark');
+      document.documentElement.classList.toggle('light', next==='light');
+      lucide.createIcons();
+    });
+    // Sidebar
+    const openBtn=document.getElementById('open-sidebar');
+    const closeBtn=document.getElementById('close-sidebar');
+    const mobileSidebar=document.getElementById('mobile-sidebar');
+    const overlay=document.getElementById('mobile-overlay');
+    function openSidebar(){ mobileSidebar.classList.remove('-translate-x-full'); overlay.classList.remove('hidden'); document.body.style.overflow='hidden'; }
+    function closeSidebar(){ mobileSidebar.classList.add('-translate-x-full'); overlay.classList.add('hidden'); document.body.style.overflow=''; }
+    if(openBtn) openBtn.addEventListener('click', openSidebar);
+    if(closeBtn) closeBtn.addEventListener('click', closeSidebar);
+    if(overlay) overlay.addEventListener('click', closeSidebar);
+    function morgiLogout(){ try{ localStorage.clear(); sessionStorage.clear(); }catch(e){} window.location.href='/login/'; }
+    document.addEventListener('keydown', function(e){ if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); const inp=document.getElementById('globalSearch'); if(inp) inp.focus(); }});
+    // Feedback
+    const fbBtn=document.getElementById('feedbackBtn');
+    const fbModal=document.getElementById('feedbackModal');
+    if(fbBtn && fbModal) fbBtn.addEventListener('click', function(){ fbModal.classList.remove('hidden'); fbModal.classList.add('flex'); });
+    if(fbModal) fbModal.addEventListener('click', function(e){ if(e.target===fbModal){ fbModal.classList.add('hidden'); fbModal.classList.remove('flex'); }});
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

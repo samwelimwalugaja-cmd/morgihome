@@ -1,0 +1,139 @@
+{% extends 'plainadmin/base.html' %}
+{% load static %}
+{% block title %}Property Details - MorgiHome{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/properties.css' %}?v=2" rel="stylesheet">
+<style>
+  .detail-gallery{border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(10,43,78,.12)}
+  .detail-cover{height:420px;object-fit:cover;width:100%;background:#eef2f7}
+  .detail-thumbs{display:flex;gap:8px;overflow-x:auto;padding:12px;background:#f8fafc}
+  .detail-thumbs img{width:80px;height:60px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:all .2s}
+  .detail-thumbs img.active{border-color:#0077B6;box-shadow:0 2px 8px rgba(0,119,182,.3)}
+  .detail-thumbs img.cover-badge{position:relative}
+  .price-hero{font-size:28px;font-weight:800;color:#0077B6;letter-spacing:-.5px}
+  .seller-card{border:1px solid #e2e8f0;border-radius:16px;overflow:hidden}
+  .seller-card-header{background:linear-gradient(135deg,#0077B6 0%,#0A2B4E 100%);color:#fff;padding:16px}
+  .feature-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .feature-item{border:1px solid #eef2f7;border-radius:10px;padding:12px;text-align:center;background:#fff}
+  .feature-item strong{display:block;font-size:18px;color:#0A2B4E}
+  @media(max-width:768px){ .detail-cover{height:260px} .feature-grid{grid-template-columns:1fr} }
+</style>
+{% endblock %}
+{% block content %}
+<div class="pagetitle">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div>
+      <h1 id="detailTitle" style="font-weight:800;color:#0A2B4E">Loading property...</h1>
+      <nav><ol class="breadcrumb mb-0"><li class="breadcrumb-item"><a href="/dashboard/">Home</a></li><li class="breadcrumb-item"><a href="/properties/">Properties</a></li><li class="breadcrumb-item active" id="detailBreadcrumb">Details</li></ol></nav>
+    </div>
+    <a href="/properties/" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i> Back to Properties</a>
+  </div>
+</div>
+
+<section class="section">
+  <div id="detailLoading" class="text-center py-5"><div class="spinner-border text-primary" style="width:3rem;height:3rem"></div><p class="text-muted mt-3">Loading property details...</p></div>
+
+  <div id="detailContent" class="d-none">
+    <div class="row g-4">
+      <!-- Left: Gallery + Details -->
+      <div class="col-12 col-xl-8">
+        <div class="detail-gallery mb-4">
+          <img id="detailCover" src="" alt="Property" class="detail-cover" onerror="this.src='https://via.placeholder.com/800x420?text=No+Image'">
+          <div id="detailThumbs" class="detail-thumbs"></div>
+        </div>
+
+        <div class="card" style="border-radius:16px;border:none;box-shadow:0 4px 20px rgba(10,43,78,.06)">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-3">
+              <div>
+                <h3 id="detailName" style="font-weight:800;color:#0A2B4E" class="mb-1">Property Title</h3>
+                <p class="text-muted mb-0" id="detailLocation"><i class="bi bi-geo-alt me-1"></i> Location</p>
+              </div>
+              <div class="text-end">
+                <div class="price-hero" id="detailPrice">TZS 0</div>
+                <span id="detailTypeBadge" class="badge" style="background:#eef2f7;color:#0A2B4E;border:1px solid #e2e8f0">House</span>
+                <span id="detailStatusBadge" class="badge bg-success ms-1">Available</span>
+                <span id="detailVerifiedBadge" class="badge bg-light text-dark border ms-1 d-none">Verified</span>
+              </div>
+            </div>
+
+            <div class="feature-grid mb-4" id="detailFeatures">
+              <div class="feature-item"><i class="bi bi-door-open" style="font-size:20px;color:#0077B6"></i><strong id="detailBeds">3</strong><small class="text-muted">Bedrooms</small></div>
+              <div class="feature-item"><i class="bi bi-droplet" style="font-size:20px;color:#0077B6"></i><strong id="detailBaths">2</strong><small class="text-muted">Bathrooms</small></div>
+              <div class="feature-item"><i class="bi bi-bounding-box" style="font-size:20px;color:#0077B6"></i><strong id="detailArea">250 sqm</strong><small class="text-muted">Area</small></div>
+              <div class="feature-item"><i class="bi bi-hash" style="font-size:20px;color:#0077B6"></i><strong id="detailNapa">-</strong><small class="text-muted">NaPa</small></div>
+            </div>
+
+            <h6 style="font-weight:700;color:#0A2B4E"><i class="bi bi-file-text me-2" style="color:#0077B6"></i> Description</h6>
+            <p id="detailDesc" class="text-muted" style="line-height:1.7">Description will appear here.</p>
+
+            <div class="alert mt-4 d-flex align-items-center" style="background:rgba(0,119,182,.06);border:1px solid rgba(0,119,182,.12);border-radius:12px">
+              <i class="bi bi-shield-check me-3" style="font-size:24px;color:#0077B6"></i>
+              <div><strong style="color:#0A2B4E">Verified Property</strong><br><small class="text-muted">This property has been reviewed and is listed as <span id="detailStatusText">available</span>.</small></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Seller + Actions -->
+      <div class="col-12 col-xl-4">
+        <div class="seller-card mb-4">
+          <div class="seller-card-header">
+            <div class="d-flex align-items-center gap-3">
+              <div id="sellerAvatar" style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800">S</div>
+              <div>
+                <div id="sellerName" style="font-weight:700">Seller Name</div>
+                <small id="sellerRole" style="opacity:.9">Seller • <span id="sellerVerified">Not Verified</span></small>
+              </div>
+            </div>
+          </div>
+          <div class="card-body p-3">
+            <div class="small mb-2"><i class="bi bi-envelope me-2" style="color:#0077B6"></i> <span id="sellerEmail">email@example.com</span> <span id="sellerEmailVerified" class="badge bg-light text-dark border ms-1 d-none" style="font-size:10px">Verified</span></div>
+            <div class="small mb-3"><i class="bi bi-telephone me-2" style="color:#0077B6"></i> <span id="sellerPhone">+255...</span></div>
+            <div class="d-grid gap-2">
+              <button class="btn btn-primary" id="btnContact" style="background:#0077B6;border-color:#0077B6;border-radius:10px;font-weight:600"><i class="bi bi-chat-dots me-2"></i> Contact Seller</button>
+              <button class="btn btn-outline-primary" id="btnApplyMortgage" style="border-color:#0077B6;color:#0077B6;border-radius:10px;font-weight:600"><i class="bi bi-bank me-2"></i> Apply Mortgage</button>
+            </div>
+            <small class="text-muted d-block text-center mt-2" style="font-size:11px">Pre-filled form with this property details</small>
+          </div>
+        </div>
+
+        <div class="card" style="border-radius:16px;border:1px solid #eef2f7">
+          <div class="card-body">
+            <h6 style="font-weight:700;color:#0A2B4E"><i class="bi bi-geo-alt me-2" style="color:#0077B6"></i> Location</h6>
+            <p id="detailLocation2" class="text-muted small">Location</p>
+            <div style="height:160px;background:#eef2f7;border-radius:10px;display:flex;align-items:center;justify-content:center"><i class="bi bi-map" style="font-size:32px;color:#a0aec0"></i><span class="ms-2 text-muted small">Map preview</span></div>
+            <div class="d-flex gap-2 mt-3">
+              <span class="badge bg-light text-dark border"><i class="bi bi-calendar me-1"></i> <span id="detailDate">2024</span></span>
+              <span class="badge bg-light text-dark border"><i class="bi bi-eye me-1"></i> 1.2k views</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mt-3" style="border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0">
+          <div class="card-body p-3">
+            <h6 class="small" style="font-weight:700;color:#0A2B4E">Need help?</h6>
+            <p class="small text-muted mb-2">Our team can help you with mortgage calculation.</p>
+            <a href="/customer/apply/" class="btn btn-sm btn-outline-secondary w-100">Mortgage Calculator</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="detailError" class="d-none"><div class="alert alert-danger d-flex align-items-center"><i class="bi bi-exclamation-triangle me-2" style="font-size:20px"></i><div><strong>Property not found</strong><br><small>It may have been removed or ID is incorrect.</small></div></div><a href="/properties/" class="btn btn-primary" style="background:#0077B6">Back to Properties</a></div>
+</section>
+
+<!-- Contact Modal -->
+<div class="modal fade" id="contactModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:16px"><div class="modal-header" style="border:none"><h5 class="modal-title" style="font-weight:800;color:#0A2B4E"><i class="bi bi-chat-dots me-2" style="color:#0077B6"></i> Contact Seller</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body text-center">
+  <p class="text-muted small">Choose how you want to contact the seller</p>
+  <div class="d-grid gap-3">
+    <a id="contactEmailBtn" href="#" class="btn btn-lg btn-outline-primary d-flex align-items-center justify-content-center gap-2" style="border-radius:12px;border-width:2px"><i class="bi bi-envelope" style="font-size:20px"></i> <span><strong>Email</strong><br><small id="contactEmailText">seller@example.com</small></span></a>
+    <a id="contactPhoneBtn" href="#" class="btn btn-lg btn-primary d-flex align-items-center justify-content-center gap-2" style="background:#0077B6;border-color:#0077B6;border-radius:12px"><i class="bi bi-telephone" style="font-size:20px"></i> <span><strong>Phone Call</strong><br><small id="contactPhoneText">+255...</small></span></a>
+  </div>
+  <small class="text-muted d-block mt-3">You'll be redirected to your email app or phone dialer</small>
+</div></div></div></div>
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'js/property_detail.js' %}?v=1"></script>
+{% endblock %}

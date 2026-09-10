@@ -1,0 +1,98 @@
+{% extends 'realestate/realestate_base.html' %}
+{% load humanize %}
+{% block title %}My Properties - Corona{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h3 class="page-title">
+    <span class="page-title-icon bg-gradient-primary text-white me-2"><i class="mdi mdi-home"></i></span> {% if is_my_properties %}My Properties{% else %}All Properties{% endif %}
+  </h3>
+  <nav aria-label="breadcrumb">
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item active" aria-current="page">Real Estate / {% if is_my_properties %}My Properties{% else %}Properties{% endif %} <span class="badge badge-outline-primary ms-2">{{ properties|length }} listings</span> {% if is_my_properties %}<span class="badge badge-outline-success ms-1">Yours only</span>{% endif %}</li>
+    </ul>
+  </nav>
+</div>
+
+<div class="row">
+  <div class="col-12 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="card-title">Search & Filter</h4>
+        <form method="get" class="forms-sample">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label>Search</label>
+                <input type="text" name="q" value="{{ query|default:'' }}" class="form-control" placeholder="Search by title, location...">
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label>Status</label>
+                <select name="status" class="form-control">
+                  <option value="">All Statuses</option>
+                  <option value="available" {% if request.GET.status == 'available' %}selected{% endif %}>Available</option>
+                  <option value="applied" {% if request.GET.status == 'applied' %}selected{% endif %}>Applied</option>
+                  <option value="verifying" {% if request.GET.status == 'verifying' %}selected{% endif %}>Bank Verifying</option>
+                  <option value="sold" {% if request.GET.status == 'sold' %}selected{% endif %}>Sold</option>
+                  <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+              <button type="submit" class="btn btn-primary me-2" style="background:#0077B6; border-color:#0077B6;"><i class="mdi mdi-magnify"></i> Search</button>
+              <a href="/realestate/properties/add/" class="btn btn-success"><i class="mdi mdi-plus"></i> Add Property</a>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  {% for prop in properties %}
+  <div class="col-md-4 grid-margin stretch-card">
+    <div class="card">
+      {% if prop.cover_image_url %}
+        <img src="{{ prop.cover_image_url }}" alt="{{ prop.title }}" class="card-img-top" style="height: 200px; object-fit: cover;">
+      {% else %}
+        <div class="card-img-top d-flex align-items-center justify-content-center" style="height: 200px; background: #2c2e33;"><i class="mdi mdi-home" style="font-size: 64px; color: #6c7293;"></i></div>
+      {% endif %}
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <span class="badge badge-outline-primary">{{ prop.get_property_type_display }}</span>
+          <span class="badge {% if prop.status == 'available' %}badge-outline-success{% elif prop.status == 'sold' %}badge-outline-danger{% elif prop.status == 'applied' %}badge-outline-warning{% elif prop.status == 'verifying' %}badge-outline-info{% else %}badge-outline-warning{% endif %}">{% if prop.status == 'verifying' %}Bank Verifying{% elif prop.status == 'applied' %}Applied{% else %}{{ prop.get_status_display }}{% endif %}</span>
+        </div>
+        <h4 class="card-title">{{ prop.title|truncatechars:35 }}</h4>
+        <p class="text-muted"><i class="mdi mdi-map-marker"></i> {{ prop.location|truncatechars:30 }} • Seller: {{ prop.seller.get_full_name|default:prop.seller.email }}</p>
+        <p class="text-muted" style="min-height: 40px;">{{ prop.description|truncatechars:80 }}</p>
+        <div class="d-flex text-muted small mb-3">
+          <span class="me-3"><i class="mdi mdi-hotel"></i> {{ prop.bedrooms }} bd</span>
+          <span class="me-3"><i class="mdi mdi-hot-tub"></i> {{ prop.bathrooms }} ba</span>
+          <span><i class="mdi mdi-ruler-square"></i> {{ prop.area }} m²</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+          <h4 class="text-primary mb-0">TZS {{ prop.price|intcomma }}</h4>
+          <div class="d-flex gap-1">
+            <a href="/realestate/properties/{{ prop.id }}/" class="btn btn-outline-secondary btn-sm" title="View"><i class="mdi mdi-eye"></i></a>
+            <a href="/realestate/properties/edit/{{ prop.id }}/" class="btn btn-primary btn-sm" title="Edit" style="background:#0077B6; border-color:#0077B6;"><i class="mdi mdi-pencil"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body text-center py-5">
+        <i class="mdi mdi-home" style="font-size: 64px; color: #6c7293;"></i>
+        <h4 class="mt-3">No properties</h4>
+        <p class="text-muted">No properties found in system.</p>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

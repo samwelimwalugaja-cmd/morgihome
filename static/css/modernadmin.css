@@ -1,0 +1,97 @@
+@import url('modernadmin-main.css');
+
+/* MorgiHome overrides - brand #0077B6 / #0A2B4E - ModernAdmin */
+:root {
+  --accent-color: #0077B6;
+  --accent-hover: #0090db;
+  --mh-dark: #0A2B4E;
+}
+
+/* Sidebar logo juu kabisa - weka logo vizuri */
+.sidebar .sidebar-header {
+  padding: 8px 16px !important;
+  min-height: 56px;
+}
+.sidebar .sidebar-logo img {
+  width: 42px !important;
+  height: 42px !important;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #fff;
+  padding: 2px;
+  opacity: 1 !important;
+  filter: none !important;
+}
+.sidebar .sidebar-logo span {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 700;
+  color: var(--mh-dark);
+}
+
+/* Header - logo mzee */
+.header {
+  background: #fff;
+}
+.header-logo img {
+  width: 42px;
+  height: 42px;
+  border-radius: 6px;
+  opacity: 1 !important;
+  filter: none !important;
+  background: #fff;
+  padding: 2px;
+}
+.header-logo span {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 700;
+  color: var(--mh-dark);
+}
+.welcome-illustration img {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* Avatar fallback - MOJA TU */
+.avatar-initial {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #0077B6;
+  color: #fff;
+  font-weight: 700;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  user-select: none;
+  line-height: 1;
+  text-align: center;
+}
+.avatar-initial--sm { width: 36px; height: 36px; font-size: 14px; }
+.avatar-initial--md { width: 64px; height: 64px; font-size: 24px; }
+.avatar-initial--lg { width: 96px; height: 96px; font-size: 38px; border: 3px solid #fff; box-shadow: 0 4px 16px rgba(0,0,0,.12); }
+.avatar-initial--header { width: 36px; height: 36px; font-size: 14px; }
+
+/* Stat cards accent */
+.stat-card .stat-card-icon.primary,
+.sales-metric-icon.primary {
+  background: rgba(0,119,182,0.12) !important;
+  color: #0077B6 !important;
+}
+
+/* Ensure no empty promo box spacing */
+.sidebar-footer {
+  padding: 12px !important;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Dark theme overrides for MorgiHome */
+[data-theme="dark"] .sidebar {
+  background: #0A2B4E;
+}
+[data-theme="dark"] .header {
+  background: #0A2B4E;
+}
+[data-theme="dark"] .sidebar .sidebar-logo span,
+[data-theme="dark"] .header-logo span {
+  color: #fff;
+}

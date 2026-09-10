@@ -1,0 +1,149 @@
+{% extends 'customer/customer_base.html' %}
+{% load humanize %}
+{% block title %}Bank Requirements - MorgiHome{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h3 class="page-title">
+    <span class="page-title-icon bg-gradient-primary text-white me-2" style="background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%) !important;"><i class="mdi mdi-bank"></i></span> Bank Requirements
+  </h3>
+  <nav aria-label="breadcrumb">
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item active" aria-current="page">Mortgage Applicant / Bank Requirements</li>
+    </ul>
+  </nav>
+</div>
+
+{% if bank_filter %}
+<div class="alert d-flex align-items-center justify-content-between flex-wrap gap-2" style="background:rgba(0,119,182,0.12); border:1px solid rgba(0,119,182,0.25); color:#e5e6ea; border-radius:8px;">
+  <div><i class="mdi mdi-filter me-2" style="color:#0077B6;"></i> Showing: <strong style="text-transform:uppercase;">{{ bank_filter }}</strong> Bank only — <span style="font-size:13px;">others hidden (filtered from database)</span></div>
+  <a href="/customer/bank-requirements/" class="btn btn-outline-primary btn-sm" style="border-radius:6px;"><i class="mdi mdi-view-grid me-1"></i> All Banks</a>
+</div>
+{% endif %}
+
+<p class="text-muted mb-4">Compare the terms of registered banks before you choose. Interest, fees and limits below come <strong>directly from the database</strong> — each bank fills these in its own Settings page. Pick the one that suits you and apply directly.</p>
+
+{% if banks %}
+<div class="row {% if banks|length == 1 %}justify-content-center{% endif %}">
+  {% for bank in banks %}
+  <div class="{% if banks|length == 1 %}col-12 col-lg-10 col-xl-8 mx-auto{% else %}col-md-6 col-xl-4{% endif %} grid-margin stretch-card" {% if banks|length == 1 %}style="max-width:680px;"{% endif %}>
+    <div class="card" {% if banks|length == 1 %}style="box-shadow:0 8px 32px rgba(0,119,182,0.15); border:1px solid rgba(0,119,182,0.2); overflow:hidden;"{% else %}style="overflow:hidden;"{% endif %}>
+      <div class="card-body" style="min-width:0;">
+        <div class="d-flex align-items-center gap-3 mb-3">
+          {% if bank.profile_image %}<img src="{{ bank.profile_image.url }}" alt="{{ bank.get_full_name }}" style="width:48px; height:48px; border-radius:50%; object-fit:cover; border:2px solid #0077B6; flex-shrink:0;">{% else %}<div class="rounded-circle d-flex align-items-center justify-content-center text-white flex-shrink-0" style="width:48px; height:48px; background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%); font-weight:bold;">{{ bank.get_full_name|slice:":2"|upper }}</div>{% endif %}
+          <div style="min-width:0; flex:1;">
+            <h5 class="mb-0 text-truncate">{{ bank.get_full_name }}</h5>
+            <small class="text-muted d-block text-truncate">{{ bank.email }}</small>
+          </div>
+          {% if bank.interest_rate %}<span class="badge badge-outline-primary flex-shrink-0">{{ bank.interest_rate }}% p.a.</span>{% endif %}
+        </div>
+        {% if not bank.is_verified %}<div class="alert alert-warning py-2 px-3 mb-3" style="font-size:12px; border-radius:8px;">Unverified bank — terms shown as filled by the bank.</div>{% endif %}
+        <div class="row text-center g-2 mb-3">
+          <div class="col-6"><div class="p-2 rounded" style="background:#191c24; border:1px solid #2c2e33;"><small class="text-muted d-block">Interest</small><strong style="color:#0077B6;">{% if bank.interest_rate %}{{ bank.interest_rate }}% p.a.{% else %}—{% endif %}</strong></div></div>
+          <div class="col-6"><div class="p-2 rounded" style="background:#191c24; border:1px solid #2c2e33;"><small class="text-muted d-block">Fee</small><strong>{% if bank.processing_fee %}TZS {{ bank.processing_fee|intcomma }}{% else %}—{% endif %}</strong></div></div>
+          <div class="col-6"><div class="p-2 rounded" style="background:#191c24; border:1px solid #2c2e33;"><small class="text-muted d-block">Min Loan</small><strong>{% if bank.min_loan_amount %}TZS {{ bank.min_loan_amount|intcomma }}{% else %}—{% endif %}</strong></div></div>
+          <div class="col-6"><div class="p-2 rounded" style="background:#191c24; border:1px solid #2c2e33;"><small class="text-muted d-block">Max Loan</small><strong>{% if bank.max_loan_amount %}TZS {{ bank.max_loan_amount|intcomma }}{% else %}—{% endif %}</strong></div></div>
+        </div>
+        <p class="text-muted mb-2" style="font-size:13px;"><i class="mdi mdi-file-document-outline me-1"></i> Requirements:</p>
+        {% if bank.req_list %}
+        <ul class="mb-3" style="list-style:none; padding-left:0; font-size:13px;">
+          {% for req in bank.req_list %}
+          <li class="d-flex gap-2 align-items-start mb-2" style="min-width:0;">
+            <span style="width:22px; height:22px; border-radius:50%; background:rgba(0,119,182,0.12); display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px;"><i class="mdi mdi-check" style="color:#0077B6; font-size:13px;"></i></span>
+            <span class="text-muted" style="overflow-wrap:anywhere; min-width:0;">{{ req }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted mb-3" style="font-size:13px;">—</p>
+        {% endif %}
+        {% if request.user.is_authenticated and request.user.role != 'customer' %}
+        <div class="alert py-2 px-3 mb-0" style="font-size:12px; border-radius:8px; background:rgba(108,114,147,0.12); border:1px solid #2c2e33; color:#a7abc3;">Viewing as {{ request.user.get_role_display }} — mortgage application is for customers only.</div>
+        {% else %}
+        <a href="/customer/apply/?bank={{ bank.id }}" class="btn btn-primary w-100" style="background:#0077B6; border-color:#0077B6;" onclick="return applyWithBank(event,'{{ bank.get_full_name|escapejs }}')">Apply via {{ bank.get_full_name|truncatechars:18 }}</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Comparison Table (Desktop) - also from database -->
+<div class="row">
+  <div class="col-12 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="card-title">Quick Comparison</h4>
+        <p class="card-description">Side-by-side table — live from the database.</p>
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Bank</th>
+                <th>Interest</th>
+                <th>Fee</th>
+                <th>Min - Max Loan</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for bank in banks %}
+              <tr>
+                <td><strong>{{ bank.get_full_name }}</strong><br><small class="text-muted">{{ bank.email }}</small></td>
+                <td>{% if bank.interest_rate %}<span class="badge badge-outline-primary">{{ bank.interest_rate }}%</span>{% else %}—{% endif %}</td>
+                <td>{% if bank.processing_fee %}TZS {{ bank.processing_fee|intcomma }}{% else %}—{% endif %}</td>
+                <td>{% if bank.min_loan_amount or bank.max_loan_amount %}TZS {{ bank.min_loan_amount|default:"—"|intcomma }} - {{ bank.max_loan_amount|default:"—"|intcomma }}{% else %}—{% endif %}</td>
+                <td>{% if request.user.is_authenticated and request.user.role != 'customer' %}<span class="text-muted" style="font-size:12px;">Customers only</span>{% else %}<a href="/customer/apply/?bank={{ bank.id }}" class="btn btn-sm btn-primary" style="background:#0077B6;" onclick="return applyWithBank(event,'{{ bank.get_full_name|escapejs }}')">Apply</a>{% endif %}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="card">
+  <div class="card-body text-center py-5">
+    <i class="mdi mdi-bank-off" style="font-size:42px; color:#6c7293;"></i>
+    <h5 class="mt-3">No bank found</h5>
+    <p class="text-muted">{% if bank_filter %}No registered bank matches "<strong>{{ bank_filter }}</strong>". The bank name in the system must contain that word (e.g. CRDB).{% else %}No banks registered yet.{% endif %}</p>
+    <a href="/customer/bank-requirements/" class="btn btn-outline-primary mt-2">Show all banks</a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+// Preserve current ?type= when navigating to apply
+function applyWithBank(e, bankName){
+  e.preventDefault();
+  let target = e.currentTarget.getAttribute('href');
+  try{
+    const cur = new URLSearchParams(window.location.search);
+    const curType = cur.get('type') || cur.get('mortgage_type');
+    if(curType && !target.includes('type=')){
+      target += (target.includes('?') ? '&' : '?') + 'type='+encodeURIComponent(curType);
+    }
+  }catch(e){}
+  Swal.fire({
+    title: bankName + ' ?',
+    text: 'You will be redirected to the application form - the selected '+bankName+' and mortgage type will be pre-filled at the top.',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#0077B6',
+    cancelButtonColor: '#6c7293',
+    confirmButtonText: 'Continue',
+    cancelButtonText: 'Cancel'
+  }).then((result)=>{
+    if(result.isConfirmed){
+      window.location.href = target;
+    }
+  });
+  return false;
+}
+</script>
+{% endblock %}

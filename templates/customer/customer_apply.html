@@ -1,0 +1,1805 @@
+{% extends 'customer/customer_base.html' %}
+{% load static humanize %}
+{% block title %}Apply Mortgage - MorgiHome{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+  .stepper { display:flex; align-items:center; justify-content:space-between; gap:0; margin-bottom:20px; overflow-x:auto; padding-bottom:8px; }
+  .stepper .step { display:flex; flex-direction:column; align-items:center; gap:6px; min-width:70px; flex:1; position:relative; cursor:pointer; }
+  .stepper .step .circle { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; border:2px solid #2c2e33; background:#191c24; color:#6c7293; z-index:1; transition:all 0.3s; }
+  .stepper .step.active .circle { background:#0077B6; border-color:#0077B6; color:#fff; box-shadow:0 0 0 4px rgba(0,119,182,0.2); }
+  .stepper .step.done .circle { background:#00d25b; border-color:#00d25b; color:#fff; }
+  .stepper .step.invalid .circle { background:#fc424a; border-color:#fc424a; color:#fff; }
+  .stepper .step .label { font-size:11px; color:#6c7293; text-align:center; line-height:1.2; font-weight:600; }
+  .stepper .step.active .label { color:#0077B6; }
+  .stepper .step.done .label { color:#00d25b; }
+  .stepper .step.invalid .label { color:#fc424a; }
+  .stepper .line { flex:1; height:2px; background:#2c2e33; margin:0 -10px; position:relative; top:-18px; }
+  .stepper .line.done { background:#00d25b; }
+  .stepper .line.invalid { background:#fc424a; }
+  .segment-card { display:none; }
+  .segment-card.active { display:block; animation: fadeIn 0.3s; }
+  @keyframes fadeIn { from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+  .type-card { cursor:pointer; border:2px solid #2c2e33; border-radius:10px; padding:18px; text-align:center; transition:all 0.2s; background:#191c24; }
+  .type-card:hover { border-color:#0077B6; }
+  .type-card.selected { border-color:#0077B6; background:rgba(0,119,182,0.1); box-shadow:0 0 0 3px rgba(0,119,182,0.15); }
+  .type-card i { font-size:32px; color:#0077B6; }
+  .bank-card { cursor:pointer; border:2px solid #2c2e33; border-radius:10px; padding:14px; transition:all 0.2s; background:#191c24; }
+  .bank-card:hover { border-color:#0077B6; }
+  .bank-card.selected { border-color:#0077B6; background:rgba(0,119,182,0.1); }
+  .doc-drop { border:1px dashed #444; border-radius:8px; padding:12px; background:#191c24; }
+  .form-control.is-invalid, .form-select.is-invalid { border-color:#fc424a !important; box-shadow:0 0 0 0.2rem rgba(252,66,74,.25) !important; }
+  .form-control.is-valid, .form-select.is-valid { border-color:#00d25b !important; box-shadow:0 0 0 0.2rem rgba(0,210,91,.15) !important; }
+  .field-error { color:#fc424a; font-size:11px; margin-top:4px; display:none; }
+  .field-error.show { display:block; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="card" style="background: linear-gradient(135deg, #0A2B4E 0%, #0077B6 100%); border:none;">
+      <div class="card-body py-3">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div>
+            <h4 class="mb-1 text-white" style="font-weight:800;"><span id="mortgageTitle">Mortgage Application</span> <span id="mortgageTypeBadge" class="badge bg-white text-dark ms-2" style="font-size:11px; display:none;"></span></h4>
+            <p class="mb-0 text-white" style="opacity:0.85; font-size:13px;" id="mortgageSubtitle">Step by step • AI will assess your affordability instantly • Auto-save every segment</p>
+          </div>
+          <div id="mortgageTypeInfo" class="text-white text-end" style="font-size:12px; opacity:0.9; display:none;">
+            <i class="mdi mdi-information-outline me-1"></i> <span id="mortgageTypeDesc"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="typeAlert" class="alert mt-3" style="display:none; background:rgba(0,119,182,0.12); border:1px solid rgba(0,119,182,0.25); color:#e5e6ea; border-radius:10px;">
+  <i class="mdi mdi-home me-2" style="color:#0077B6;"></i> <strong id="typeAlertTitle"></strong> — <span id="typeAlertDesc" style="font-size:13px;"></span>
+</div>
+<!-- Draft Resume Banner - Auto-continue without prompt (hidden by default) -->
+<div id="draftResumeBanner" class="card mt-3" style="display:none; border-left:4px solid #ffc107; background:#191c24; border-color:#2c2e33; border-radius:10px;">
+  <div class="card-body py-3 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
+    <div>
+      <h6 class="mb-1" style="font-weight:700;"><i class="mdi mdi-content-save-edit" style="color:#ffc107;"></i> Draft in Progress (Pending)</h6>
+      <p class="text-muted mb-0" style="font-size:13px;" id="draftResumeText">Continued from step 3 • Residential Mortgage • Will resume where you left off</p>
+      <small class="text-muted" id="draftResumeMeta" style="font-size:11px;"></small>
+    </div>
+    <div class="d-flex gap-2">
+      <button onclick="resumeDraft()" class="btn btn-warning btn-sm" style="border-radius:6px; font-weight:600;"><i class="mdi mdi-play me-1"></i> Continue</button>
+      <button onclick="discardDraft()" class="btn btn-outline-secondary btn-sm" style="border-radius:6px;">Discard Draft</button>
+    </div>
+  </div>
+</div>
+<!-- Auto-resume info - shown when a draft existed and was auto-continued -->
+<div id="autoResumeInfo" class="alert mt-3" style="display:none; background:rgba(0,210,91,0.12); border:1px solid rgba(0,210,91,0.25); color:#e5e6ea; border-radius:8px; font-size:13px;">
+  <i class="mdi mdi-autorenew me-2" style="color:#00d25b;"></i> <span id="autoResumeText"></span>
+</div>
+<!-- Bank selected header - shows the relevant bank when coming from Bank Requirements -->
+<div id="bankHeaderInfo" class="alert mt-3" style="display:none; background:rgba(0,119,182,0.12); border:1px solid rgba(0,119,182,0.25); color:#e5e6ea; border-radius:10px;">
+  <i class="mdi mdi-bank me-2" style="color:#0077B6;"></i> <strong id="bankHeaderName"></strong> — <span id="bankHeaderDesc" style="font-size:13px;"></span>
+</div>
+<!-- Property pre-selected banner -->
+<div id="propertyHeaderInfo" class="alert mt-3" style="display:none; background:rgba(0,210,91,0.12); border:1px solid rgba(0,210,91,0.25); color:#e5e6ea; border-radius:10px;">
+  <i class="mdi mdi-home me-2" style="color:#00d25b;"></i> <strong id="propertyHeaderName"></strong> — <span id="propertyHeaderDesc" style="font-size:13px;"></span>
+</div>
+<!-- Mortgage type pre-selected banner -->
+<div id="typeHeaderInfo" class="alert mt-3" style="display:none; background:rgba(0,119,182,0.08); border:1px solid rgba(0,119,182,0.15); color:#e5e6ea; border-radius:10px;">
+  <i class="mdi mdi-tag me-2" style="color:#0077B6;"></i> <strong id="typeHeaderName"></strong> — <span id="typeHeaderDesc" style="font-size:13px;"></span>
+</div>
+
+<!-- Stepper -->
+<div class="card mt-3">
+  <div class="card-body py-3">
+    <div class="stepper" id="stepper">
+      <div class="step active" data-step="1" onclick="goToSegment(1)"><div class="circle">1</div><div class="label">Customer<br>Type</div></div>
+      <div class="line" id="line1"></div>
+      <div class="step" data-step="2" onclick="goToSegment(2)"><div class="circle">2</div><div class="label">Personal<br>Info</div></div>
+      <div class="line" id="line2"></div>
+      <div class="step" data-step="3" onclick="goToSegment(3)"><div class="circle">3</div><div class="label">Employment</div></div>
+      <div class="line" id="line3"></div>
+      <div class="step" data-step="4" onclick="goToSegment(4)"><div class="circle">4</div><div class="label">Business</div></div>
+      <div class="line" id="line4"></div>
+      <div class="step" data-step="5" onclick="goToSegment(5)"><div class="circle">5</div><div class="label">Loan</div></div>
+      <div class="line" id="line5"></div>
+      <div class="step" data-step="6" onclick="goToSegment(6)"><div class="circle">6</div><div class="label">Bank</div></div>
+      <div class="line" id="line6"></div>
+      <div class="step" data-step="7" onclick="goToSegment(7)"><div class="circle">7</div><div class="label">Documents</div></div>
+      <div class="line" id="line7"></div>
+      <div class="step" data-step="8" onclick="goToSegment(8)"><div class="circle">8</div><div class="label">Review &<br>Submit</div></div>
+    </div>
+    <div class="progress" style="height:4px; background:#2c2e33;"><div id="progressBar" class="progress-bar" style="width:12.5%; background:#0077B6;"></div></div>
+  </div>
+</div>
+
+<form id="wizardForm" enctype="multipart/form-data" class="mt-3">
+  {% csrf_token %}
+  <!-- STEP 1: Customer Type -->
+  <div class="segment-card active" data-segment="1">
+    <div class="card">
+      <div class="card-body">
+        <h5 style="font-weight:700;"><span style="display:inline-flex; width:28px; height:28px; background:#0077B6; color:#fff; border-radius:50%; align-items:center; justify-content:center; font-size:13px; margin-right:8px;">1</span> Customer Type</h5>
+        <p class="text-muted" style="font-size:13px;">Are you an employee or a business owner? This will determine the next step.</p>
+        <div class="row mt-4">
+          <div class="col-12 col-md-6 mb-3">
+            <div class="type-card" data-value="employed" onclick="selectCustomerType('employed')">
+              <i class="mdi mdi-briefcase"></i>
+              <h6 class="mt-2" style="font-weight:700;">Employed</h6>
+              <p class="text-muted mb-0" style="font-size:12px;">I have permanent / contract employment<br>Government or private company</p>
+              <input type="radio" name="customer_type" value="employed" hidden>
+            </div>
+          </div>
+          <div class="col-12 col-md-6 mb-3">
+            <div class="type-card" data-value="business" onclick="selectCustomerType('business')">
+              <i class="mdi mdi-store"></i>
+              <h6 class="mt-2" style="font-weight:700;">Business Owner</h6>
+              <p class="text-muted mb-0" style="font-size:12px;">I own my own business<br>Entrepreneur / freelancer</p>
+              <input type="radio" name="customer_type" value="business" hidden>
+            </div>
+          </div>
+        </div>
+        <div id="typeInfo" class="alert" style="background:rgba(0,119,182,0.1); border:1px solid rgba(0,119,182,0.2); color:#6c7293; font-size:13px; display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: Personal Info -->
+  <div class="segment-card" data-segment="2">
+    <div class="card">
+      <div class="card-body">
+        <h5 style="font-weight:700;"><span style="display:inline-flex; width:28px; height:28px; background:#0077B6; color:#fff; border-radius:50%; align-items:center; justify-content:center; font-size:13px; margin-right:8px;">2</span> Personal Information</h5>
+        <div class="row g-3 mt-1">
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Full Name *</label><input type="text" class="form-control" value="{% if user.is_authenticated %}{{ user.get_full_name|default:user.email }}{% endif %}" readonly style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Email *</label><input type="email" class="form-control" value="{% if user.is_authenticated %}{{ user.email }}{% endif %}" readonly style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Phone *</label><input type="text" class="form-control" value="{% if user.is_authenticated %}{{ user.phone_number }}{% endif %}" readonly style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Date of Birth *</label><input type="date" name="dob" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+          <div class="col-12 col-md-4"><label class="form-label" style="font-size:12px; color:#6c7293;">Gender</label><select name="gender" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;"><option value="">Select</option><option value="male">Male</option><option value="female">Female</option></select></div>
+          <div class="col-12 col-md-4"><label class="form-label" style="font-size:12px; color:#6c7293;">Marital Status</label><select name="marital_status" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;"><option value="">Select</option><option value="single">Single</option><option value="married">Married</option><option value="divorced">Divorced</option></select></div>
+          <div class="col-12 col-md-4"><label class="form-label" style="font-size:12px; color:#6c7293;">Dependents</label><input type="number" name="dependents" class="form-control" placeholder="0" min="0" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+          <div class="col-12"><label class="form-label" style="font-size:12px; color:#6c7293;">National ID Number (NIDA) <span style="color:#6c7293; font-weight:400;">— 15 digits</span></label>
+            <input type="text" name="nin" id="nidaInput" class="form-control" placeholder="e.g. 199012345678901" maxlength="15" pattern="\d{15}" inputmode="numeric" style="background:#2c2e33; border-color:#444; color:#fff;">
+            <small class="text-muted" style="font-size:11px;">Exactly 15 digits. No spaces or dashes.</small>
+            <div class="field-error" id="nidaError" style="color:#fc424a; font-size:11px; display:none;"></div>
+            <button type="button" id="verifyNidaBtn" class="btn btn-outline-primary btn-sm mt-2" style="border-radius:6px; font-size:12px;" onclick="startNidaVerification()"><i class="mdi mdi-shield-check me-1"></i> Verify NIDA</button>
+            <span id="nidaVerifyStatus" class="ms-2" style="font-size:12px; display:none;"></span>
+          </div>
+          <!-- NIDA 3-question flow -->
+          <div id="nidaQ1Wrap" class="col-12" style="display:none;">
+            <div style="background:#191c24; border:1px solid #2c2e33; border-radius:8px; padding:14px;">
+              <label class="form-label" style="font-size:12px; color:#6c7293;">Question 1: What is your First Name? <span id="nidaQ1Check" style="display:none; color:#00d25b;"><i class="mdi mdi-check-circle"></i> Correct</span> <span id="nidaQ1Cross" style="display:none; color:#fc424a;"><i class="mdi mdi-close-circle"></i> Incorrect</span></label>
+              <input type="text" id="nidaQ1Input" class="form-control" placeholder="Enter first name" style="background:#2c2e33; border-color:#444; color:#fff;">
+              <button type="button" class="btn btn-primary btn-sm mt-2" style="border-radius:6px; font-size:12px;" onclick="submitNidaQ1()">Submit</button>
+            </div>
+          </div>
+          <div id="nidaQ2Wrap" class="col-12" style="display:none;">
+            <div style="background:#191c24; border:1px solid #2c2e33; border-radius:8px; padding:14px;">
+              <label class="form-label" style="font-size:12px; color:#6c7293;">Question 2: What is your Last Name? <span id="nidaQ2Check" style="display:none; color:#00d25b;"><i class="mdi mdi-check-circle"></i> Correct</span> <span id="nidaQ2Cross" style="display:none; color:#fc424a;"><i class="mdi mdi-close-circle"></i> Incorrect</span></label>
+              <input type="text" id="nidaQ2Input" class="form-control" placeholder="Enter last name" style="background:#2c2e33; border-color:#444; color:#fff;">
+              <button type="button" class="btn btn-primary btn-sm mt-2" style="border-radius:6px; font-size:12px;" onclick="submitNidaQ2()">Submit</button>
+            </div>
+          </div>
+          <div id="nidaQ3Wrap" class="col-12" style="display:none;">
+            <div style="background:#191c24; border:1px solid #2c2e33; border-radius:8px; padding:14px;">
+              <label class="form-label" style="font-size:12px; color:#6c7293;">Question 3: What is your Email? <span id="nidaQ3Check" style="display:none; color:#00d25b;"><i class="mdi mdi-check-circle"></i> Correct</span> <span id="nidaQ3Cross" style="display:none; color:#fc424a;"><i class="mdi mdi-close-circle"></i> Incorrect</span></label>
+              <input type="email" id="nidaQ3Input" class="form-control" placeholder="Enter email" style="background:#2c2e33; border-color:#444; color:#fff;">
+              <button type="button" class="btn btn-primary btn-sm mt-2" style="border-radius:6px; font-size:12px;" onclick="submitNidaQ3()">Submit</button>
+            </div>
+          </div>
+          <div id="nidaFinalMsg" class="col-12" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: Employment -->
+  <div class="segment-card" data-segment="3">
+    <div class="card">
+      <div class="card-body">
+        <h5 style="font-weight:700;"><span style="display:inline-flex; width:28px; height:28px; background:#0077B6; color:#fff; border-radius:50%; align-items:center; justify-content:center; font-size:13px; margin-right:8px;">3</span> Employment Details <span id="employmentBadge" class="badge bg-secondary ms-2" style="font-size:11px; display:none;"></span></h5>
+        <div id="employmentDisabledMsg" class="alert mt-2" style="display:none; background:rgba(255,193,7,0.12); border:1px solid rgba(255,193,7,0.25); color:#e5e6ea; border-radius:8px; font-size:13px;"><i class="mdi mdi-information-outline me-1" style="color:#ffc107;"></i> <strong>Note:</strong> This step is for <b>employed</b> applicants. You selected <b>Business Owner</b>, so employer details are not required. Please click Next to continue to the business step. You may still enter monthly income/expenses if needed.</div>
+        <div class="row g-3 mt-1">
+          <div class="col-12">
+            <div style="background:rgba(0,119,182,0.08); border:1px solid rgba(0,119,182,0.15); border-radius:8px; padding:10px 14px; display:flex; align-items:center; justify-content:space-between;">
+              <div>
+                <label class="form-label mb-0" style="font-size:11px; color:#6c7293; letter-spacing:0.5px; font-weight:600;">EMPLOYMENT STATUS (auto-filled from Step 1)</label>
+                <div id="employmentStatusDisplay" style="font-weight:700; color:#0077B6; font-size:14px; margin-top:2px;">— Select type in Step 1</div>
+              </div>
+              <span id="employmentStatusBadge" class="badge" style="background:rgba(0,119,182,0.15); color:#0077B6; border:1px solid rgba(0,119,182,0.3);">Auto</span>
+            </div>
+            <input type="hidden" name="employment_status" id="employmentStatus">
+          </div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Employer Name *</label><input type="text" name="employer_name" id="employerName" class="form-control" placeholder="e.g. Ministry of Education" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Job Title *</label><input type="text" name="job_title" id="jobTitle" class="form-control" placeholder="e.g. Teacher" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Years of Employment *</label><input type="number" name="years_employed" id="yearsEmployed" class="form-control" placeholder="3" min="0" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Monthly Income (TZS) *</label><input type="number" name="monthly_income" id="monthlyIncome" class="form-control" placeholder="2000000" required style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Monthly Expenses (TZS) *</label><input type="number" name="monthly_expenses" id="monthlyExpenses" class="form-control" placeholder="800000" required style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Contract Type *</label><select name="contract_type" id="contractType" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;"><option value="">Select</option><option value="permanent">Permanent</option><option value="contract">Contract</option></select></div>
+          <div class="col-12"><label class="form-label" style="font-size:12px; color:#6c7293;">Do you have an existing loan at any bank? *</label>
+            <select name="has_existing_loan" id="hasExistingLoan" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;" onchange="toggleExistingLoanDetails(this.value)">
+              <option value="">Select</option>
+              <option value="no" selected>No</option>
+              <option value="yes">Yes</option>
+            </select>
+          </div>
+          <div id="existingLoanDetails" class="col-12" style="display:none;">
+            <div style="background:#191c24; border:1px solid #2c2e33; border-radius:8px; padding:14px;">
+              <p class="text-muted mb-2" style="font-size:12px;">Please provide details of your existing loan — this information will be attached and sent to the selected bank.</p>
+              <div class="row g-2">
+                <div class="col-12 col-md-6"><label class="form-label" style="font-size:11px; color:#6c7293;">Bank Name</label><input type="text" name="existing_loan_bank" class="form-control" placeholder="e.g. CRDB Bank" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+                <div class="col-12 col-md-6"><label class="form-label" style="font-size:11px; color:#6c7293;">Loan Amount (TZS)</label><input type="number" name="existing_loan_amount" class="form-control" placeholder="20000000" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+                <div class="col-12 col-md-6"><label class="form-label" style="font-size:11px; color:#6c7293;">Monthly Repayment (TZS)</label><input type="number" name="existing_loan_repayment" class="form-control" placeholder="500000" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+                <div class="col-12 col-md-6"><label class="form-label" style="font-size:11px; color:#6c7293;">Remaining Balance (TZS)</label><input type="number" name="existing_loan_balance" class="form-control" placeholder="10000000" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="alert mt-3" style="background:rgba(0,119,182,0.08); border:1px solid rgba(0,119,182,0.15); font-size:12px;"><i class="mdi mdi-information-outline me-1" style="color:#0077B6;"></i> Your monthly income and repayment will be used to calculate affordability (DSR). The selected bank's interest rate will be applied automatically.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4: Business -->
+  <div class="segment-card" data-segment="4">
+    <div class="card">
+      <div class="card-body">
+        <h5 style="font-weight:700;"><span style="display:inline-flex; width:28px; height:28px; background:#0077B6; color:#fff; border-radius:50%; align-items:center; justify-content:center; font-size:13px; margin-right:8px;">4</span> Business Details <span id="businessBadge" class="badge bg-secondary ms-2" style="font-size:11px; display:none;"></span> <small class="text-muted" style="font-weight:400; font-size:12px;" id="businessSubtitle">(for Business Owners only - will be skipped if Employed)</small></h5>
+        <div id="businessDisabledMsg" class="alert mt-2" style="display:none; background:rgba(255,193,7,0.12); border:1px solid rgba(255,193,7,0.25); color:#e5e6ea; border-radius:8px; font-size:13px;"><i class="mdi mdi-information-outline me-1" style="color:#ffc107;"></i> <strong>Not required:</strong> You selected <b>Employed</b>, so business details are not needed. You do not need to fill anything here because you are not a business owner. Please click Next to proceed. This step is for business owners only.</div>
+        <div class="row g-3 mt-1">
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Business Name</label><input type="text" name="business_name" class="form-control" placeholder="e.g. Sanga Enterprises" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Registration Number (BRELA)</label><input type="text" name="business_reg" class="form-control" placeholder="123456" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Business Type</label><select name="business_type" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;"><option value="">Select</option><option value="retail">Retail</option><option value="wholesale">Wholesale</option><option value="services">Services</option><option value="manufacturing">Manufacturing</option><option value="agriculture">Agriculture</option></select></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Years in Business</label><input type="number" name="business_years" class="form-control" placeholder="5" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Monthly Business Income</label><input type="number" name="business_income" class="form-control" placeholder="3500000" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Monthly Business Expenses</label><input type="number" name="business_expenses" class="form-control" placeholder="1200000" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 5: Loan Details -->
+  <div class="segment-card" data-segment="5">
+    <div class="card">
+      <div class="card-body">
+        <h5 style="font-weight:700;"><span style="display:inline-flex; width:28px; height:28px; background:#0077B6; color:#fff; border-radius:50%; align-items:center; justify-content:center; font-size:13px; margin-right:8px;">5</span> Loan Details</h5>
+        <div class="row g-3 mt-1">
+          <div class="col-12"><label class="form-label" style="font-size:12px; color:#6c7293;" id="propertyLabel">Property <span id="propertyRequiredStar">*</span> <small class="text-muted" id="propertyOptionalNote" style="display:none; font-weight:400;">(optional for Semi-Finish / Construction)</small></label>
+            <select name="property" id="applyProperty" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;" required>
+              <option value="">-- Select Property --</option>
+              {% for prop in properties %}
+              <option value="{{ prop.id }}" data-price="{{ prop.price }}" {% if selected_property and selected_property.id == prop.id %}selected{% endif %}>{{ prop.title }} — TZS {{ prop.price|intcomma }} • {{ prop.location }}</option>
+              {% endfor %}
+            </select>
+            <small class="text-muted" id="propertyHelp" style="font-size:11px; display:none;">For Semi-Finish / Construction you may leave this empty if you own the land/house already.</small>
+          </div>
+          <div class="col-12"><label class="form-label" style="font-size:12px; color:#6c7293;">Loan Type *</label>
+            <select name="loan_type" id="loanType" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;" required>
+              <option value="">-- Select Type --</option>
+              <option value="purchase">Purchase - Buy house/apartment (90% financed, 5M-700M)</option>
+              <option value="refinance">Refinance / Equity Release - Cash from titled property (5M-700M)</option>
+              <option value="semi_finish">Semi Finish - Complete house at lintel stage (5M-700M, 2 stages)</option>
+              <option value="construction">Construction - Build new house (5M-200M, 5 stages BOQ)</option>
+            </select>
+          </div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Loan Amount (TZS) *</label><input type="number" name="loan_amount" id="loanAmount" class="form-control" placeholder="50000000" required min="5000000" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Down Payment (TZS) *</label><input type="number" name="down_payment" id="downPayment" class="form-control" placeholder="10000000" required style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+          <div class="col-12"><label class="form-label" style="font-size:12px; color:#6c7293;">Repayment Period (Months) *</label>
+            <select name="repayment_period" id="repaymentPeriod" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;" required>
+              <option value="">-- Select --</option><option value="12">12 months (1 year)</option><option value="24">24 months (2)</option><option value="36">36 months (3)</option><option value="60">60 months (5)</option><option value="120">120 months (10)</option><option value="180" selected>180 months (15 years)</option><option value="240">240 months (20)</option><option value="300">300 months (25)</option><option value="360">360 months (30)</option>
+            </select>
+            <small class="text-muted" style="font-size:11px;">Maximum period depends on the selected bank. Construction loans up to 200M.</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 6: Bank Selection -->
+  <div class="segment-card" data-segment="6">
+    <div class="card">
+      <div class="card-body">
+        <h5 style="font-weight:700;"><span style="display:inline-flex; width:28px; height:28px; background:#0077B6; color:#fff; border-radius:50%; align-items:center; justify-content:center; font-size:13px; margin-right:8px;">6</span> Select Bank</h5>
+        <p class="text-muted" style="font-size:13px;">Select one bank. Interest and fees will be used to calculate repayment.</p>
+        <div class="row g-3 mt-1">
+          {% for bank in banks %}
+          <div class="col-12 col-md-6">
+            <div class="bank-card" data-bank="{{ bank.id }}" onclick="selectBank({{ bank.id }})">
+              <div class="d-flex justify-content-between align-items-center">
+                <h6 class="mb-1" style="font-weight:700;">{{ bank.get_full_name }}</h6>
+                {% if bank.interest_rate %}<span class="badge" style="background:rgba(0,119,182,0.15); color:#0077B6; border:1px solid rgba(0,119,182,0.3);">{{ bank.interest_rate }}% p.a.</span>{% endif %}
+              </div>
+              <p class="text-muted mb-1" style="font-size:12px;">{{ bank.email }}</p>
+              <div style="font-size:12px;"><span class="text-muted">Min:</span> TZS {{ bank.min_loan_amount|default:"—"|intcomma }} • <span class="text-muted">Max:</span> TZS {{ bank.max_loan_amount|default:"—"|intcomma }}</div>
+              <input type="radio" name="bank" value="{{ bank.id }}" hidden>
+            </div>
+          </div>
+          {% empty %}
+          <div class="col-12"><p class="text-muted">No banks registered. Default bank will be used.</p></div>
+          {% endfor %}
+        </div>
+        <div class="mt-3">
+          <label class="form-label" style="font-size:12px; color:#6c7293;">Or select manually (optional)</label>
+          <select name="bank_fallback" id="applyBank" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;">
+            <option value="">-- Use selection above --</option>
+            {% for bank in banks %}<option value="{{ bank.id }}">{{ bank.get_full_name }} — {{ bank.interest_rate }}%</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 7: Documents -->
+  <div class="segment-card" data-segment="7">
+    <div class="card">
+      <div class="card-body">
+        <h5 style="font-weight:700;"><span style="display:inline-flex; width:28px; height:28px; background:#0077B6; color:#fff; border-radius:50%; align-items:center; justify-content:center; font-size:13px; margin-right:8px;">7</span> Upload Documents</h5>
+        <p class="text-muted" style="font-size:13px;">Each file max 5MB. Allowed: PDF, JPG, PNG. Title deed, ID, pay slips and bank statements are required. Other is optional.</p>
+        <div id="docEmployedNote" class="alert mt-2" style="display:none; background:rgba(0,119,182,0.08); border:1px solid rgba(0,119,182,0.15); font-size:12px;"><i class="mdi mdi-information-outline" style="color:#0077B6;"></i> You are employed — employer documents are required. Business documents are not needed.</div>
+        <div id="docBusinessNote" class="alert mt-2" style="display:none; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.15); font-size:12px;"><i class="mdi mdi-store" style="color:#10b981;"></i> You are a business owner — business income proof is required. Employer reference letter is not needed.</div>
+        <div class="row g-3 mt-1">
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">ID / Passport *</label><div class="doc-drop"><input type="file" name="documents" id="docId" accept=".pdf,.jpg,.jpeg,.png" class="form-control doc-required" style="background:#2c2e33; border-color:#444; color:#fff;"></div></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">3 Recent Pay Slips *</label><div class="doc-drop"><input type="file" name="documents" id="docPayslip" accept=".pdf,.jpg,.jpeg,.png" multiple class="form-control doc-required" style="background:#2c2e33; border-color:#444; color:#fff;"></div></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">3 Months Bank Statements *</label><div class="doc-drop"><input type="file" name="documents" id="docBankStatement" accept=".pdf,.jpg,.jpeg,.png" multiple class="form-control doc-required" style="background:#2c2e33; border-color:#444; color:#fff;"></div></div>
+          <div class="col-12 col-md-6" id="docEmployerRefWrap"><label class="form-label" style="font-size:12px; color:#6c7293;">Employer Reference Letter <span id="docEmployerRefStar" style="display:none;">*</span></label><div class="doc-drop"><input type="file" name="documents" id="docEmployerRef" accept=".pdf,.jpg,.jpeg,.png" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;"></div></div>
+          <div class="col-12 col-md-6" id="docEmploymentContractWrap"><label class="form-label" style="font-size:12px; color:#6c7293;">Employment Contract <span id="docContractStar" style="display:none;">*</span></label><div class="doc-drop"><input type="file" name="documents" id="docEmploymentContract" accept=".pdf,.jpg,.jpeg,.png" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;"></div></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Title Deed *</label><div class="doc-drop"><input type="file" name="documents" id="docTitleDeed" accept=".pdf,.jpg,.jpeg,.png" class="form-control doc-required" style="background:#2c2e33; border-color:#444; color:#fff;"></div></div>
+          <div class="col-12"><label class="form-label" style="font-size:12px; color:#6c7293;">Other Documents (Tax Clearance etc.)</label><div class="doc-drop"><input type="file" name="documents" id="docOther" multiple accept=".pdf,.jpg,.jpeg,.png" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 8: Review -->
+  <div class="segment-card" data-segment="8">
+    <div class="card" style="border-top:4px solid #0077B6;">
+      <div class="card-body">
+        <h5 style="font-weight:700;"><i class="mdi mdi-file-check" style="color:#0077B6;"></i> Review & Submit <span id="reviewAppNumber" class="badge ms-2" style="background:rgba(0,119,182,0.15); color:#0077B6; border:1px solid rgba(0,119,182,0.3); font-size:11px; display:none;"></span></h5>
+        <p class="text-muted" style="font-size:12px;">Please review all information below carefully before submitting. Ensure every section is correct.</p>
+        <div id="reviewBox" class="mt-3" style="background:#191c24; border:1px solid #2c2e33; border-radius:8px; padding:14px; font-size:13px;"></div>
+        <div class="card mt-3" style="background:#191c24; border:1px solid #2c2e33;">
+          <div class="card-body">
+            <h6 style="font-weight:700;"><i class="mdi mdi-lightbulb-outline" style="color:#ffc107;"></i> AI Affordability Assessment <span class="badge" style="background:rgba(0,119,182,0.15); color:#0077B6;">Live</span> <button type="button" class="btn btn-sm btn-outline-primary ms-2" style="font-size:11px; padding:2px 8px; border-radius:20px;" onclick="recalcAI()"><i class="mdi mdi-refresh"></i> Recalculate</button></h6>
+            <div class="row g-2 mt-3 text-center">
+              <div class="col-6 col-lg-3"><div style="background:#0f0f0f; border:1px solid #2c2e33; border-radius:8px; padding:10px;"><p class="text-muted mb-1" style="font-size:11px;">Monthly Payment</p><p class="mb-0" style="font-weight:800;" id="aiMonthly">—</p></div></div>
+              <div class="col-6 col-lg-3"><div style="background:#0f0f0f; border:1px solid #2c2e33; border-radius:8px; padding:10px;"><p class="text-muted mb-1" style="font-size:11px;">Affordability</p><p class="mb-0" style="font-weight:800;" id="aiAfford">—</p><div class="progress mt-2" style="height:4px; background:#2c2e33;"><div id="aiAffordBar" class="progress-bar bg-success" style="width:0%"></div></div></div></div>
+              <div class="col-6 col-lg-3"><div style="background:#0f0f0f; border:1px solid #2c2e33; border-radius:8px; padding:10px;"><p class="text-muted mb-1" style="font-size:11px;">Risk Score</p><p class="mb-0" style="font-weight:800;" id="aiRisk">—</p><div class="progress mt-2" style="height:4px; background:#2c2e33;"><div id="aiRiskBar" class="progress-bar bg-warning" style="width:0%"></div></div></div></div>
+              <div class="col-6 col-lg-3"><div style="background:#0f0f0f; border:1px solid #2c2e33; border-radius:8px; padding:10px;"><p class="text-muted mb-1" style="font-size:11px;">DTI Ratio</p><p class="mb-0" style="font-weight:800;" id="aiDti">—</p></div></div>
+            </div>
+            <div id="aiFeesBox" class="mt-3 p-3 rounded" style="display:none; background:rgba(0,119,182,0.06); border:1px solid rgba(0,119,182,0.15); font-size:12px;"></div>
+            <div id="aiRecommendation" class="mt-3 p-3 rounded" style="display:none; font-size:13px;"></div>
+          </div>
+        </div>
+        <div class="alert mt-3" style="background:rgba(255,193,7,0.1); border:1px solid rgba(255,193,7,0.3); font-size:13px; display:none;" id="aiAlert"></div>
+        <div class="card mt-3" style="background:#0f0f0f; border:1px solid #2c2e33; border-radius:8px;">
+          <div class="card-body py-3">
+            <label class="d-flex gap-3 align-items-start" style="cursor:pointer;">
+              <input type="checkbox" id="confirmReviewCheck" style="margin-top:4px; width:18px; height:18px;">
+              <span style="font-size:13px; color:#e5e6ea;"><strong>Read carefully:</strong> I have reviewed all information above and confirm it is correct. I understand that this information will be sent to the selected bank for assessment. I agree to proceed with submission.</span>
+            </label>
+            <div id="confirmError" class="field-error" style="display:none; color:#fc424a; font-size:11px; margin-top:8px;">Please confirm that you have read and verified your information before submitting.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="d-flex justify-content-between align-items-center mt-3 mb-4">
+    <button type="button" id="prevBtn" class="btn btn-outline-secondary" style="border-radius:6px; padding:8px 20px; display:none;" onclick="prevSegment()"><i class="mdi mdi-arrow-left me-1"></i> Previous</button>
+    <div class="ms-auto d-flex gap-2">
+      <button type="button" id="saveExitBtn" class="btn btn-outline-secondary" style="border-radius:6px; padding:8px 16px;" onclick="saveAndExit()">Save & Exit</button>
+      <button type="button" id="nextBtn" class="btn btn-primary" style="border-radius:6px; padding:8px 24px;" onclick="nextSegment()">Next <i class="mdi mdi-arrow-right ms-1"></i></button>
+      <button type="submit" id="submitBtn" class="btn btn-success" style="border-radius:6px; padding:8px 24px; display:none;"><i class="mdi mdi-send me-1"></i> Submit Application</button>
+    </div>
+  </div>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentSegment = 1;
+const totalSegments = 8;
+let customerType = null;
+let currentMortgageType = null;
+let pendingDraft = null;
+
+function getMortgageType(){
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('type') || urlParams.get('mortgage_type') || localStorage.getItem('apply_mortgage_type') || 'residential';
+}
+
+const djangoUserEmail = "{{ user.email|default:'' }}";
+const djangoUserId = "{{ user.id|default:'' }}";
+// For NIDA verification - compare against logged-in user
+window.__nidaExpFirst = "{{ user.first_name|default:'' }}";
+window.__nidaExpLast = "{{ user.last_name|default:'' }}";
+window.__nidaExpEmail = "{{ user.email|default:'' }}";
+function getCookie(name){
+  try{
+    const v = document.cookie.match('(^|;)\\s*'+name+'\\s*=\\s*([^;]+)');
+    return v ? decodeURIComponent(v.pop()) : '';
+  }catch(e){ return ''; }
+}
+function isJwtExpired(token){
+  if(!token) return true;
+  try{
+    const payload = token.split('.')[1];
+    const decoded = JSON.parse(atob(payload.replace(/-/g,'+').replace(/_/g,'/')));
+    if(!decoded.exp) return false;
+    return (decoded.exp * 1000) < Date.now();
+  }catch(e){ return false; }
+}
+function draftKey(mtype){
+  var userKey = 'anon';
+  try{
+    var u = JSON.parse(localStorage.getItem('user')||'null');
+    if(u && u.email) userKey = u.email;
+    else if(u && u.id) userKey = ''+u.id;
+    else if(djangoUserEmail) userKey = djangoUserEmail;
+    else if(djangoUserId) userKey = ''+djangoUserId;
+  }catch(e){
+    if(djangoUserEmail) userKey = djangoUserEmail;
+    else if(djangoUserId) userKey = ''+djangoUserId;
+  }
+  return 'apply_draft_'+userKey+'_'+(mtype||getMortgageType());
+}
+
+function saveDraftLocal(){
+  try{
+    const form = document.getElementById('wizardForm');
+    const fd = new FormData(form);
+    const obj = {};
+    fd.forEach((v,k)=>{ if(v) obj[k]=v; });
+    obj._currentStep = currentSegment;
+    obj._mortgageType = currentMortgageType||getMortgageType();
+    obj._customerType = customerType;
+    obj._savedAt = new Date().toISOString();
+    localStorage.setItem(draftKey(obj._mortgageType), JSON.stringify(obj));
+    localStorage.setItem('apply_last_step_'+obj._mortgageType, currentSegment);
+  }catch(e){}
+}
+
+async function saveDraftBackend(useBeacon){
+  // After a successful submit the application is complete - never recreate a draft
+  // (beforeunload/visibilitychange fire on the post-submit redirect).
+  if(window._submitted) return;
+  try{
+    const token = localStorage.getItem('access') || localStorage.getItem('access_token') || '';
+    let csrftoken = getCookie('csrftoken');
+    if(!csrftoken){
+      const inp=document.querySelector('[name=csrfmiddlewaretoken]');
+      if(inp) csrftoken=inp.value;
+    }
+    const form = document.getElementById('wizardForm');
+    const fd = new FormData(form);
+    const payload = {};
+    fd.forEach((v,k)=>{ if(v) payload[k]=v; });
+    payload.current_step = currentSegment;
+    payload.mortgage_type = currentMortgageType||getMortgageType();
+    payload.loan_type = document.getElementById('loanType')?.value || payload.mortgage_type;
+    payload.type = payload.mortgage_type;
+    // Idempotent save: send draft_id so the backend updates that same row instead of creating a new one
+    try{
+      const did = window._backendDraftId || localStorage.getItem('apply_draft_id_'+payload.mortgage_type);
+      if(did) payload.draft_id = did;
+    }catch(e){}
+    const bodyStr = JSON.stringify(payload);
+    // Use sendBeacon for unload cases
+    if(useBeacon && navigator.sendBeacon){
+      try{
+        const blob = new Blob([bodyStr], {type:'application/json'});
+        navigator.sendBeacon('/api/mortgages/draft/', blob);
+        return;
+      }catch(e){}
+    }
+    const headers = {'Content-Type':'application/json'};
+    // Only send JWT if not expired - expired token causes 401 even though session cookie would succeed
+    if(token && !isJwtExpired(token)) headers['Authorization']='Bearer '+token;
+    if(csrftoken) headers['X-CSRFToken']=csrftoken;
+    const res = await fetch('/api/mortgages/draft/', {
+      method:'POST',
+      headers: headers,
+      body: bodyStr,
+      credentials: 'same-origin',
+      keepalive: true
+    });
+    if(!res.ok){
+      console.warn('draft save failed', res.status, await res.text().catch(()=>''));
+    }else{
+      // Save the returned id so later saves update that same row (no duplicates)
+      try{
+        const data = await res.clone().json();
+        if(data && data.id){
+          window._backendDraftId = String(data.id);
+          try{ localStorage.setItem('apply_draft_id_'+payload.mortgage_type, String(data.id)); }catch(e){}
+        }
+      }catch(e){}
+    }
+  }catch(e){ console.warn('draft save error', e); }
+}
+
+function saveDraft(){
+  if(window._submitted) return;
+  saveDraftLocal();
+  saveDraftBackend();
+}
+
+function restoreFormFromObj(obj){
+  if(!obj) return;
+  for(const[k,v] of Object.entries(obj)){
+    if(k.startsWith('_')) continue;
+    // property/bank special: they are IDs
+    const el = document.querySelector(`[name="${k}"]`);
+    if(el && v){
+      if(el.type==='radio' || el.type==='checkbox'){
+        const radio = document.querySelector(`[name="${k}"][value="${v}"]`);
+        if(radio){ radio.checked=true; }
+      } else {
+        el.value=v;
+      }
+    }
+  }
+  if(obj._customerType || obj.customer_type){
+    customerType = obj._customerType || obj.customer_type;
+    document.querySelectorAll('.type-card').forEach(c=>c.classList.toggle('selected', c.dataset.value===customerType));
+    const inp=document.querySelector(`.type-card[data-value="${customerType}"] input`);
+    if(inp) inp.checked=true;
+    const info=document.getElementById('typeInfo');
+    if(info){ info.style.display='block'; info.innerHTML = customerType==='employed' ? '<i class="mdi mdi-briefcase"></i> You selected <b>Employed</b> - Step 4 will be skipped.' : '<i class="mdi mdi-store"></i> You selected <b>Business Owner</b>'; }
+    const hiddenEmp2=document.getElementById('employmentStatus');
+    const dispEmp2=document.getElementById('employmentStatusDisplay');
+    if(hiddenEmp2) hiddenEmp2.value = customerType==='employed' ? 'employed' : 'business_owner';
+    if(dispEmp2) dispEmp2.textContent = customerType==='employed' ? 'Employed' : 'Business Owner';
+  }
+  if(obj.bank){
+    const card=document.querySelector(`.bank-card[data-bank="${obj.bank}"]`);
+    if(card){ document.querySelectorAll('.bank-card').forEach(c=>c.classList.remove('selected')); card.classList.add('selected'); const inp=card.querySelector('input'); if(inp) inp.checked=true; const sel=document.getElementById('applyBank'); if(sel) sel.value=obj.bank; }
+    else {
+      const sel=document.getElementById('applyBank'); if(sel) sel.value=obj.bank;
+    }
+  }
+}
+
+function autoResumeDraft(obj){
+  // Unified auto-resume - no banner needed
+  let restoreObj = obj;
+  if(obj.draft_data){
+    restoreObj = {...obj.draft_data, _customerType: obj.draft_data.customer_type || obj.draft_data._customerType, _currentStep: obj.current_step, _mortgageType: obj.mortgage_type||obj._mortgageType, mortgage_type: obj.mortgage_type};
+  }
+  restoreFormFromObj(restoreObj);
+  currentSegment = parseInt(obj.current_step || obj._currentStep || 1);
+  if(isNaN(currentSegment) || currentSegment<1) currentSegment=1;
+  if(currentSegment===4 && (customerType==='employed' || restoreObj._customerType==='employed')) currentSegment=5;
+  updateStepper(false); // false = don't re-save immediately
+  const info=document.getElementById('autoResumeInfo');
+  const txt=document.getElementById('autoResumeText');
+  if(info && txt){
+    txt.textContent = `Auto-resumed to step ${currentSegment} / 8 • ${(currentMortgageType||'').charAt(0).toUpperCase()+(currentMortgageType||'').slice(1)} Mortgage - no need to click Continue`;
+    info.style.display='block';
+    setTimeout(()=>{ info.style.display='none'; }, 6000);
+  }
+  // also toast
+  if(typeof Swal!=='undefined'){
+    Swal.fire({icon:'success', title:'Auto-resumed', text:`Resumed to step ${currentSegment} • ${(currentMortgageType||'')}`, timer:4500, showConfirmButton:false, toast:true, position:'top-end'});
+  }
+}
+
+function toggleExistingLoanDetails(val){
+  const details=document.getElementById('existingLoanDetails');
+  if(!details) return;
+  if(val==='yes'){
+    details.style.display='block';
+  } else {
+    details.style.display='none';
+    // clear values when hidden
+    details.querySelectorAll('input').forEach(i=>{ i.value=''; i.classList.remove('is-invalid','is-valid'); });
+  }
+  saveDraft();
+}
+
+function showDraftBanner(obj, fromBackend){
+  // Deprecated - auto-resume is used now, but kept for backward compat (do not show the banner again)
+  pendingDraft = obj;
+  // auto-resume directly
+  autoResumeDraft(obj);
+}
+
+function resumeDraft(){
+  if(!pendingDraft) {
+    // fallback: try local
+    try{
+      const raw=localStorage.getItem(draftKey(currentMortgageType));
+      if(raw) pendingDraft=JSON.parse(raw);
+    }catch(e){}
+  }
+  if(!pendingDraft) return;
+  autoResumeDraft(pendingDraft);
+  const banner=document.getElementById('draftResumeBanner');
+  if(banner) banner.style.display='none';
+}
+
+async function discardDraft(){
+  try{ localStorage.removeItem(draftKey(currentMortgageType)); localStorage.removeItem('apply_last_step_'+currentMortgageType); }catch(e){}
+  try{
+    const token=localStorage.getItem('access');
+    if(token && pendingDraft && pendingDraft.id){
+      await fetch(`/api/mortgages/${pendingDraft.id}/`, {method:'DELETE', headers:{'Authorization':'Bearer '+token}});
+    }
+  }catch(e){}
+  pendingDraft=null;
+  const b=document.getElementById('draftResumeBanner'); if(b) b.style.display='none';
+  const a=document.getElementById('autoResumeInfo'); if(a) a.style.display='none';
+  if(typeof Swal!=='undefined') Swal.fire({icon:'success', title:'Draft cleared', timer:4000, showConfirmButton:false});
+}
+
+function clearFieldError(el){
+  if(!el) return;
+  el.classList.remove('is-invalid');
+  el.classList.remove('is-valid');
+  // if has value, mark valid green
+  const v=(el.value||'').toString().trim();
+  if(v) el.classList.add('is-valid');
+  const err = el.parentNode && el.parentNode.querySelector('.field-error');
+  if(err) err.classList.remove('show');
+  const alt = el.nextElementSibling;
+  if(alt && alt.classList.contains('field-error')) alt.classList.remove('show');
+}
+function showFieldError(el, msg){
+  if(!el) return;
+  el.classList.add('is-invalid');
+  el.classList.remove('is-valid');
+  let err = el.parentNode.querySelector('.field-error');
+  if(!err){
+    err = document.createElement('div');
+    err.className = 'field-error show';
+    err.textContent = msg || 'This field is required';
+    el.parentNode.appendChild(err);
+  } else {
+    err.textContent = msg || 'This field is required';
+    err.classList.add('show');
+  }
+  // also check next sibling
+  const next = el.nextElementSibling;
+  if(next && next.classList.contains('field-error')){
+    next.textContent = msg || 'This field is required';
+    next.classList.add('show');
+  }
+}
+function clearAllFieldErrors(){
+  document.querySelectorAll('.is-invalid').forEach(el=> el.classList.remove('is-invalid'));
+  document.querySelectorAll('.field-error.show').forEach(el=> el.classList.remove('show'));
+}
+function markFieldValid(el){
+  if(!el) return;
+  const v=(el.value||'').toString().trim();
+  if(v){
+    el.classList.remove('is-invalid');
+    el.classList.add('is-valid');
+    const err=el.parentNode && el.parentNode.querySelector('.field-error');
+    if(err) err.classList.remove('show');
+    const nxt=el.nextElementSibling;
+    if(nxt && nxt.classList.contains('field-error')) nxt.classList.remove('show');
+  } else {
+    el.classList.remove('is-valid');
+  }
+}
+function validateSegment(seg, showErrors){
+  // English only messages
+  let valid = true;
+  const mark = (sel, msg) => {
+    const el = document.querySelector(sel);
+    if(!el) return true;
+    const val = (el.value||'').toString().trim();
+    if(!val){
+      valid = false;
+      if(showErrors) showFieldError(el, msg);
+      else el.classList.add('is-invalid');
+      return false;
+    } else {
+      if(showErrors) clearFieldError(el);
+      else el.classList.remove('is-invalid');
+      return true;
+    }
+  };
+  clearAllFieldErrors();
+  if(seg===1){
+    if(!customerType){
+      valid=false;
+      if(showErrors && typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Please select customer type', text:'Select Employed or Business Owner to continue', toast:true, position:'top-end', timer:4500, showConfirmButton:false});
+    }
+  } else if(seg===2){
+    // Personal info: DOB required + Gender/Marital preferred, NIDA check
+    const dob = document.querySelector('[name=\"dob\"]');
+    if(!dob || !dob.value){
+      valid=false;
+      if(showErrors) showFieldError(dob, 'Date of Birth is required');
+    } else { if(showErrors) markFieldValid(dob); else dob.classList.remove('is-invalid'); }
+    // Gender and Marital are recommended but not blocking? To satisfy request, we show error if empty when user clicks Next, but allow? We make them required for better data
+    const genderEl=document.querySelector('[name=\"gender\"]');
+    if(genderEl && !genderEl.value){
+      valid=false;
+      if(showErrors) showFieldError(genderEl, 'Gender is required');
+    } else if(genderEl && showErrors) markFieldValid(genderEl);
+    const maritalEl=document.querySelector('[name=\"marital_status\"]');
+    if(maritalEl && !maritalEl.value){
+      valid=false;
+      if(showErrors) showFieldError(maritalEl, 'Marital status is required');
+    } else if(maritalEl && showErrors) markFieldValid(maritalEl);
+    // Dependents optional - no validation
+    const nidaInp=document.getElementById('nidaInput');
+    window._nidaNeedsVerify=false;
+    if(nidaInp && nidaInp.value.trim()!==''){
+      if(!/^\d{15}$/.test(nidaInp.value.trim())){
+        valid=false;
+        if(showErrors) showFieldError(nidaInp, 'NIDA must be exactly 15 digits');
+      } else {
+        let nScore=(nidaQ1Ok?1:0)+(nidaQ2Ok?1:0)+(nidaQ3Ok?1:0);
+        const finalMsg=document.getElementById('nidaFinalMsg');
+        const hasVerified = finalMsg && finalMsg.style.display!=='none';
+        const q1Visible = document.getElementById('nidaQ1Wrap') && document.getElementById('nidaQ1Wrap').style.display!=='none';
+        if(!hasVerified || nScore<2){
+          valid=false;
+          window._nidaNeedsVerify=true;
+          if(showErrors){
+            if(!q1Visible){
+              showFieldError(nidaInp, 'Please click Verify NIDA button to verify your NIDA');
+              if(typeof Swal!=='undefined') Swal.fire({icon:'info', title:'Please verify your NIDA', text:'You entered NIDA correctly. Now click the Verify NIDA button to answer verification questions.', toast:true, position:'top-end', timer:5000, showConfirmButton:false});
+            } else {
+              showFieldError(nidaInp, 'Please verify your NIDA - answer at least 2 of 3 questions correctly');
+              if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'NIDA verification required', text:'Click Verify NIDA and answer at least 2 of 3 questions correctly (you already answered '+nScore+'/2).', toast:true, position:'top-end', timer:5000, showConfirmButton:false});
+            }
+          }
+        } else if(showErrors) markFieldValid(nidaInp);
+      }
+    }
+  } else if(seg===3){
+    // Employment details - hidden status auto-filled, validate all visible required fields
+    const hiddenEmp2=document.getElementById('employmentStatus');
+    if(!hiddenEmp2 || !hiddenEmp2.value){
+      valid=false;
+      if(showErrors && typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Select customer type first', text:'Go back to Step 1 and choose Employed or Business Owner', toast:true, position:'top-end', timer:5000, showConfirmButton:false});
+    }
+    // When not business (employed case), employer fields are required
+    const isBusinessLocal = customerType==='business';
+    if(!isBusinessLocal){
+      valid = mark('#employerName', 'Employer name is required') && valid;
+      valid = mark('#jobTitle', 'Job title is required') && valid;
+      valid = mark('#yearsEmployed', 'Years of employment is required') && valid;
+      valid = mark('#contractType', 'Contract type is required') && valid;
+    }
+    valid = mark('#monthlyIncome', 'Monthly income is required') && valid;
+    valid = mark('#monthlyExpenses', 'Monthly expenses is required') && valid;
+    // also check income >0
+    const inc = document.getElementById('monthlyIncome');
+    if(inc && inc.value && parseFloat(inc.value) <=0){ valid=false; if(showErrors) showFieldError(inc,'Enter a valid amount'); }
+    const exp = document.getElementById('monthlyExpenses');
+    if(exp && exp.value && parseFloat(exp.value) <=0){ valid=false; if(showErrors) showFieldError(exp,'Enter a valid amount'); }
+    // Existing loan details if Yes
+    const hasLoan = document.getElementById('hasExistingLoan')?.value || document.querySelector('input[name="has_existing_loan"]:checked')?.value;
+    if(hasLoan==='yes'){
+      valid = mark('[name="existing_loan_bank"]', 'Bank name is required') && valid;
+      valid = mark('[name="existing_loan_amount"]', 'Loan amount is required') && valid;
+    }
+  } else if(seg===4){
+    if(customerType==='business'){
+      valid = mark('[name=\"business_name\"]', 'Business name is required') && valid;
+      valid = mark('[name=\"business_type\"]', 'Business type is required') && valid;
+    }
+  } else if(seg===5){
+    // Property is optional for semi_finish / construction / renovation
+    const lt=document.getElementById('loanType')?.value || '';
+    const propertyOptional = ['semi_finish','construction'].includes(lt) || ['construction','renovation','semi_finish'].includes(currentMortgageType);
+    if(!propertyOptional){
+      valid = mark('#applyProperty', 'Property is required') && valid;
+    } else {
+      const propEl=document.getElementById('applyProperty');
+      if(propEl && propEl.value && showErrors) markFieldValid(propEl);
+      // if empty, it's okay - clear any previous error
+      if(propEl && !propEl.value) clearFieldError(propEl);
+    }
+    valid = mark('#loanType', 'Loan type is required') && valid;
+    valid = mark('#loanAmount', 'Loan amount is required') && valid;
+    const loan = document.getElementById('loanAmount');
+    if(loan && loan.value && parseFloat(loan.value) < 5000000){ valid=false; if(showErrors) showFieldError(loan,'Minimum is 5,000,000 TZS'); }
+    // Purchase loans (residential/commercial/land) can never exceed the property value
+    (function(){
+      var lt5 = document.getElementById('loanType')?.value || '';
+      var mt5 = (typeof currentMortgageType!=='undefined' && currentMortgageType) ? currentMortgageType : '';
+      var isPurchaseLike = ['residential','commercial','land'].includes(mt5) || (lt5==='purchase' && ['residential','commercial','land',''].includes(mt5));
+      var propSel = document.getElementById('applyProperty');
+      var opt = propSel ? propSel.options[propSel.selectedIndex] : null;
+      var price = opt ? parseFloat(opt.getAttribute('data-price')||'0') : 0;
+      if(isPurchaseLike && loan && loan.value && price > 0 && parseFloat(loan.value) > price){
+        valid=false;
+        if(showErrors) showFieldError(loan,'Loan exceeds property value (TZS '+price.toLocaleString()+'). Reduce the amount.');
+      }
+    })();
+    valid = mark('#repaymentPeriod', 'Repayment period is required') && valid;
+  } else if(seg===6){
+    const bankSel = document.querySelector('input[name=\"bank\"]:checked');
+    const fallback = document.getElementById('applyBank');
+    const hasBank = (bankSel && bankSel.value) || (fallback && fallback.value);
+    if(!hasBank){
+      valid=false;
+      if(showErrors){
+        if(fallback) showFieldError(fallback, 'Please select a bank');
+        if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Bank selection required', text:'Please select a bank before continuing', toast:true, position:'top-end', timer:4500, showConfirmButton:false});
+      }
+    }
+  } else if(seg===7){
+    // Documents - required based on customer type
+    const isBusiness = customerType==='business';
+    const requiredIds = ['#docId','#docPayslip','#docBankStatement','#docTitleDeed'];
+    // Employer docs only for employed
+    if(!isBusiness){
+      requiredIds.push('#docEmployerRef','#docEmploymentContract');
+    }
+    for(const sel of requiredIds){
+      const el=document.querySelector(sel);
+      if(!el) continue;
+      const hasFile = el.files && el.files.length>0;
+      if(!hasFile){
+        valid=false;
+        if(showErrors) showFieldError(el, 'This document is required');
+        else el.classList.add('is-invalid');
+      } else {
+        if(showErrors) markFieldValid(el);
+      }
+    }
+    // Other documents optional - no validation
+  }
+  return valid;
+}
+
+function updateStepper(showAlert=true, hasInvalid=false){
+  document.querySelectorAll('.step').forEach(s=>{
+    const step = parseInt(s.dataset.step);
+    s.classList.remove('active','done','invalid');
+    const circle = s.querySelector('.circle');
+    if(step < currentSegment){
+      // Previous steps remain done (green) even when current has error - only current shows invalid
+      s.classList.add('done');
+      circle.innerHTML = '<i class=\"mdi mdi-check\"></i>';
+    } else if(step === currentSegment){
+      if(hasInvalid){ s.classList.add('invalid'); circle.textContent = step; }
+      else s.classList.add('active');
+      if(!hasInvalid) circle.textContent = step;
+    }
+    else { circle.textContent = step; }
+  });
+  for(let i=1;i<totalSegments;i++){
+    const line = document.getElementById('line'+i);
+    if(line){
+      line.classList.remove('done','invalid');
+      if(i < currentSegment){
+        // Only current segment line turns red when invalid; others stay done
+        if(hasInvalid && i === currentSegment-1) line.classList.add('invalid');
+        else line.classList.add('done');
+      }
+    }
+  }
+  document.getElementById('progressBar').style.width = (currentSegment/totalSegments*100)+'%';
+  document.querySelectorAll('.segment-card').forEach(c=>{
+    c.classList.toggle('active', parseInt(c.dataset.segment)===currentSegment);
+  });
+  document.getElementById('prevBtn').style.display = currentSegment===1?'none':'inline-block';
+  document.getElementById('nextBtn').style.display = currentSegment===totalSegments?'none':'inline-block';
+  document.getElementById('submitBtn').style.display = currentSegment===totalSegments?'inline-block':'none';
+  if(showAlert){
+    saveDraft();
+  } else {
+    saveDraftLocal();
+  }
+}
+function goToSegment(target){
+  if(target===currentSegment) return;
+  if(target < currentSegment){
+    // Backward always allowed
+    clearAllFieldErrors();
+    currentSegment = target;
+    if(currentSegment===4 && customerType==='employed') currentSegment=3;
+    updateStepper(true, false);
+    window.scrollTo({top:0, behavior:'smooth'});
+    return;
+  }
+  // Forward: validate current and intermediate segments, but allow jump with red indication
+  let hasInvalid = false;
+  // validate current segment first
+  if(!validateSegment(currentSegment, true)) hasInvalid = true;
+  // validate intermediate segments between current and target
+  for(let s=currentSegment+1; s<target; s++){
+    if(s===4 && customerType==='employed') continue; // skipped
+    if(!validateSegment(s, false)) hasInvalid = true;
+  }
+  // also validate target-1 etc? we already
+  currentSegment = target;
+  if(currentSegment===4 && customerType==='employed') currentSegment=5;
+  updateStepper(true, hasInvalid);
+  if(hasInvalid){
+    if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Some fields incomplete', text:'Previous steps have missing required fields - marked with red border. Please complete them.', toast:true, position:'top-end', timer:5000, showConfirmButton:false});
+  }
+  if(currentSegment===8){ buildReview(); recalcAI(); }
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function updateEmploymentBusinessDisabled(){
+  const isEmployed = customerType==='employed';
+  const isBusiness = customerType==='business';
+  // Step 4 business
+  const bizMsg=document.getElementById('businessDisabledMsg');
+  const bizBadge=document.getElementById('businessBadge');
+  const bizInputs=document.querySelectorAll('[data-segment="4"] input, [data-segment="4"] select');
+  if(isEmployed){
+    if(bizMsg) bizMsg.style.display='block';
+    if(bizBadge){ bizBadge.textContent='Not required'; bizBadge.className='badge bg-warning ms-2'; bizBadge.style.display='inline-block'; }
+    bizInputs.forEach(el=>{ el.disabled=true; el.style.opacity='0.5'; el.style.pointerEvents='none'; });
+  } else {
+    if(bizMsg) bizMsg.style.display='none';
+    if(bizBadge){ bizBadge.style.display='none'; }
+    bizInputs.forEach(el=>{ el.disabled=false; el.style.opacity='1'; el.style.pointerEvents='auto'; });
+  }
+  // Step 3 employment employer-specific fields if business
+  const empMsg=document.getElementById('employmentDisabledMsg');
+  const empBadge=document.getElementById('employmentBadge');
+  const employerFields=['employer_name','job_title','years_employed','contract_type'];
+  if(isBusiness){
+    if(empMsg) empMsg.style.display='block';
+    if(empBadge){ empBadge.textContent='Business owner - employer not required'; empBadge.className='badge bg-warning ms-2'; empBadge.style.display='inline-block'; }
+    employerFields.forEach(n=>{
+      const el=document.querySelector(`[name="${n}"]`);
+      if(el){ el.disabled=true; el.style.opacity='0.5'; el.style.pointerEvents='none'; el.placeholder='Not required for business owners'; }
+    });
+  } else {
+    if(empMsg) empMsg.style.display='none';
+    if(empBadge) empBadge.style.display='none';
+    employerFields.forEach(n=>{
+      const el=document.querySelector(`[name="${n}"]`);
+      if(el){ el.disabled=false; el.style.opacity='1'; el.style.pointerEvents='auto'; }
+    });
+  }
+  // Step 7 document notes based on type
+  const docEmpNote=document.getElementById('docEmployedNote');
+  const docBizNote=document.getElementById('docBusinessNote');
+  const docEmpStar=document.getElementById('docEmployerRefStar');
+  const docConStar=document.getElementById('docContractStar');
+  if(isEmployed){
+    if(docEmpNote) docEmpNote.style.display='block';
+    if(docBizNote) docBizNote.style.display='none';
+    if(docEmpStar) docEmpStar.style.display='inline';
+    if(docConStar) docConStar.style.display='inline';
+  } else if(isBusiness){
+    if(docEmpNote) docEmpNote.style.display='none';
+    if(docBizNote) docBizNote.style.display='block';
+    if(docEmpStar) docEmpStar.style.display='none';
+    if(docConStar) docConStar.style.display='none';
+  } else {
+    if(docEmpNote) docEmpNote.style.display='none';
+    if(docBizNote) docBizNote.style.display='none';
+    if(docEmpStar) docEmpStar.style.display='none';
+    if(docConStar) docConStar.style.display='none';
+  }
+}
+
+function selectCustomerType(type){
+  customerType = type;
+  document.querySelectorAll('.type-card').forEach(c=>c.classList.remove('selected'));
+  document.querySelector(`.type-card[data-value="${type}"]`).classList.add('selected');
+  document.querySelector(`.type-card[data-value="${type}"] input`).checked = true;
+  const info = document.getElementById('typeInfo');
+  info.style.display='block';
+  const hiddenEmp = document.getElementById('employmentStatus');
+  const dispEmp = document.getElementById('employmentStatusDisplay');
+  if(type==='employed'){
+    info.innerHTML='<i class="mdi mdi-briefcase"></i> You selected <b>Employed</b> - Step 4 (Business) will be skipped automatically.';
+    if(hiddenEmp) hiddenEmp.value='employed';
+    if(dispEmp) dispEmp.textContent='Employed';
+  }else{
+    info.innerHTML='<i class="mdi mdi-store"></i> You selected <b>Business Owner</b> - Please fill business details in Step 4.';
+    if(hiddenEmp) hiddenEmp.value='business_owner';
+    if(dispEmp) dispEmp.textContent='Business Owner';
+  }
+  // visual feedback: green border briefly
+  if(hiddenEmp){ hiddenEmp.classList.remove('is-invalid'); hiddenEmp.classList.add('is-valid'); }
+  localStorage.setItem('apply_customer_type', type);
+  updateEmploymentBusinessDisabled();
+  saveDraft();
+}
+
+function selectBank(id){
+  document.querySelectorAll('.bank-card').forEach(c=>c.classList.remove('selected'));
+  const el = document.querySelector(`.bank-card[data-bank="${id}"]`);
+  if(el) el.classList.add('selected');
+  const inp = el ? el.querySelector('input') : null;
+  if(inp) inp.checked=true;
+  document.getElementById('applyBank').value = id;
+  recalcAI();
+  updateBankHeaderById(id);
+}
+
+function updateBankHeaderById(bankId){
+  try{
+    const card=document.querySelector(`.bank-card[data-bank="${bankId}"]`);
+    let name='';
+    if(card){
+      const h6=card.querySelector('h6');
+      if(h6) name=h6.textContent.trim();
+    }
+    if(!name){
+      const sel=document.getElementById('applyBank');
+      if(sel){
+        const opt=sel.querySelector(`option[value="${bankId}"]`);
+        if(opt) name=opt.textContent.trim().split('—')[0].trim();
+      }
+    }
+    if(name){
+      const hdr=document.getElementById('bankHeaderInfo');
+      const hdrName=document.getElementById('bankHeaderName');
+      const hdrDesc=document.getElementById('bankHeaderDesc');
+      if(hdr && hdrName){
+        hdrName.textContent=name;
+        const mtypeText=(currentMortgageType||'residential');
+        if(hdrDesc) hdrDesc.textContent=`You are applying for ${mtypeText} Mortgage via ${name}`;
+        const titleEl=document.getElementById('mortgageTitle');
+        if(titleEl && !titleEl.textContent.includes(name)){
+        }
+        hdr.style.display='block';
+      }
+    }
+  }catch(e){}
+}
+
+function handleBankParam(){
+  const urlParams=new URLSearchParams(window.location.search);
+  let bankParam=urlParams.get('bank');
+  if(!bankParam) return;
+  bankParam=bankParam.trim();
+  // If numeric id directly
+  if(/^\d+$/.test(bankParam)){
+    const card=document.querySelector(`.bank-card[data-bank="${bankParam}"]`);
+    if(card) selectBank(bankParam);
+    else { const sel=document.getElementById('applyBank'); if(sel) { sel.value=bankParam; updateBankHeaderById(bankParam); } }
+    lockBankSelection(bankParam);
+    return;
+  }
+  // slug like crdb/nmb etc -> map to bank name fragment
+  const slug=bankParam.toLowerCase();
+  const cards=document.querySelectorAll('.bank-card');
+  for(const c of cards){
+    const name=c.querySelector('h6')?c.querySelector('h6').textContent.toLowerCase():'';
+    if(name.includes(slug)){
+      selectBank(c.dataset.bank);
+      lockBankSelection(c.dataset.bank);
+      return;
+    }
+  }
+  // fallback: try select element
+  const sel=document.getElementById('applyBank');
+  if(sel){
+    for(const opt of sel.options){
+      if(opt.textContent.toLowerCase().includes(slug)){
+        sel.value=opt.value;
+        updateBankHeaderById(opt.value);
+        lockBankSelection(opt.value);
+        break;
+      }
+    }
+  }
+  // still show header with slug name capitalised
+  const hdr=document.getElementById('bankHeaderInfo');
+  const hdrName=document.getElementById('bankHeaderName');
+  const hdrDesc=document.getElementById('bankHeaderDesc');
+  if(hdr && hdrName && slug){
+    hdrName.textContent=slug.toUpperCase()+' Bank';
+    if(hdrDesc) hdrDesc.textContent=`You are applying for ${currentMortgageType||'residential'} Mortgage via ${slug.toUpperCase()} Bank`;
+    hdr.style.display='block';
+  }
+}
+
+function lockBankSelection(bankId){
+  try{
+    const cards=document.querySelectorAll('.bank-card');
+    cards.forEach(c=>{
+      const col = c.closest('.col-12');
+      if(c.dataset.bank!==''+bankId){
+        if(col) col.style.display='none';
+        else { c.style.opacity='0.45'; c.style.pointerEvents='none'; }
+        c.title='Pre-selected bank - other options hidden for this direct application';
+      } else {
+        c.style.opacity='1';
+        c.style.borderColor='#00d25b';
+        c.style.background='rgba(0,210,91,0.08)';
+        if(col) col.style.display='';
+      }
+    });
+    const sel=document.getElementById('applyBank');
+    if(sel){ sel.disabled=true; sel.style.opacity='0.6'; sel.title='Bank pre-selected from your earlier choice'; }
+    // Hide manual fallback when locked to single bank
+    const fallbackWrap = sel ? sel.closest('.mt-3') : null;
+    if(fallbackWrap) fallbackWrap.style.display='none';
+    // show lock badge on bank step
+    const bankBadge=document.getElementById('bankHeaderInfo');
+    if(bankBadge){
+      const existing = document.getElementById('bankLockedBadge');
+      if(!existing){
+        const span=document.createElement('span');
+        span.id='bankLockedBadge';
+        span.className='badge bg-success ms-2';
+        span.style.fontSize='11px';
+        span.innerHTML='<i class="mdi mdi-lock"></i> Pre-selected';
+        bankBadge.appendChild(span);
+      }
+    }
+  }catch(e){}
+}
+
+function updatePropertyOptionalUI(){
+  try{
+    const lt=document.getElementById('loanType')?.value || '';
+    const isSemi = ['semi_finish','construction'].includes(lt) || ['construction','renovation','semi_finish'].includes(currentMortgageType);
+    const star=document.getElementById('propertyRequiredStar');
+    const note=document.getElementById('propertyOptionalNote');
+    const help=document.getElementById('propertyHelp');
+    const sel=document.getElementById('applyProperty');
+    if(star) star.style.display = isSemi ? 'none' : 'inline';
+    if(note) note.style.display = isSemi ? 'inline' : 'none';
+    if(help) help.style.display = isSemi ? 'block' : 'none';
+    if(sel) sel.required = !isSemi;
+    if(isSemi && sel && !sel.value){
+      clearFieldError(sel);
+    }
+  }catch(e){}
+}
+
+function handlePropertyAutoFill(){
+  const urlParams=new URLSearchParams(window.location.search);
+  const propParam=urlParams.get('property');
+  const typeParam=urlParams.get('type') || urlParams.get('mortgage_type');
+  if(propParam){
+    const sel=document.getElementById('applyProperty');
+    if(sel){
+      sel.value=propParam;
+      // lock visual
+      sel.disabled=false; // keep enabled for form submission but highlight
+      sel.style.borderColor='#00d25b';
+      sel.style.background='rgba(0,210,91,0.08)';
+      const opt=sel.querySelector(`option[value="${propParam}"]`);
+      let propName = opt ? opt.textContent.trim().split('—')[0].trim() : 'Property #'+propParam;
+      const hdr=document.getElementById('propertyHeaderInfo');
+      const hdrName=document.getElementById('propertyHeaderName');
+      const hdrDesc=document.getElementById('propertyHeaderDesc');
+      if(hdr && hdrName){
+        hdrName.textContent=propName;
+        if(hdrDesc) hdrDesc.textContent=`Property pre-selected from your earlier choice - form auto-filled. You do not need to select again.`;
+        hdr.style.display='block';
+      }
+      // add lock badge near property label
+      const label = sel.previousElementSibling;
+      if(label && !document.getElementById('propLockedBadge')){
+        const badge=document.createElement('span');
+        badge.id='propLockedBadge';
+        badge.className='badge bg-success ms-2';
+        badge.style.fontSize='11px';
+        badge.innerHTML='<i class="mdi mdi-check-circle"></i> Pre-selected';
+        label.appendChild(badge);
+      }
+    }
+  }
+  if(typeParam){
+    const loanTypeSel=document.getElementById('loanType');
+    const typeMap2={'residential':'purchase','construction':'construction','renovation':'semi_finish','land':'purchase','commercial':'purchase'};
+    let desired = typeMap2[typeParam] || typeParam;
+    if(loanTypeSel){
+      // try to set value if option exists
+      const hasOpt = Array.from(loanTypeSel.options).some(o=>o.value===desired);
+      if(hasOpt){
+        loanTypeSel.value=desired;
+        loanTypeSel.style.borderColor='#00d25b';
+        loanTypeSel.style.background='rgba(0,210,91,0.08)';
+        const hdr=document.getElementById('typeHeaderInfo');
+        const hdrName=document.getElementById('typeHeaderName');
+        const hdrDesc=document.getElementById('typeHeaderDesc');
+        if(hdr && hdrName){
+          hdrName.textContent=typeParam.charAt(0).toUpperCase()+typeParam.slice(1)+' Mortgage';
+          if(hdrDesc) hdrDesc.textContent=`Mortgage type pre-selected from your earlier choice (${desired}) - auto-filled. You do not need to select again.`;
+          hdr.style.display='block';
+        }
+        const label2 = loanTypeSel.previousElementSibling;
+        if(label2 && !document.getElementById('typeLockedBadge')){
+          const badge=document.createElement('span');
+          badge.id='typeLockedBadge';
+          badge.className='badge bg-success ms-2';
+          badge.style.fontSize='11px';
+          badge.innerHTML='<i class="mdi mdi-check-circle"></i> Pre-selected';
+          label2.appendChild(badge);
+        }
+      }
+    }
+  }
+}
+
+// NIDA verification flow - 15 digits + 3 questions
+let nidaScore=0, nidaQ1Ok=false, nidaQ2Ok=false, nidaQ3Ok=false;
+function getExpectedNidaAnswers(){
+  // Compare against logged-in user data (Django template rendered)
+  const email = (document.querySelector('input[type="email"][readonly]')?.value || djangoUserEmail || '').trim().toLowerCase();
+  const fullName = (document.querySelector('input[value*=\"@\"]')?.value || '').trim();
+  // fallback: parse first_name/last_name from backend via hidden data
+  // We will extract from first_name/last_name variables injected below
+  const expFirst = (window.__nidaExpFirst || '').trim().toLowerCase();
+  const expLast = (window.__nidaExpLast || '').trim().toLowerCase();
+  const expEmail = (window.__nidaExpEmail || email).trim().toLowerCase();
+  return {expFirst, expLast, expEmail};
+}
+function startNidaVerification(){
+  const input=document.getElementById('nidaInput');
+  const err=document.getElementById('nidaError');
+  const status=document.getElementById('nidaVerifyStatus');
+  const val=(input.value||'').trim();
+  if(err) err.style.display='none';
+  if(!/^\d{15}$/.test(val)){
+    if(err){ err.textContent='NIDA number must be exactly 15 digits (numbers only, no spaces).'; err.style.display='block'; }
+    if(status){ status.textContent=''; status.style.display='none'; }
+    input.classList.add('is-invalid');
+    if(typeof Swal!=='undefined') Swal.fire({icon:'error', title:'Invalid NIDA', text:'NIDA number must be exactly 15 digits.', timer:4000, showConfirmButton:false, toast:true, position:'top-end'});
+    return;
+  }
+  input.classList.remove('is-invalid');
+  input.classList.add('is-valid');
+  if(status){ status.style.display='inline'; status.innerHTML='<span style="color:#00d25b;"><i class="mdi mdi-check-circle"></i> Format valid - answer the questions below</span>'; }
+  // reset scores
+  nidaScore=0; nidaQ1Ok=nidaQ2Ok=nidaQ3Ok=false;
+  document.getElementById('nidaQ1Wrap').style.display='block';
+  document.getElementById('nidaQ1Check').style.display='none';
+  document.getElementById('nidaQ1Cross').style.display='none';
+  document.getElementById('nidaQ2Wrap').style.display='none';
+  document.getElementById('nidaQ3Wrap').style.display='none';
+  document.getElementById('nidaFinalMsg').style.display='none';
+  document.getElementById('nidaQ1Input').value='';
+  document.getElementById('nidaQ2Input').value='';
+  document.getElementById('nidaQ3Input').value='';
+  document.getElementById('nidaQ1Input').focus();
+  if(typeof Swal!=='undefined') Swal.fire({icon:'info', title:'Verify Identity', text:'Please answer 3 questions to verify your NIDA.', timer:4000, showConfirmButton:false, toast:true, position:'top-end'});
+}
+function checkAnswer(inputVal, expected){
+  return inputVal.trim().toLowerCase() === expected.trim().toLowerCase() && inputVal.trim()!=='';
+}
+function submitNidaQ1(){
+  const val=document.getElementById('nidaQ1Input').value;
+  const exp=getExpectedNidaAnswers().expFirst;
+  // if exp not available, fallback to checking non-empty (allow any if no server data)
+  let ok=false;
+  if(exp) ok=checkAnswer(val, exp);
+  else ok=val.trim().length>=2;
+  nidaQ1Ok=ok;
+  document.getElementById('nidaQ1Check').style.display= ok ? 'inline' : 'none';
+  document.getElementById('nidaQ1Cross').style.display= ok ? 'none' : 'inline';
+  document.getElementById('nidaQ1Input').style.borderColor= ok ? '#00d25b' : '#fc424a';
+  setTimeout(()=>{ document.getElementById('nidaQ2Wrap').style.display='block'; document.getElementById('nidaQ2Input').focus(); }, 800);
+}
+function submitNidaQ2(){
+  const val=document.getElementById('nidaQ2Input').value;
+  const exp=getExpectedNidaAnswers().expLast;
+  let ok=false;
+  if(exp) ok=checkAnswer(val, exp);
+  else ok=val.trim().length>=2;
+  nidaQ2Ok=ok;
+  document.getElementById('nidaQ2Check').style.display= ok ? 'inline' : 'none';
+  document.getElementById('nidaQ2Cross').style.display= ok ? 'none' : 'inline';
+  document.getElementById('nidaQ2Input').style.borderColor= ok ? '#00d25b' : '#fc424a';
+  // Check if already 2/2 correct -> verified, no need for Q3
+  const scoreAfter2 = (nidaQ1Ok?1:0)+(nidaQ2Ok?1:0);
+  if(scoreAfter2===2){
+    const final=document.getElementById('nidaFinalMsg');
+    final.style.display='block';
+    final.innerHTML='<div class="alert" style="background:rgba(0,210,91,0.12); border:1px solid rgba(0,210,91,0.25); color:#e5e6ea; border-radius:8px;"><i class="mdi mdi-check-decagram" style="color:#00d25b;"></i> <strong>Verified:</strong> You answered 2/2 correctly. NIDA is verified. Click <b>Next</b> to continue — no need to answer question 3.</div>';
+    document.getElementById('nidaVerifyStatus').innerHTML='<span style="color:#00d25b;"><i class="mdi mdi-check-circle"></i> Verified (2/2) - NIDA verified</span>';
+    document.getElementById('nidaQ3Wrap').style.display='none';
+    if(typeof Swal!=='undefined') Swal.fire({icon:'success', title:'NIDA Verified', text:'You passed 2/2 checks. Click Next to continue.', timer:4000, showConfirmButton:false, toast:true, position:'top-end'});
+    return;
+  }
+  setTimeout(()=>{ document.getElementById('nidaQ3Wrap').style.display='block'; document.getElementById('nidaQ3Input').focus(); }, 800);
+}
+function submitNidaQ3(){
+  const val=document.getElementById('nidaQ3Input').value;
+  const exp=getExpectedNidaAnswers().expEmail;
+  let ok=false;
+  if(exp) ok=checkAnswer(val, exp);
+  else ok=val.trim().includes('@');
+  nidaQ3Ok=ok;
+  document.getElementById('nidaQ3Check').style.display= ok ? 'inline' : 'none';
+  document.getElementById('nidaQ3Cross').style.display= ok ? 'none' : 'inline';
+  document.getElementById('nidaQ3Input').style.borderColor= ok ? '#00d25b' : '#fc424a';
+  let score = (nidaQ1Ok?1:0)+(nidaQ2Ok?1:0)+(nidaQ3Ok?1:0);
+  const final=document.getElementById('nidaFinalMsg');
+  final.style.display='block';
+  if(score>=2){
+    final.innerHTML='<div class="alert" style="background:rgba(0,210,91,0.12); border:1px solid rgba(0,210,91,0.25); color:#e5e6ea; border-radius:8px;"><i class="mdi mdi-check-decagram" style="color:#00d25b;"></i> <strong>Verified:</strong> You answered '+score+'/3 correctly. You may proceed to the next step.</div>';
+    document.getElementById('nidaVerifyStatus').innerHTML='<span style="color:#00d25b;"><i class="mdi mdi-check-circle"></i> Verified ('+score+'/3)</span>';
+    if(typeof Swal!=='undefined') Swal.fire({icon:'success', title:'NIDA Verified', text:'You passed '+score+'/3 checks. You may continue.', timer:4000, showConfirmButton:false, toast:true, position:'top-end'});
+  } else {
+    final.innerHTML='<div class="alert" style="background:rgba(252,66,74,0.12); border:1px solid rgba(252,66,74,0.25); color:#e5e6ea; border-radius:8px;"><i class="mdi mdi-alert-circle" style="color:#fc424a;"></i> <strong>NIDA not official:</strong> You answered only '+score+'/3 correctly. At least 2 correct answers are required. Please check your details.</div>';
+    document.getElementById('nidaVerifyStatus').innerHTML='<span style="color:#fc424a;"><i class="mdi mdi-close-circle"></i> Not verified ('+score+'/3) - NIDA not official</span>';
+    if(typeof Swal!=='undefined') Swal.fire({icon:'error', title:'NIDA not official', text:'Only '+score+'/3 correct. At least 2 required.', timer:5000, showConfirmButton:false, toast:true, position:'top-end'});
+  }
+}
+
+async function saveAndExit(){
+  // Ensure local save immediately, then try backend save with session cookie (avoid expired JWT)
+  try{ saveDraftLocal(); }catch(e){}
+  try{ await saveDraftBackend(); }catch(e){}
+  // Give backend a moment to commit
+  await new Promise(r=> setTimeout(r, 400));
+  if(typeof Swal!=='undefined'){
+    Swal.fire({icon:'success', title:'Saved!', html:'Your progress has been saved as <b>Draft • Pending</b> • When you return you will continue from step <b>'+currentSegment+'</b>. Check My Applications to see it.', timer:3500, showConfirmButton:false}).then(()=>{ window.location.href='/customer/applications/'; });
+  } else {
+    window.location.href='/customer/applications/';
+  }
+}
+
+function nextSegment(){
+  // Validate current segment with red border & message - English only
+  if(!validateSegment(currentSegment, true)){
+    // If NIDA needs verify, specific Swal already shown in validateSegment, don't show generic
+    if(window._nidaNeedsVerify){
+      updateStepper(true, true);
+      return;
+    }
+    if(typeof Swal!=='undefined') Swal.fire({icon:'error', title:'Please complete required fields', text:'Check highlighted fields with red border before continuing to next step', toast:true, position:'top-end', timer:5000, showConfirmButton:false});
+    // keep line red: mark stepper invalid
+    updateStepper(true, true);
+    return;
+  }
+  if(currentSegment===4 && customerType==='employed'){
+    currentSegment = 5;
+    updateStepper(true, false);
+    if(typeof Swal!=='undefined') Swal.fire({icon:'success', title:`Step 3 saved successfully`, text:`Employment saved • Continuing to step ${currentSegment}/8`, timer:4000, showConfirmButton:false, toast:true, position:'top-end'});
+    return;
+  }
+  if(currentSegment < totalSegments){
+    const prev=currentSegment;
+    currentSegment++;
+    if(currentSegment===4 && customerType==='employed') currentSegment=5;
+    updateStepper(true, false);
+    if(typeof Swal!=='undefined') Swal.fire({icon:'success', title:`Step ${prev} saved successfully`, text:`Step ${prev} completed • now step ${currentSegment}/8`, timer:4000, showConfirmButton:false, toast:true, position:'top-end'});
+    if(currentSegment===8) { buildReview(); recalcAI(); }
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+}
+function prevSegment(){
+  if(currentSegment>1){
+    currentSegment--;
+    if(currentSegment===4 && customerType==='employed') currentSegment=3;
+    updateStepper(true);
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+}
+function buildReview(){
+  const fd = new FormData(document.getElementById('wizardForm'));
+  // Filter out csrf and empty, map nicely
+  const skipKeys = new Set(['csrfmiddlewaretoken','documents']);
+  const map = {
+    customer_type:'Customer Type', dob:'Date of Birth', gender:'Gender', marital_status:'Marital Status', dependents:'Dependents', nin:'NIDA',
+    employment_status:'Employment Status', employer_name:'Employer', job_title:'Job Title', years_employed:'Years Employed', monthly_income:'Monthly Income', monthly_expenses:'Monthly Expenses', contract_type:'Contract Type',
+    has_existing_loan:'Has Existing Loan', existing_loan_bank:'Existing Loan Bank', existing_loan_amount:'Existing Loan Amount', existing_loan_repayment:'Existing Repayment', existing_loan_balance:'Existing Balance',
+    business_name:'Business Name', business_reg:'BRELA Reg No', business_type:'Business Type', business_years:'Years in Business', business_income:'Business Income', business_expenses:'Business Expenses',
+    property:'Property', loan_type:'Loan Type', loan_amount:'Loan Amount', down_payment:'Down Payment', repayment_period:'Repayment Period (months)',
+    bank:'Bank', bank_fallback:'Bank'
+  };
+  const groups = {
+    'Personal Information': ['customer_type','dob','gender','marital_status','dependents','nin'],
+    'Employment Details': ['employment_status','employer_name','job_title','years_employed','monthly_income','monthly_expenses','contract_type','has_existing_loan','existing_loan_bank','existing_loan_amount','existing_loan_repayment','existing_loan_balance'],
+    'Business Details': ['business_name','business_reg','business_type','business_years','business_income','business_expenses'],
+    'Loan Details': ['property','loan_type','loan_amount','down_payment','repayment_period'],
+    'Bank Selection': ['bank','bank_fallback']
+  };
+  let html='';
+  // Application number header
+  const appNum = pendingDraft && (pendingDraft.application_number || (pendingDraft.id ? `MORG-APP-${String(pendingDraft.id).padStart(6,'0')}` : '')) || '';
+  if(appNum) html+=`<div class="d-flex justify-content-between align-items-center mb-3 p-2 rounded" style="background:rgba(0,119,182,0.08); border:1px solid rgba(0,119,182,0.15);"><span style="font-weight:700; color:#0077B6;"><i class="mdi mdi-file-document me-1"></i> Application Number</span><span style="font-weight:800; color:#fff;">${appNum}</span></div>`;
+  else {
+    // generate preview number based on mortgage type
+    const typeMap2={'residential':'RES','construction':'CON','renovation':'REN','land':'LND','commercial':'COM'};
+    const prefix = typeMap2[currentMortgageType||'residential']||'GEN';
+    html+=`<div class="d-flex justify-content-between align-items-center mb-3 p-2 rounded" style="background:rgba(0,119,182,0.08); border:1px solid rgba(0,119,182,0.15);"><span style="font-weight:700; color:#0077B6;"><i class="mdi mdi-file-document me-1"></i> Application Number (preview)</span><span style="font-weight:800; color:#fff;">MORG-${prefix}-XXXXXX</span></div>`;
+  }
+  for(const [group, keys] of Object.entries(groups)){
+    let rows='';
+    for(const k of keys){
+      let v = fd.get(k);
+      if(!v || skipKeys.has(k)) continue;
+      // resolve property/bank display names if IDs
+      if(k==='property' && v){
+        const opt=document.querySelector(`#applyProperty option[value="${v}"]`);
+        if(opt) v=opt.textContent.trim();
+      }
+      if((k==='bank' || k==='bank_fallback') && v){
+        const card=document.querySelector(`.bank-card[data-bank="${v}"] h6`);
+        if(card) v=card.textContent.trim();
+        else {
+          const opt2=document.querySelector(`#applyBank option[value="${v}"]`);
+          if(opt2) v=opt2.textContent.trim();
+        }
+      }
+      const label = map[k]||k;
+      // format amounts
+      if(k.includes('amount') || k.includes('income') || k.includes('expenses') || k.includes('balance') || k.includes('repayment') && !isNaN(v)){
+        try{ const n=Number(v); if(!isNaN(n)) v='TZS '+n.toLocaleString(); }catch(e){}
+      }
+      if(k==='loan_amount' || k==='down_payment'){
+        try{ const n=Number(v); if(!isNaN(n)) v='TZS '+n.toLocaleString(); }catch(e){}
+      }
+      rows+=`<tr><td style="color:#6c7293; border-color:#2c2e33; width:45%;">${label}</td><td style="border-color:#2c2e33; font-weight:600; color:#fff;">${v}</td></tr>`;
+    }
+    if(rows){
+      html+=`<h6 style="font-weight:700; color:#0077B6; margin-top:12px; border-left:3px solid #0077B6; padding-left:8px;">${group}</h6><table class="table table-sm" style="color:#fff; font-size:13px; margin-bottom:10px;">${rows}</table>`;
+    }
+  }
+  if(!html.includes('<table')) html='<p class="text-muted">No data to review yet. Please complete previous steps.</p>';
+  const box=document.getElementById('reviewBox');
+  if(box) box.innerHTML=html;
+  // Update application number badge in header
+  const badge=document.getElementById('reviewAppNumber');
+  if(badge){
+    if(appNum){ badge.textContent=appNum; badge.style.display='inline-block'; }
+    else {
+      const typeMap2={'residential':'RES','construction':'CON','renovation':'REN','land':'LND','commercial':'COM'};
+      const prefix = typeMap2[currentMortgageType||'residential']||'GEN';
+      badge.textContent=`MORG-${prefix}-XXXXXX`;
+      badge.style.display='inline-block';
+    }
+  }
+}
+
+async function recalcAI(){
+  const loan=parseFloat(document.getElementById('loanAmount')?.value)||0;
+  const period=parseInt(document.getElementById('repaymentPeriod')?.value)||0;
+  const income=parseFloat(document.getElementById('monthlyIncome')?.value)||0;
+  const expenses=parseFloat(document.getElementById('monthlyExpenses')?.value)||0;
+  const employment=document.getElementById('employmentStatus')?.value;
+  const bank=document.getElementById('applyBank')?.value || document.querySelector('input[name="bank"]:checked')?.value;
+  if(!loan||!period||!income){
+    console.warn('recalcAI skip - missing', {loan,period,income});
+    return;
+  }
+  try{
+    const token=localStorage.getItem('access');
+    const csrftoken=getCookie('csrftoken');
+    const headers={'Content-Type':'application/json'};
+    if(token) headers['Authorization']='Bearer '+token;
+    if(csrftoken) headers['X-CSRFToken']=csrftoken;
+    const res=await fetch('/api/mortgages/calculate/',{method:'POST',headers:headers, credentials:'same-origin', body:JSON.stringify({loan_amount:loan, down_payment:parseFloat(document.getElementById('downPayment')?.value)||0, repayment_period:period, monthly_income:income, monthly_expenses:expenses, employment_status:employment, bank:bank})});
+    const data=await res.json();
+    if(data.monthly_installment){
+      const el1=document.getElementById('aiMonthly'); if(el1) el1.textContent='TZS '+Number(data.monthly_installment).toLocaleString();
+      const el2=document.getElementById('aiAfford'); if(el2) el2.textContent=data.affordability_score+'/100';
+      const b1=document.getElementById('aiAffordBar'); if(b1) b1.style.width=data.affordability_score+'%';
+      const el3=document.getElementById('aiRisk'); if(el3) el3.textContent=data.risk_score+'/100';
+      const b2=document.getElementById('aiRiskBar'); if(b2) b2.style.width=data.risk_score+'%';
+      const el4=document.getElementById('aiDti'); if(el4) el4.textContent=data.dti_ratio+'%';
+      const rec=document.getElementById('aiRecommendation');
+      if(rec){
+        rec.style.display='block';
+        rec.textContent=data.recommendation;
+        rec.style.background = (data.affordability_score<60||data.risk_score>70) ? 'rgba(255,193,7,0.1)' : 'rgba(0,210,91,0.1)';
+        rec.style.border='1px solid '+(data.affordability_score<60||data.risk_score>70 ? 'rgba(255,193,7,0.3)' : 'rgba(0,210,91,0.3)');
+        rec.style.color = data.affordability_score<60 ? '#ffc107' : '#00d25b';
+      }
+      const alertBox=document.getElementById('aiAlert');
+      if(alertBox){
+        if(data.affordability_score<60){
+          alertBox.style.display='block';
+          alertBox.innerHTML='<i class="mdi mdi-alert"></i> Based on your details and selected bank, <b>you do not meet the criteria for this loan</b>. Try adjusting the amount or try another bank.';
+          alertBox.style.background='rgba(252,66,74,0.1)'; alertBox.style.border='1px solid rgba(252,66,74,0.3)'; alertBox.style.color='#fc424a';
+        } else {
+          alertBox.style.display='none';
+        }
+      }
+      // Fees: Bank 1% + Platform 5% = 6% total application cost
+      const feesBox=document.getElementById('aiFeesBox');
+      if(feesBox && loan){
+        const bankFee = loan * 0.01;
+        const platformFee = loan * 0.05;
+        const totalFee = bankFee + platformFee;
+        feesBox.style.display='block';
+        feesBox.innerHTML = `<div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+          <span><i class="mdi mdi-cash-multiple" style="color:#0077B6;"></i> <strong>Bank Processing Fee (1%):</strong> TZS ${Math.round(bankFee).toLocaleString()}</span>
+          <span><i class="mdi mdi-office-building" style="color:#0A2B4E;"></i> <strong>Platform Fee (5%):</strong> TZS ${Math.round(platformFee).toLocaleString()}</span>
+          <span style="font-weight:800; color:#00d25b;"><i class="mdi mdi-calculator"></i> Total Fees (6%): TZS ${Math.round(totalFee).toLocaleString()}</span>
+        </div><small class="text-muted" style="font-size:11px;">Bank charges 1% of loan amount. MorgiHome platform charges 5%. Total 6% will be deducted/added to your application. This will be sent to the selected bank.</small>`;
+      }
+    } else {
+      // Show error if API failed
+      console.warn('AI calc no data', data);
+      const el1=document.getElementById('aiMonthly'); if(el1) el1.textContent='—';
+      const el2=document.getElementById('aiAfford'); if(el2) el2.textContent='—';
+      const el3=document.getElementById('aiRisk'); if(el3) el3.textContent='—';
+      const el4=document.getElementById('aiDti'); if(el4) el4.textContent='—';
+    }
+  }catch(e){
+    console.error('recalcAI error', e);
+  }
+}
+['loanAmount','downPayment','repaymentPeriod','monthlyIncome','monthlyExpenses','employmentStatus','applyBank'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el){ el.addEventListener('input', recalcAI); el.addEventListener('change', recalcAI); }
+});
+
+document.getElementById('wizardForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  // Require confirmation checkbox
+  const confirmChk=document.getElementById('confirmReviewCheck');
+  const confirmErr=document.getElementById('confirmError');
+  if(confirmChk && !confirmChk.checked){
+    if(confirmErr) confirmErr.style.display='block';
+    confirmChk.classList.add('is-invalid');
+    if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Please confirm', text:'Please read carefully and tick the checkbox to confirm your information is correct before submitting.'});
+    return;
+  } else {
+    if(confirmErr) confirmErr.style.display='none';
+    if(confirmChk) confirmChk.classList.remove('is-invalid');
+  }
+  const form = e.target;
+  const fd = new FormData(form);
+  const bankSel = document.querySelector('input[name="bank"]:checked');
+  if(bankSel) fd.set('bank', bankSel.value);
+  else if(document.getElementById('applyBank').value) fd.set('bank', document.getElementById('applyBank').value);
+  if(currentMortgageType) fd.set('mortgage_type', currentMortgageType);
+  const loanTypeVal=document.getElementById('loanType')?.value;
+  if(loanTypeVal) fd.set('loan_type', loanTypeVal);
+  fd.set('current_step', currentSegment);
+  // property optional for semi_finish/construction/renovation
+  const ltSubmit = document.getElementById('loanType')?.value || currentMortgageType || '';
+  const propOptionalSubmit = ['semi_finish','construction'].includes(ltSubmit) || ['construction','renovation','semi_finish'].includes(currentMortgageType);
+  if((!propOptionalSubmit && !fd.get('property'))||!fd.get('loan_amount')||!fd.get('repayment_period')||!fd.get('monthly_income')){
+    if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Please fill required fields', text:'Property (unless Semi-Finish/Construction), Loan Amount, Period and Monthly Income are required.'}); return;
+  }
+  // Final guards: minimum 5M + purchase loan capped at property value (backend enforces too)
+  var guardFail = (function(){
+    var loanAmt = parseFloat(fd.get('loan_amount'))||0;
+    if(loanAmt < 5000000){
+      if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Loan too small', text:'Minimum loan is 5,000,000 TZS.'});
+      return true;
+    }
+    var mtS = currentMortgageType || '';
+    var ltS = document.getElementById('loanType')?.value || '';
+    var purch = ['residential','commercial','land'].includes(mtS) || (ltS==='purchase' && ['residential','commercial','land',''].includes(mtS));
+    if(purch && fd.get('property')){
+      var o = document.querySelector('#applyProperty option[value="'+fd.get('property')+'"]');
+      var pr = o ? parseFloat(o.getAttribute('data-price')||'0') : 0;
+      if(pr > 0 && loanAmt > pr){
+        if(typeof Swal!=='undefined') Swal.fire({icon:'error', title:'Loan exceeds property value', text:'You requested TZS '+loanAmt.toLocaleString()+' but the property is worth TZS '+pr.toLocaleString()+'. Reduce the amount.'});
+        return true;
+      }
+    }
+    return false;
+  })();
+  if(guardFail) return;
+  try{
+    const token=localStorage.getItem('access');
+    const res=await fetch('/api/mortgages/',{method:'POST', headers: token?{'Authorization':'Bearer '+token}:{}, body: fd, credentials:'same-origin'});
+    const text=await res.text();
+    let data={}; try{data=JSON.parse(text)}catch{data={detail:text}}
+    if(res.ok){
+      try{
+        // Mark submitted FIRST so beforeunload/visibilitychange autosave cannot recreate a draft on redirect
+        window._submitted = true;
+        // Explicitly delete the backend draft row this flow was autosaving (server also deletes it)
+        const _did = window._backendDraftId || localStorage.getItem('apply_draft_id_'+currentMortgageType);
+        if(_did){
+          const _tok = localStorage.getItem('access');
+          fetch('/api/mortgages/'+encodeURIComponent(_did)+'/', {method:'DELETE', headers: _tok?{'Authorization':'Bearer '+_tok}:{}, credentials:'same-origin', keepalive:true}).catch(()=>{});
+        }
+        localStorage.removeItem(draftKey(currentMortgageType)); localStorage.removeItem('apply_draft');
+        // Clear the backend draft id - the application has been submitted, autosave should not keep updating the old draft
+        Object.keys(localStorage).filter(k=>k && k.startsWith('apply_draft_id_')).forEach(k=>localStorage.removeItem(k));
+        window._backendDraftId = null;
+      }catch(e){}
+      if(typeof Swal!=='undefined') Swal.fire({icon:'success', title:'Application submitted successfully!', text:'Your application has been received.'}).then(()=>{ window.location.href='/customer/applications/'; });
+      else window.location.href='/customer/applications/';
+    }else{
+      let msg=data.detail||data.error||JSON.stringify(data).slice(0,300);
+      if(data.property) msg=data.property[0]||data.property;
+      if(data.loan_amount) msg='Loan: '+data.loan_amount;
+      // also handle duplicate property error nicely
+      if(msg.includes('Already applied')) {
+        if(typeof Swal!=='undefined') Swal.fire({icon:'info', title:'Already Applied', text: msg});
+        else alert(msg);
+        return;
+      }
+      if(typeof Swal!=='undefined') Swal.fire({icon:'error', title:'Submission failed', text: msg});
+    }
+  }catch(err){
+    if(typeof Swal!=='undefined') Swal.fire({icon:'error', title:'Network error', text: err.message || 'Check internet connection'});
+  }
+});
+
+window.addEventListener('DOMContentLoaded', async ()=>{
+  const urlParams = new URLSearchParams(window.location.search);
+  let mortgageType = urlParams.get('type') || urlParams.get('mortgage_type');
+  currentMortgageType = mortgageType || getMortgageType();
+  if(!mortgageType){
+    mortgageType = localStorage.getItem('apply_mortgage_type');
+    if(mortgageType) currentMortgageType = mortgageType;
+  } else {
+    currentMortgageType = mortgageType;
+    localStorage.setItem('apply_mortgage_type', mortgageType);
+  }
+  const typeMap = {
+    'residential': {title:'Residential Mortgage', badge:'Residential', desc:'Loan for buying house/apartment - 90% financed, 5M-700M', loanType:'purchase'},
+    'construction': {title:'Home Construction Mortgage', badge:'Construction', desc:'Build new house - 5M-200M, 5 stages BOQ', loanType:'construction'},
+    'renovation': {title:'Renovation Mortgage', badge:'Renovation', desc:'Semi-Finish - complete house at lintel stage, 2 stages', loanType:'semi_finish'},
+    'land': {title:'Land Purchase Mortgage', badge:'Land', desc:'Buy land/plot - title deed required', loanType:'purchase'},
+    'commercial': {title:'Commercial Property Mortgage', badge:'Commercial', desc:'Buy commercial property/shop/office', loanType:'purchase'}
+  };
+  if(mortgageType && typeMap[mortgageType]){
+    const info = typeMap[mortgageType];
+    const titleEl=document.getElementById('mortgageTitle');
+    const badgeEl=document.getElementById('mortgageTypeBadge');
+    const subtitleEl=document.getElementById('mortgageSubtitle');
+    const typeInfoEl=document.getElementById('mortgageTypeInfo');
+    const typeDescEl=document.getElementById('mortgageTypeDesc');
+    const alertBox=document.getElementById('typeAlert');
+    const alertTitle=document.getElementById('typeAlertTitle');
+    const alertDesc=document.getElementById('typeAlertDesc');
+    if(titleEl) titleEl.textContent = info.title;
+    if(badgeEl){ badgeEl.textContent = info.badge; badgeEl.style.display='inline-block'; }
+    if(subtitleEl) subtitleEl.textContent = info.desc;
+    if(typeInfoEl) typeInfoEl.style.display='block';
+    if(typeDescEl) typeDescEl.textContent = info.desc;
+    if(alertBox){ alertBox.style.display='block'; if(alertTitle) alertTitle.textContent=info.title; if(alertDesc) alertDesc.textContent=info.desc; }
+    const loanTypeSel=document.getElementById('loanType');
+    if(loanTypeSel && info.loanType){
+      setTimeout(function(){ loanTypeSel.value=info.loanType; }, 200);
+    }
+    localStorage.setItem('apply_mortgage_type', mortgageType);
+  } else if(mortgageType){
+    const titleEl=document.getElementById('mortgageTitle');
+    if(titleEl) titleEl.textContent = mortgageType.charAt(0).toUpperCase()+mortgageType.slice(1) + ' Mortgage';
+    const badgeEl=document.getElementById('mortgageTypeBadge');
+    if(badgeEl){ badgeEl.textContent=mortgageType; badgeEl.style.display='inline-block'; }
+  }
+  const t=localStorage.getItem('apply_customer_type');
+  if(t) {
+    customerType=t;
+    document.querySelectorAll('.type-card').forEach(c=>c.classList.toggle('selected', c.dataset.value===t));
+    const inp=document.querySelector(`.type-card[data-value="${t}"] input`); if(inp) inp.checked=true;
+    const info=document.getElementById('typeInfo'); if(info){ info.style.display='block'; info.innerHTML = t==='employed' ? '<i class="mdi mdi-briefcase"></i> You selected <b>Employed</b> - Step 4 will be skipped.' : '<i class="mdi mdi-store"></i> You selected <b>Business Owner</b>'; }
+    const hiddenEmp3=document.getElementById('employmentStatus');
+    const dispEmp3=document.getElementById('employmentStatusDisplay');
+    if(hiddenEmp3) hiddenEmp3.value = t==='employed' ? 'employed' : 'business_owner';
+    if(dispEmp3) dispEmp3.textContent = t==='employed' ? 'Employed' : 'Business Owner';
+    updateEmploymentBusinessDisabled();
+  } else if(customerType){
+    updateEmploymentBusinessDisabled();
+  }
+  // Handle bank param from Bank Requirements - auto-fill bank
+  handleBankParam();
+  // Auto-fill property and mortgage type from URL
+  handlePropertyAutoFill();
+  // If resume_draft_id is provided (from My Applications -> Resume), fetch that specific draft
+  let resumeId = urlParams.get('resume_draft_id') || urlParams.get('draft_id');
+  // Backend draft id tracker - sent on every autosave so it updates that same row (no duplicates)
+  window._backendDraftId = resumeId || null;
+  function backendDraftIdKey(){ return 'apply_draft_id_'+(currentMortgageType||getMortgageType()); }
+  try{
+    if(!window._backendDraftId){
+      const storedId = localStorage.getItem(backendDraftIdKey());
+      if(storedId) window._backendDraftId = storedId;
+    }
+  }catch(e){}
+  if(resumeId){
+    try{
+      const tokenR=localStorage.getItem('access') || localStorage.getItem('access_token') || '';
+      const headersR={}; if(tokenR) headersR['Authorization']='Bearer '+tokenR; const csrftokenR=getCookie('csrftoken'); if(csrftokenR) headersR['X-CSRFToken']=csrftokenR;
+      const resR=await fetch('/api/mortgages/'+encodeURIComponent(resumeId)+'/', {headers:headersR, credentials:'same-origin'});
+      if(resR.ok){
+        const draftR=await resR.json();
+        if(draftR && draftR.status==='draft'){
+          pendingDraft=draftR;
+          // Ensure mortgage type matches draft
+          if(draftR.mortgage_type) { currentMortgageType=draftR.mortgage_type; localStorage.setItem('apply_mortgage_type', draftR.mortgage_type); }
+          autoResumeDraft(draftR);
+          // show success and skip general draft logic
+          updateEmploymentBusinessDisabled();
+          updatePropertyOptionalUI();
+          // Attach listeners and exit early from general draft check
+          window._resumeHandled=true;
+        }
+      }
+    }catch(e){ console.warn('resume fetch failed', e); }
+  }
+  // Check for pending draft - isolated per mortgage_type (no cross-type leakage) - reliably picks up the last state now
+  let localDraft = null;
+  try{ const raw=localStorage.getItem(draftKey(currentMortgageType)); if(raw) localDraft=JSON.parse(raw); }catch(e){}
+  let backendDraft=null;
+  // If we already resumed via resumeId, skip general fetch
+  if(!window._resumeHandled){
+  try{
+    const token=localStorage.getItem('access') || localStorage.getItem('access_token') || '';
+    let url='/api/mortgages/draft/?mortgage_type='+encodeURIComponent(currentMortgageType);
+    const headers={};
+    if(token) headers['Authorization']='Bearer '+token;
+    const csrftoken = getCookie('csrftoken');
+    if(csrftoken) headers['X-CSRFToken']=csrftoken;
+    const res=await fetch(url, {headers: headers, credentials: 'same-origin'});
+    if(res.ok){
+      const drafts=await res.json();
+      const list=Array.isArray(drafts)?drafts:[];
+      backendDraft = list.find(d=> d.mortgage_type===currentMortgageType) || null;
+      if(!backendDraft && list.length>0) backendDraft=list[0];
+      // Take the most recent of backend vs local - reliably captures the last state without losing data
+      const backendStep = backendDraft ? (parseInt(backendDraft.current_step)||0) : 0;
+      const localStep = localDraft ? (parseInt(localDraft._currentStep)||0) : 0;
+      if(backendDraft && backendStep>1 && backendStep >= localStep){
+        pendingDraft=backendDraft;
+        try{ window._backendDraftId = String(backendDraft.id); localStorage.setItem('apply_draft_id_'+currentMortgageType, String(backendDraft.id)); }catch(e){}
+        autoResumeDraft(backendDraft);
+      } else if(localDraft && localStep>1){
+        pendingDraft=localDraft;
+        autoResumeDraft(localDraft);
+        // sync local to backend right away so the last state is kept in the DB too
+        try{ saveDraftBackend(); }catch(e){}
+      } else if(backendDraft && backendStep>1){
+        pendingDraft=backendDraft;
+        autoResumeDraft(backendDraft);
+      }
+    } else {
+      if(localDraft && localDraft._currentStep>1){
+        pendingDraft=localDraft;
+        autoResumeDraft(localDraft);
+      }
+    }
+  }catch(e){
+    if(localDraft && localDraft._currentStep>1) { pendingDraft=localDraft; autoResumeDraft(localDraft); }
+  }
+  } // end if(!resumeHandled)
+  // Ensure disabled states reflect after auto-resume / auto-fill
+  updateEmploymentBusinessDisabled();
+  // If no auto-resume, still init stepper normally
+  if(!pendingDraft || (pendingDraft.current_step<=1 && pendingDraft._currentStep<=1)){
+    updateStepper(false);
+  } else {
+    // re-apply disabled after stepper update
+    setTimeout(updateEmploymentBusinessDisabled, 300);
+  }
+  // Property optional UI - update when loan type changes
+  const loanTypeEl=document.getElementById('loanType');
+  if(loanTypeEl){ loanTypeEl.addEventListener('change', updatePropertyOptionalUI); loanTypeEl.addEventListener('input', updatePropertyOptionalUI); }
+  updatePropertyOptionalUI();
+  // NIDA digits only
+  const nidaEl=document.getElementById('nidaInput');
+  if(nidaEl){
+    nidaEl.addEventListener('input', function(){ this.value=this.value.replace(/\D/g,'').slice(0,15); document.getElementById('nidaError').style.display='none'; this.classList.remove('is-invalid'); });
+  }
+  // Live green/red feedback: when user types, turn green if filled else keep red handling via next button
+  document.getElementById('wizardForm').querySelectorAll('input, select, textarea').forEach(el=>{
+    el.addEventListener('change', saveDraft);
+    el.addEventListener('input', function(){
+      if(this.value && this.value.toString().trim()!==''){
+        // if previously invalid, turn to valid
+        if(this.classList.contains('is-invalid')){
+          // will be cleared on next validation, but we can show green now
+          this.classList.remove('is-invalid');
+          this.classList.add('is-valid');
+          const err=this.parentNode && this.parentNode.querySelector('.field-error');
+          if(err) err.classList.remove('show');
+        } else if(this.value.trim().length>0){
+          // optional live green for required fields
+          // don't auto green for every field, but for required we can
+        }
+      }
+      clearTimeout(window._draftTimer); window._draftTimer=setTimeout(saveDraft, 800);
+    });
+    el.addEventListener('change', function(){ markFieldValid(this); });
+  });
+  // Before leaving page (dashboard click, etc.) persist draft as pending
+  window.addEventListener('beforeunload', function(){ try{ saveDraftLocal(); saveDraftBackend(); }catch(e){} });
+  document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden'){ try{ saveDraftLocal(); saveDraftBackend(); }catch(e){} } });
+  // Intercept sidebar/dashboard links to save first
+  document.querySelectorAll('a[href*="/customer/dashboard"], a[href*="/customer/applications"], a[href*="/customer/properties"]').forEach(a=>{
+    a.addEventListener('click', function(){ try{ saveDraftLocal(); saveDraftBackend(); }catch(e){} });
+  });
+});
+</script>
+
+{% endblock %}

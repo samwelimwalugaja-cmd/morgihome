@@ -1,0 +1,72 @@
+{% extends 'plainadmin/base.html' %}
+{% load static %}
+{% block title %}Application Details - MorgiHome{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/my_applications.css' %}?v=1" rel="stylesheet">
+{% endblock %}
+{% block content %}
+<div class="pagetitle">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div>
+      <h1>Application Details</h1>
+      <nav><ol class="breadcrumb mb-0"><li class="breadcrumb-item"><a href="/customer/applications/">My Applications</a></li><li class="breadcrumb-item active" id="detailAppId">#APP-...</li></ol></nav>
+    </div>
+    <a href="/customer/applications/" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Back to Applications</a>
+  </div>
+</div>
+
+<section class="section">
+  <div id="detailContent" class="row g-4">
+    <div class="col-12 text-center py-5"><div class="spinner-border text-primary"></div></div>
+  </div>
+</section>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function(){
+  const API='/api/';
+  function authHeaders(){ const t=localStorage.getItem('access'); const h={'Content-Type':'application/json'}; if(t) h['Authorization']='Bearer '+t; return h; }
+  const id=window.location.pathname.match(/\/applications\/(\d+)\/?/)?.[1] || new URLSearchParams(window.location.search).get('id');
+  const container=document.getElementById('detailContent');
+  const titleEl=document.getElementById('detailAppId');
+  if(!id){ container.innerHTML='<div class="alert alert-danger">No application ID provided</div>'; return; }
+  if(titleEl) titleEl.textContent='#APP-'+String(id).padStart(4,'0');
+  async function load(){
+    try{
+      const res=await fetch(API+'mortgages/'+id+'/', {headers: authHeaders()});
+      if(!res.ok) throw new Error('Not found');
+      const app=await res.json();
+      const prop=app.property_details?app.property_details.title:'Property #'+app.property;
+      container.innerHTML=`
+        <div class="col-lg-6"><div class="card"><div class="card-header"><h5 class="card-title mb-0">Application Details</h5></div><div class="card-body"><ul class="list-group small">
+          <li class="list-group-item d-flex justify-content-between"><span>Property</span><strong>${prop}</strong></li>
+          <li class="list-group-item d-flex justify-content-between"><span>Loan Amount</span><strong>TZS ${Number(app.loan_amount).toLocaleString()}</strong></li>
+          <li class="list-group-item d-flex justify-content-between"><span>Down Payment</span><strong>TZS ${Number(app.down_payment).toLocaleString()}</strong></li>
+          <li class="list-group-item d-flex justify-content-between"><span>Repayment</span><strong>${app.repayment_period} months</strong></li>
+          <li class="list-group-item d-flex justify-content-between"><span>Monthly Income</span><strong>TZS ${Number(app.monthly_income).toLocaleString()}</strong></li>
+          <li class="list-group-item d-flex justify-content-between"><span>Monthly Expenses</span><strong>TZS ${Number(app.monthly_expenses).toLocaleString()}</strong></li>
+          <li class="list-group-item d-flex justify-content-between"><span>Employment</span><strong>${app.employment_status||'—'}</strong></li>
+        </ul></div></div></div>
+        <div class="col-lg-6"><div class="card"><div class="card-header"><h5 class="card-title mb-0">AI Assessment</h5></div><div class="card-body"><ul class="list-group small">
+          <li class="list-group-item d-flex justify-content-between"><span>Affordability</span><strong>${app.affordability_score!=null?app.affordability_score+'%':'—'}</strong></li>
+          <li class="list-group-item d-flex justify-content-between"><span>Risk Score</span><strong>${app.risk_score!=null?app.risk_score+'%':'—'}</strong></li>
+          <li class="list-group-item d-flex justify-content-between"><span>Monthly Installment</span><strong>${app.monthly_installment?'TZS '+Number(app.monthly_installment).toLocaleString():'—'}</strong></li>
+          <li class="list-group-item d-flex justify-content-between"><span>DTI Ratio</span><strong>${app.dti_ratio!=null?app.dti_ratio.toFixed(1)+'%':'—'}</strong></li>
+          <li class="list-group-item d-flex justify-content-between"><span>Status</span><span class="badge bg-info">${app.status}</span></li>
+        </ul></div></div></div>
+        <div class="col-12"><div class="card"><div class="card-header"><h5 class="card-title mb-0">Timeline</h5></div><div class="card-body"><ul class="list-group small">
+          <li class="list-group-item"><i class="bi bi-check-circle-fill text-success me-2"></i> Application Submitted - ${new Date(app.created_at).toLocaleString()}</li>
+          <li class="list-group-item"><i class="bi bi-clock text-warning me-2"></i> Document Verification - ${app.status}</li>
+          <li class="list-group-item"><i class="bi bi-clock me-2"></i> Valuation - Pending</li>
+          <li class="list-group-item"><i class="bi bi-clock me-2"></i> Credit Assessment - Pending</li>
+          <li class="list-group-item"><i class="bi bi-clock me-2"></i> Approval - Pending</li>
+          <li class="list-group-item"><i class="bi bi-clock me-2"></i> Disbursement - Pending</li>
+        </ul></div></div></div>
+        <div class="col-12"><div class="card"><div class="card-header"><h5 class="card-title mb-0">Documents</h5></div><div class="card-body"><p class="text-muted small">ID Copy (Uploaded), Pay Slip (Uploaded), Bank Statement (Pending)</p><button class="btn btn-sm btn-primary" onclick="window.location.href='/customer/track/${app.id}/'"><i class="bi bi-graph-up me-1"></i> Track Progress</button></div></div></div>
+      `;
+    }catch(e){ container.innerHTML=`<div class="alert alert-danger">Failed: ${e.message}</div>`; }
+  }
+  load();
+})();
+</script>
+{% endblock %}

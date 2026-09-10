@@ -1,0 +1,102 @@
+{% extends 'plainadmin/base.html' %}
+{% load static %}
+{% block title %}Verify Phone - MorgiHome{% endblock %}
+{% block content %}
+<div class="pagetitle">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div>
+      <h1>Verify Phone</h1>
+      <nav><ol class="breadcrumb mb-0"><li class="breadcrumb-item"><a href="/dashboard/">Home</a></li><li class="breadcrumb-item active">Verify Phone</li></ol></nav>
+      <p class="text-muted small mb-0">Enter the 6-digit OTP sent to your phone</p>
+    </div>
+  </div>
+</div>
+
+<section class="section">
+  <div class="row justify-content-center">
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-body">
+          <div id="phoneStatus" class="alert alert-info"><i class="bi bi-info-circle me-2"></i> Click "Send OTP" to receive code via SMS (mock).</div>
+          <div class="mb-3">
+            <label class="form-label">Phone Number</label>
+            <div class="input-group">
+              <input type="text" id="phoneNumber" class="form-control" placeholder="+255..." disabled>
+              <button class="btn btn-outline-secondary" id="sendOtpBtn" style="background:#0077B6;color:#fff;border-color:#0077B6">Send OTP</button>
+            </div>
+            <small class="text-muted">OTP valid for 10 minutes. In DEBUG, OTP shown in response and console.</small>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Enter OTP (6 digits)</label>
+            <input type="text" id="otpInput" class="form-control text-center" placeholder="123456" maxlength="6" style="letter-spacing:8px;font-size:20px;font-weight:700">
+          </div>
+          <div class="d-grid gap-2">
+            <button id="verifyOtpBtn" class="btn btn-primary" style="background:#0077B6;border-color:#0077B6">Verify Phone</button>
+            <a href="/verify/status/" class="btn btn-outline-secondary">Check Verification Status</a>
+          </div>
+          <div id="otpResult" class="mt-3" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function(){
+  const API='/api/';
+  function authHeaders(){ const t=localStorage.getItem('access'); const h={'Content-Type':'application/json'}; if(t) h['Authorization']='Bearer '+t; return h; }
+  const phoneEl=document.getElementById('phoneNumber');
+  const statusEl=document.getElementById('phoneStatus');
+  // Load user phone
+  async function loadUser(){
+    try{
+      const res=await fetch(API+'verify/status/', {headers: authHeaders()});
+      const data=await res.json();
+      if(phoneEl) phoneEl.value=data.phone_number||'';
+      if(data.phone_verified){
+        statusEl.className='alert alert-success';
+        statusEl.innerHTML='<i class="bi bi-check-circle me-2"></i> Phone already verified ✅';
+        document.getElementById('sendOtpBtn').disabled=true;
+        document.getElementById('verifyOtpBtn').disabled=true;
+      }
+    }catch(e){}
+  }
+  document.getElementById('sendOtpBtn')?.addEventListener('click', async ()=>{
+    try{
+      const res=await fetch(API+'verify/phone/send/', {method:'POST', headers: authHeaders()});
+      const data=await res.json();
+      if(res.ok){
+        statusEl.className='alert alert-success';
+        statusEl.innerHTML='<i class="bi bi-check-circle me-2"></i> '+data.message+' (OTP: '+(data.otp||'sent')+')';
+        if(window.showToast) showToast(data.message,'success');
+      } else {
+        statusEl.className='alert alert-danger';
+        statusEl.textContent=data.error||'Failed';
+        if(window.showToast) showToast(data.error,'error');
+      }
+    }catch(e){ statusEl.textContent=e.message; }
+  });
+  document.getElementById('verifyOtpBtn')?.addEventListener('click', async ()=>{
+    const otp=document.getElementById('otpInput').value.trim();
+    if(!otp || otp.length!==6){ showToast('Please enter 6-digit OTP','warning'); return; }
+    try{
+      const res=await fetch(API+'verify/phone/confirm/', {method:'POST', headers: authHeaders(), body: JSON.stringify({otp})});
+      const data=await res.json();
+      const resultEl=document.getElementById('otpResult');
+      resultEl.style.display='block';
+      if(res.ok){
+        resultEl.className='alert alert-success';
+        resultEl.innerHTML='<i class="bi bi-check-circle me-2"></i> Phone verified! <a href="/verify/status/">Check status</a>';
+        if(window.showToast) showToast(data.message,'success');
+        setTimeout(()=>window.location.href='/verify/status/', 1200);
+      } else {
+        resultEl.className='alert alert-danger';
+        resultEl.textContent=data.error||'Invalid OTP';
+        if(window.showToast) showToast(data.error,'error');
+      }
+    }catch(e){ showToast(e.message,'error'); }
+  });
+  loadUser();
+})();
+</script>
+{% endblock %}

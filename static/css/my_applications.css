@@ -1,0 +1,148 @@
+/* My Applications - MorgiHome ModernAdmin */
+.my-applications-header {
+  margin-bottom: 24px;
+}
+.my-applications-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0A2B4E;
+  margin-bottom: 4px;
+}
+.my-applications-header p {
+  color: #64748b;
+  font-size: 14px;
+}
+.filters-bar {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.04);
+  margin-bottom: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+}
+.filters-bar .filter-group {
+  flex: 1;
+  min-width: 180px;
+}
+.filters-bar .filter-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0A2B4E;
+  margin-bottom: 6px;
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.applications-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+@media (max-width: 992px) {
+  .applications-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.app-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06);
+  overflow: hidden;
+  transition: transform .2s, box-shadow .2s;
+  border: 1px solid #eef2f7;
+}
+.app-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,0,0,.1);
+}
+.app-card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.app-card-header h6 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0A2B4E;
+  margin: 0 0 4px;
+}
+.app-card-header .meta {
+  font-size: 13px;
+  color: #64748b;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.app-card-body {
+  padding: 16px 20px;
+}
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.status-pending { background: #FFF3CD; color: #856404; }
+.status-document_verification { background: #FFE5D0; color: #8B4513; }
+.status-valuation { background: #CCE5FF; color: #004085; }
+.status-credit_assessment { background: #E2D9F3; color: #4A148C; }
+.status-approved { background: #D4EDDA; color: #155724; }
+.status-rejected { background: #F8D7DA; color: #721C24; }
+.status-disbursed { background: #D1E7DD; color: #0F5132; }
+.ai-assessment-mini {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.ai-assessment-mini .ai-item {
+  text-align: center;
+}
+.ai-assessment-mini .ai-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+}
+.ai-assessment-mini .ai-value {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0A2B4E;
+}
+.ai-progress {
+  height: 6px;
+  border-radius: 3px;
+  background: #e2e8f0;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.ai-progress-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width .3s;
+}
+.app-card-footer {
+  padding: 12px 20px;
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.app-card-footer .btn {
+  border-radius: 8px;
+  font-size: 13px;
+  padding: 6px 12px;
+  font-weight: 600;
+}
+.btn-view { background: #0077B6; border-color: #0077B6; color: #fff; }
+.btn-track { background: #0A2B4E; border-color: #0A2B4E; color: #fff; }
+.btn-upload { background: #fff; border: 1px solid #DFE5EF; color: #0A2B4E; }

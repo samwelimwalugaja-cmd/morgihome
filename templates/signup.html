@@ -1,0 +1,170 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Sign Up - MorgiHome</title>
+  <meta name="description" content="Create your MorgiHome account">
+
+  <link href="{% static 'images/favicon.ico' %}?v=4" rel="icon" sizes="48x48">
+  <link href="{% static 'images/favicon-32x32.png' %}?v=4" rel="icon" type="image/png" sizes="32x32">
+  <link href="{% static 'images/favicon-16x16.png' %}?v=4" rel="icon" type="image/png" sizes="16x16">
+  <link href="{% static 'images/apple-touch-icon.png' %}?v=4" rel="apple-touch-icon" type="image/png">
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap" rel="stylesheet">
+  <link href="{% static 'vendors/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+  <link href="{% static 'css/auth.css' %}?v=102" rel="stylesheet">
+  <link href="{% static 'css/toast.css' %}" rel="stylesheet">
+</head>
+
+<body>
+
+  <div class="auth-shell">
+
+    <aside class="auth-aside">
+      <div class="auth-brand">
+        <div class="logo"><i class="bi bi-house-heart-fill"></i></div>
+        <div class="name">MorgiHome</div>
+      </div>
+
+      <div class="auth-aside-body">
+        <span class="auth-aside-eyebrow">MorgiHome · Easy Mortgages</span>
+        <h1>Own Your Dream Home with Easy Mortgages</h1>
+        <p>MorgiHome connects buyers, sellers, banks, real estate companies and lawyers on one secure digital platform.</p>
+        <div class="auth-quote">
+          "Registration took just a few minutes. Two weeks later I had signed the contract for my first home."
+          <div class="auth-quote-author">
+            <div class="av">RK</div>
+            <div>Rashid Komba · Homeowner, Dar es Salaam</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="auth-aside-footer">
+        <span>© 2026 MORGIHOME</span>
+        <span>BUILT IN TANZANIA</span>
+      </div>
+    </aside>
+
+    <main class="auth-main">
+      <div class="auth-main-top">
+        <a href="{% url 'home' %}" class="auth-back">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
+          Back to Home
+        </a>
+        <div class="switch-link">Already have an account? <a href="{% url 'login_page' %}">Log In</a></div>
+      </div>
+
+      <div class="auth-card">
+        <h2>Create your account</h2>
+        <p class="sub">Free to create · No card required · Get started now</p>
+
+        <form id="signup-form" class="auth-form">
+          {% csrf_token %}
+          <div class="field" id="field-first_name">
+            <label class="field-label" for="first_name">First Name <span class="field-help" style="display:inline">*</span></label>
+            <div class="input-icon">
+              <span class="ico"><i class="bi bi-person"></i></span>
+              <input id="first_name" class="input" type="text" placeholder="John" autocomplete="given-name" required>
+            </div>
+            <div class="field-error" id="first_name-error"></div>
+          </div>
+
+          <div class="field" id="field-last_name">
+            <label class="field-label" for="last_name">Last Name <span class="field-help" style="display:inline">*</span></label>
+            <div class="input-icon">
+              <span class="ico"><i class="bi bi-person-fill"></i></span>
+              <input id="last_name" class="input" type="text" placeholder="Doe" autocomplete="family-name" required>
+            </div>
+            <div class="field-error" id="last_name-error"></div>
+          </div>
+
+          <div class="field" id="field-email">
+            <label class="field-label" for="email">Email Address <span class="field-help" style="display:inline">*</span></label>
+            <div class="input-icon">
+              <span class="ico"><i class="bi bi-envelope"></i></span>
+              <input id="email" class="input" type="email" placeholder="john.doe@example.com" autocomplete="email" required>
+            </div>
+            <div class="field-error" id="email-error"></div>
+          </div>
+
+          <div class="field" id="field-phone_number">
+            <label class="field-label" for="phone_number">Phone Number <span class="field-help" style="display:inline">*</span></label>
+            <div class="input-icon">
+              <span class="ico"><i class="bi bi-telephone"></i></span>
+              <input id="phone_number" class="input" type="text" placeholder="+255 712 345 678" autocomplete="tel" required>
+            </div>
+            <div class="field-error" id="phone_number-error"></div>
+          </div>
+
+          <div class="field" id="field-role">
+            <label class="field-label" for="role">I am a: <span class="field-help" style="display:inline">*</span></label>
+            <div class="input-icon select-wrap">
+              <span class="ico"><i class="bi bi-person-badge"></i></span>
+              <select id="role" class="input" required>
+                <option value="" disabled selected>Select account type</option>
+                <option value="customer">👤 Mortgage Applicant — I want to buy/rent</option>
+                <option value="seller">🏘️ Property Seller — I want to sell property</option>
+              </select>
+            </div>
+            <div class="field-error" id="role-error"></div>
+          </div>
+
+          <div class="field" id="field-password">
+            <label class="field-label" for="password">Password <span class="field-help" style="display:inline">*</span></label>
+            <div class="input-icon has-eye">
+              <span class="ico"><i class="bi bi-lock"></i></span>
+              <input id="password" class="input" type="password" placeholder="At least 8 characters" autocomplete="new-password" required minlength="8">
+              <button type="button" class="eye-btn" data-target="password" aria-label="Show password" aria-controls="password"><i class="bi bi-eye"></i></button>
+            </div>
+            <div class="field-error" id="password-error"></div>
+          </div>
+
+          <div class="field" id="field-confirm_password">
+            <label class="field-label" for="confirm_password">Confirm Password <span class="field-help" style="display:inline">*</span></label>
+            <div class="input-icon has-eye">
+              <span class="ico"><i class="bi bi-lock-fill"></i></span>
+              <input id="confirm_password" class="input" type="password" placeholder="Confirm your password" autocomplete="new-password" required minlength="8">
+              <button type="button" class="eye-btn" data-target="confirm_password" aria-label="Show password" aria-controls="confirm_password"><i class="bi bi-eye"></i></button>
+            </div>
+            <div class="field-error" id="confirm_password-error"></div>
+          </div>
+
+          <div class="field" id="field-terms">
+            <label class="check"><input type="checkbox" id="terms" required> <span class="box"></span> I agree to <a href="#">Terms</a> and <a href="#">Privacy Policy</a></label>
+            <div class="field-error" id="terms-error"></div>
+          </div>
+
+          <button type="submit" class="btn btn--primary auth-submit">Create Account
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"></path></svg>
+          </button>
+        </form>
+
+        <div class="auth-divider">or sign up with</div>
+
+        <div class="social-row single">
+          <a class="social-btn" href="#" aria-label="Sign up with Google" style="grid-column: 1 / -1; max-width: 320px; margin: 0 auto; width: 100%;">
+            <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22 12.2c0-.7-.06-1.4-.18-2.04H12v3.86h5.62a4.81 4.81 0 0 1-2.08 3.16v2.62h3.36C20.85 17.96 22 15.36 22 12.2z"></path><path fill="#34A853" d="M12 22c2.7 0 4.96-.9 6.62-2.4l-3.36-2.62c-.94.62-2.12.98-3.26.98-2.5 0-4.62-1.7-5.38-3.96H3.16v2.7A10 10 0 0 0 12 22z"></path><path fill="#FBBC05" d="M6.62 13.98a6 6 0 0 1 0-3.96V7.32H3.16a10 10 0 0 0 0 9.36z"></path><path fill="#EA4335" d="M12 6.04c1.46 0 2.78.5 3.82 1.5l2.86-2.86A10 10 0 0 0 12 2 10 10 0 0 0 3.16 7.32l3.46 2.7C7.38 7.74 9.5 6.04 12 6.04z"></path></svg>
+            Continue with Google
+          </a>
+        </div>
+      </div>
+
+      <div class="auth-main-bottom">Already a customer? <a href="{% url 'login_page' %}">Log In</a></div>
+    </main>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="{% static 'js/toast.js' %}?v=103"></script>
+  <script src="{% static 'js/auth.js' %}?v=103"></script>
+
+</body>
+
+</html>

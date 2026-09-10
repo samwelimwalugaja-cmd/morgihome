@@ -1,0 +1,79 @@
+{% extends 'plainadmin/base.html' %}
+{% load static %}
+{% block title %}My Applications - MorgiHome{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/my_applications.css' %}?v=1" rel="stylesheet">
+{% endblock %}
+{% block content %}
+<div class="pagetitle">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div>
+      <h1>My Mortgage Applications</h1>
+      <nav>
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a href="/dashboard/">Home</a></li>
+          <li class="breadcrumb-item active">My Applications</li>
+        </ol>
+      </nav>
+      <p class="text-muted small mb-0 mt-1">View all your loan applications and their statuses</p>
+    </div>
+    <a href="/customer/apply/" class="btn btn-primary" style="background:#0077B6;border-color:#0077B6"><i class="bi bi-plus-lg me-1"></i> Apply for New Mortgage</a>
+  </div>
+</div>
+
+<section class="section">
+  <div class="filters-bar">
+    <div class="filter-group">
+      <label>Status Filter</label>
+      <select id="appStatusFilter" class="form-select">
+        <option value="all">All</option>
+        <option value="pending">Pending</option>
+        <option value="document_verification">Document Verification</option>
+        <option value="valuation">Valuation</option>
+        <option value="credit_assessment">Credit Assessment</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+        <option value="disbursed">Disbursed</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Search</label>
+      <input type="text" id="appSearch" class="form-control" placeholder="Search by property name or loan amount">
+    </div>
+    <div class="filter-group">
+      <label>Sort By</label>
+      <select id="appSort" class="form-select">
+        <option value="newest">Newest First</option>
+        <option value="oldest">Oldest First</option>
+        <option value="highest">Highest Amount</option>
+        <option value="lowest">Lowest Amount</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="applicationsGrid" class="applications-grid">
+    <div class="text-center py-5 w-100" style="grid-column:1/-1"><div class="spinner-border text-primary"></div><p class="text-muted mt-2">Loading applications...</p></div>
+  </div>
+  <div id="applicationsEmpty" class="text-center py-5 d-none">
+    <i class="bi bi-inbox" style="font-size:48px;color:#cbd5e0"></i>
+    <h6 class="mt-3">No applications found</h6>
+    <p class="text-muted">You have not applied for any mortgage yet.</p>
+    <a href="/customer/apply/" class="btn btn-primary">Apply Now</a>
+  </div>
+</section>
+
+<!-- Detail Modal -->
+<div class="modal fade" id="appDetailModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="appDetailTitle">Application Details</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body" id="appDetailBody">
+        <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'js/my_applications.js' %}?v=1"></script>
+{% endblock %}

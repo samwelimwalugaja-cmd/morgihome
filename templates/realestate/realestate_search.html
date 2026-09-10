@@ -1,0 +1,140 @@
+{% extends 'realestate/realestate_base.html' %}
+{% load humanize %}
+{% block title %}Search - Real Estate - MorgiHome{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h3 class="page-title">
+    <span class="page-title-icon text-white me-2" style="background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%) !important;"><i class="mdi mdi-magnify"></i></span> Search
+  </h3>
+  <nav aria-label="breadcrumb">
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/realestate/dashboard/">Dashboard</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Search{% if query %} • "{{ query }}"{% endif %}</li>
+    </ul>
+  </nav>
+</div>
+
+<div class="row">
+  <div class="col-12 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <form method="get" action="/realestate/search/" class="d-flex gap-2">
+          <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search properties, buyers, contracts...">
+          <button type="submit" class="btn btn-primary" style="background:#0077B6; border-color:#0077B6;"><i class="mdi mdi-magnify"></i> Search</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if query %}
+<p class="text-muted mb-4" style="font-size:13px;">{{ total }} result{{ total|pluralize }} for "{{ query }}"</p>
+
+<div class="row">
+  <div class="col-12 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="card-title" style="font-weight:700;"><i class="mdi mdi-home text-primary"></i> Properties ({{ properties|length }})</h4>
+        {% if properties %}
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead><tr><th>Property</th><th>Price</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              {% for p in properties %}
+              <tr>
+                <td><p class="mb-0" style="font-weight:600; font-size:13px;">{{ p.title }}</p><p class="text-muted mb-0" style="font-size:11px;">{{ p.location }}</p></td>
+                <td style="font-weight:700; color:#0077B6;">TZS {{ p.price|intcomma }}</td>
+                <td><span class="badge badge-outline-primary">{{ p.get_status_display }}</span></td>
+                <td class="text-end"><a href="/realestate/properties/{{ p.id }}/" class="btn btn-sm btn-outline-primary">View</a></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">No properties match "{{ query }}".</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="card-title" style="font-weight:700;"><i class="mdi mdi-account-group text-primary"></i> Buyers ({{ buyers|length }})</h4>
+        {% if buyers %}
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead><tr><th>Buyer</th><th>Property</th><th>Loan</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              {% for b in buyers %}
+              <tr>
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    {% if b.customer.profile_image %}<img src="{{ b.customer.profile_image.url }}" alt="{{ b.customer.get_full_name }}" style="width:36px; height:36px; border-radius:50%; object-fit:cover; border:2px solid #0077B6; flex-shrink:0;">{% else %}<div style="width:36px; height:36px; border-radius:50%; background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:12px; flex-shrink:0;">{{ b.customer.initials|default:"B" }}</div>{% endif %}
+                    <div><p class="mb-0" style="font-weight:600; font-size:13px;">{{ b.customer.get_full_name|default:"Buyer" }}</p><p class="text-muted mb-0" style="font-size:11px;">Interested buyer</p></div>
+                  </div>
+                </td>
+                <td style="font-size:13px;">{{ b.property.title }}</td>
+                <td style="font-weight:700; color:#0077B6;">TZS {{ b.loan_amount|intcomma }}</td>
+                <td><span class="badge badge-outline-primary">{{ b.get_status_display }}</span></td>
+                <td class="text-end"><a href="/realestate/buyers/" class="btn btn-sm btn-outline-primary">Buyers</a></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">No buyers match "{{ query }}". <a href="/realestate/buyers/" style="color:#0077B6;">View all buyers</a></p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="card-title" style="font-weight:700;"><i class="mdi mdi-file-sign text-primary"></i> Contracts ({{ contracts|length }})</h4>
+        {% if contracts %}
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead><tr><th>Contract</th><th>Buyer</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              {% for c in contracts %}
+              <tr>
+                <td style="font-family:monospace; font-weight:700;">#CTR-{{ c.id }}</td>
+                <td style="font-size:13px;">{{ c.customer.get_full_name|default:"Customer" }}</td>
+                <td style="font-weight:700; color:#0077B6;">TZS {{ c.mortgage.loan_amount|intcomma }}</td>
+                <td><span class="badge badge-outline-primary">{{ c.get_status_display }}</span></td>
+                <td class="text-end"><a href="/realestate/contracts/" class="btn btn-sm btn-outline-primary">Contracts</a></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">No contracts match "{{ query }}". <a href="/realestate/contracts/" style="color:#0077B6;">View all contracts</a></p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="row">
+  <div class="col-12 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body text-center py-5">
+        <div class="mx-auto mb-3 d-flex align-items-center justify-content-center" style="width:80px; height:80px; border-radius:50%; background:rgba(0,119,182,0.1);"><i class="mdi mdi-magnify" style="font-size:40px; color:#0077B6;"></i></div>
+        <h4>Search your portal</h4>
+        <p class="text-muted">Type a property title, buyer name or email, or contract ID above.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

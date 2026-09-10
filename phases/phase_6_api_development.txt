@@ -1,0 +1,512 @@
+================================================================================
+PHASE 6: API DEVELOPMENT (DJANGO REST FRAMEWORK)
+================================================================================
+
+KABLA YA KUANZA: Hakikisha Phase 5 imekamilika (Lawyer & Contracts inafanya kazi).
+
+================================================================================
+KAZI ZA PHASE HII (TEKELEZA MOJA KWA MOJA)
+================================================================================
+
+--- KAZI 6.1: Unda API App (Kama haipo) ---
+TEKELEZA:
+1. Hakikisha app ya 'api' ipo kwenye mradi
+2. Ikiwa haipo: python manage.py startapp api
+3. Weka 'api' kwenye INSTALLED_APPS kwenye settings.py
+
+--- KAZI 6.2: Unda Serializers za API ---
+TEKELEZA:
+1. Nenda kwenye api/serializers.py
+2. Weka code hii:
+
+from rest_framework import serializers
+from accounts.models import User
+from properties.models import Property
+from mortgages.models import MortgageApplication, RepaymentSchedule
+from transactions.models import Contract, Transaction
+
+# ----- USER SERIALIZERS -----
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'role', 'phone_number', 'is_verified']
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'role', 'phone_number', 'is_verified', 'first_name', 'last_name']
+
+# ----- PROPERTY SERIALIZERS -----
+class PropertyListSerializer(serializers.ModelSerializer):
+    seller_name = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Property
+        fields = ['id', 'title', 'price', 'location', 'property_type', 'status', 'image', 'seller_name']
+    
+    def get_seller_name(self, obj):
+        return obj.seller.username if obj.seller else None
+
+class PropertyDetailSerializer(serializers.ModelSerializer):
+    seller_name = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Property
+        fields = '__all__'
+    
+    def get_seller_name(self, obj):
+        return obj.seller.username if obj.seller else None
+
+# ----- MORTGAGE SERIALIZERS -----
+class MortgageApplicationListSerializer(serializers.ModelSerializer):
+    customer_name = serializers.SerializerMethodField()
+    property_title = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = MortgageApplication
+        fields = ['id', 'customer_name', 'property_title', 'loan_amount', 'status', 
+                 'affordability_score', 'risk_score', 'created_at']
+    
+    def get_customer_name(self, obj):
+        return obj.customer.username if obj.customer else None
+    
+    def get_property_title(self, obj):
+        return obj.property.title if obj.property else None
+
+class MortgageApplicationDetailSerializer(serializers.ModelSerializer):
+    customer_name = serializers.SerializerMethodField()
+    property_details = PropertyListSerializer(source='property', read_only=True)
+    
+    class Meta:
+        model = MortgageApplication
+        fields = '__all__'
+    
+    def get_customer_name(self, obj):
+        return obj.customer.username if obj.customer else None
+
+# ----- REPAYMENT SCHEDULE SERIALIZER -----
+class RepaymentScheduleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RepaymentSchedule
+        fields = '__all__'
+
+# ----- CONTRACT SERIALIZERS -----
+class ContractListSerializer(serializers.ModelSerializer):
+    customer_name = serializers.SerializerMethodField()
+    property_title = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Contract
+        fields = ['id', 'customer_name', 'property_title', 'status', 'created_at']
+    
+    def get_customer_name(self, obj):
+        return obj.customer.username if obj.customer else None
+    
+    def get_property_title(self, obj):
+        return obj.mortgage.property.title if obj.mortgage and obj.mortgage.property else None
+
+class ContractDetailSerializer(serializers.ModelSerializer):
+    customer_name = serializers.SerializerMethodField()
+    seller_name = serializers.SerializerMethodField()
+    bank_name = serializers.SerializerMethodField()
+    lawyer_name = serializers.SerializerMethodField()
+    mortgage_details = MortgageApplicationListSerializer(source='mortgage', read_only=True)
+    
+    class Meta:
+        model = Contract
+        fields = '__all__'
+    
+    def get_customer_name(self, obj):
+        return obj.customer.username if obj.customer else None
+    def get_seller_name(self, obj):
+        return obj.seller.username if obj.seller else None
+    def get_bank_name(self, obj):
+        return obj.bank.username if obj.bank else None
+    def get_lawyer_name(self, obj):
+        return obj.lawyer.username if obj.lawyer else None
+
+# ----- TRANSACTION SERIALIZER -----
+class TransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = '__all__'
+
+--- KAZI 6.3: Unda Views za API ---
+TEKELEZA:
+1. Nenda kwenye api/views.py
+2. Weka code hii:
+
+from rest_framework import viewsets, generics, permissions, status, filters
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from django.db.models import Q
+from django.shortcuts import get_object_or_404
+
+from accounts.models import User
+from properties.models import Property
+from mortgages.models import MortgageApplication, RepaymentSchedule
+from transactions.models import Contract, Transaction
+
+from .serializers import (
+    UserSerializer, UserProfileSerializer,
+    PropertyListSerializer, PropertyDetailSerializer,
+    MortgageApplicationListSerializer, MortgageApplicationDetailSerializer,
+    RepaymentScheduleSerializer,
+    ContractListSerializer, ContractDetailSerializer,
+    TransactionSerializer
+)
+
+from accounts.permissions import IsCustomer, IsSeller, IsBank, IsRealEstate, IsLawyer
+
+# ----- USER VIEWS -----
+class UserProfileView(generics.RetrieveUpdateAPIView):
+    serializer_class = UserProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_object(self):
+        return self.request.user
+
+# ----- PROPERTY VIEWS -----
+class PropertyViewSet(viewsets.ModelViewSet):
+    queryset = Property.objects.all()
+    permission_classes = [permissions.AllowAny]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['title', 'location', 'description']
+    ordering_fields = ['price', 'created_at', 'area']
+    
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return PropertyListSerializer
+        return PropertyDetailSerializer
+    
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [permissions.IsAuthenticated(), (IsSeller() | IsRealEstate())]
+        return [permissions.AllowAny()]
+    
+    def perform_create(self, serializer):
+        serializer.save(seller=self.request.user)
+    
+    @action(detail=False, methods=['get'])
+    def search(self, request):
+        query = request.query_params.get('q', '')
+        min_price = request.query_params.get('min_price')
+        max_price = request.query_params.get('max_price')
+        property_type = request.query_params.get('property_type')
+        
+        properties = Property.objects.filter(status='available')
+        
+        if query:
+            properties = properties.filter(
+                Q(title__icontains=query) | 
+                Q(location__icontains=query) |
+                Q(description__icontains=query)
+            )
+        if min_price:
+            properties = properties.filter(price__gte=min_price)
+        if max_price:
+            properties = properties.filter(price__lte=max_price)
+        if property_type:
+            properties = properties.filter(property_type=property_type)
+        
+        serializer = self.get_serializer(properties, many=True)
+        return Response(serializer.data)
+
+# ----- MORTGAGE VIEWS -----
+class MortgageViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'customer':
+            return MortgageApplication.objects.filter(customer=user)
+        elif user.role in ['bank', 'realestate']:
+            return MortgageApplication.objects.all()
+        elif user.role == 'seller':
+            return MortgageApplication.objects.filter(property__seller=user)
+        return MortgageApplication.objects.none()
+    
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return MortgageApplicationListSerializer
+        return MortgageApplicationDetailSerializer
+    
+    def get_permissions(self):
+        if self.action == 'create':
+            return [permissions.IsAuthenticated(), IsCustomer()]
+        elif self.action in ['approve', 'reject']:
+            return [permissions.IsAuthenticated(), IsBank()]
+        return [permissions.IsAuthenticated()]
+    
+    def perform_create(self, serializer):
+        # AI features zinahesabiwa kwenye model (tumia ai_utils kutoka phase 4)
+        from mortgages.ai_utils import calculate_monthly_installment, calculate_affordability, calculate_risk_score
+        
+        annual_interest_rate = 0.12
+        loan_amount = float(serializer.validated_data.get('loan_amount', 0))
+        months = serializer.validated_data.get('repayment_period', 0)
+        
+        monthly_installment = calculate_monthly_installment(loan_amount, annual_interest_rate, months)
+        
+        monthly_income = float(serializer.validated_data.get('monthly_income', 0))
+        monthly_expenses = float(serializer.validated_data.get('monthly_expenses', 0))
+        affordability_score, dti_ratio = calculate_affordability(monthly_income, monthly_expenses, monthly_installment)
+        
+        employment_status = serializer.validated_data.get('employment_status')
+        risk_score = calculate_risk_score(affordability_score, employment_status)
+        
+        serializer.save(
+            customer=self.request.user,
+            monthly_installment=monthly_installment,
+            affordability_score=affordability_score,
+            risk_score=risk_score,
+            dti_ratio=dti_ratio
+        )
+    
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        mortgage = self.get_object()
+        if mortgage.status != 'pending':
+            return Response({'error': 'Application is not pending'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        mortgage.status = 'approved'
+        mortgage.save()
+        
+        # Generate repayment schedule
+        from mortgages.ai_utils import generate_repayment_schedule
+        schedules, monthly_installment = generate_repayment_schedule(mortgage)
+        for schedule in schedules:
+            RepaymentSchedule.objects.create(
+                mortgage=mortgage,
+                installment_number=schedule['installment_number'],
+                due_date=request.data.get('due_date') or '2025-01-01',
+                amount_due=schedule['amount_due'],
+                balance_remaining=schedule['balance_remaining']
+            )
+        
+        return Response({'status': 'approved', 'message': 'Mortgage approved successfully'})
+    
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        mortgage = self.get_object()
+        if mortgage.status in ['approved', 'disbursed']:
+            return Response({'error': 'Cannot reject approved or disbursed application'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        mortgage.status = 'rejected'
+        mortgage.save()
+        return Response({'status': 'rejected', 'message': 'Mortgage rejected'})
+    
+    @action(detail=True, methods=['get'])
+    def repayment_schedule(self, request, pk=None):
+        mortgage = self.get_object()
+        schedules = RepaymentSchedule.objects.filter(mortgage=mortgage).order_by('installment_number')
+        serializer = RepaymentScheduleSerializer(schedules, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['get'])
+    def affordability(self, request, pk=None):
+        mortgage = self.get_object()
+        return Response({
+            'affordability_score': mortgage.affordability_score,
+            'risk_score': mortgage.risk_score,
+            'dti_ratio': mortgage.dti_ratio,
+            'monthly_installment': mortgage.monthly_installment,
+            'status': mortgage.status
+        })
+
+# ----- CONTRACT VIEWS -----
+class ContractViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'lawyer':
+            return Contract.objects.filter(lawyer=user)
+        elif user.role == 'customer':
+            return Contract.objects.filter(customer=user)
+        elif user.role == 'seller':
+            return Contract.objects.filter(seller=user)
+        elif user.role == 'bank':
+            return Contract.objects.filter(bank=user)
+        return Contract.objects.none()
+    
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return ContractListSerializer
+        return ContractDetailSerializer
+    
+    def get_permissions(self):
+        if self.action in ['create', 'execute']:
+            return [permissions.IsAuthenticated(), IsLawyer()]
+        elif self.action == 'sign':
+            return [permissions.IsAuthenticated()]
+        return [permissions.IsAuthenticated()]
+    
+    @action(detail=True, methods=['post'])
+    def sign(self, request, pk=None):
+        contract = self.get_object()
+        user = request.user
+        
+        if contract.status not in ['draft', 'pending_signature']:
+            return Response({'error': 'Contract cannot be signed'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if user.role == 'customer':
+            contract.customer_signed = True
+        elif user.role == 'seller':
+            contract.seller_signed = True
+        elif user.role == 'bank':
+            contract.bank_signed = True
+        elif user.role == 'lawyer':
+            contract.lawyer_signed = True
+        else:
+            return Response({'error': 'Invalid role'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        contract.status = 'pending_signature'
+        if contract.is_fully_signed():
+            contract.status = 'signed'
+            contract.signed_date = date.today()
+        
+        contract.save()
+        return Response({'status': contract.status, 'message': 'Signed successfully'})
+    
+    @action(detail=True, methods=['post'])
+    def execute(self, request, pk=None):
+        contract = self.get_object()
+        if contract.status != 'signed':
+            return Response({'error': 'Contract must be signed first'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        contract.status = 'executed'
+        contract.executed_date = date.today()
+        contract.save()
+        
+        mortgage = contract.mortgage
+        mortgage.status = 'disbursed'
+        mortgage.save()
+        
+        return Response({'status': 'executed', 'message': 'Contract executed successfully'})
+
+# ----- TRANSACTION VIEWS -----
+class TransactionViewSet(viewsets.ModelViewSet):
+    queryset = Transaction.objects.all()
+    serializer_class = TransactionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.role in ['lawyer', 'bank']:
+            return Transaction.objects.all()
+        elif user.role == 'customer':
+            return Transaction.objects.filter(contract__customer=user)
+        elif user.role == 'seller':
+            return Transaction.objects.filter(contract__seller=user)
+        return Transaction.objects.none()
+    
+    def get_permissions(self):
+        if self.action == 'create':
+            return [permissions.IsAuthenticated(), (IsLawyer() | IsBank())]
+        return [permissions.IsAuthenticated()]
+    
+    def perform_create(self, serializer):
+        import uuid
+        if not serializer.validated_data.get('reference_number'):
+            serializer.save(reference_number=f"TRX-{uuid.uuid4().hex[:12].upper()}")
+        else:
+            serializer.save()
+
+--- KAZI 6.4: Unda URLs za API ---
+TEKELEZA:
+1. Nenda kwenye api/urls.py
+2. Weka code hii:
+
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import (
+    UserProfileView,
+    PropertyViewSet,
+    MortgageViewSet,
+    ContractViewSet,
+    TransactionViewSet
+)
+
+router = DefaultRouter()
+router.register(r'properties', PropertyViewSet, basename='api-property')
+router.register(r'mortgages', MortgageViewSet, basename='api-mortgage')
+router.register(r'contracts', ContractViewSet, basename='api-contract')
+router.register(r'transactions', TransactionViewSet, basename='api-transaction')
+
+urlpatterns = [
+    path('profile/', UserProfileView.as_view(), name='api-profile'),
+    path('', include(router.urls)),
+]
+
+3. Nenda kwenye morgihome_backend/urls.py
+4. Hakikisha path zote ziko:
+   from django.contrib import admin
+   from django.urls import path, include
+   from django.views.generic import TemplateView
+   from django.conf import settings
+   from django.conf.urls.static import static
+
+   urlpatterns = [
+       path('admin/', admin.site.urls),
+       path('', TemplateView.as_view(template_name='index.html'), name='home'),
+       path('api/auth/', include('accounts.urls')),
+       path('api/', include('properties.urls')),
+       path('api/', include('mortgages.urls')),
+       path('api/', include('transactions.urls')),
+       path('api/', include('api.urls')),  # Hii ni muhimu!
+   ]
+
+   if settings.DEBUG:
+       urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+--- KAZI 6.5: Weka API Documentation (Swagger) ---
+TEKELEZA:
+1. Sakinisha: pip install drf-yasg
+2. Nenda kwenye api/urls.py na ongeza:
+   from drf_yasg.views import get_schema_view
+   from drf_yasg import openapi
+   from rest_framework import permissions
+
+   schema_view = get_schema_view(
+       openapi.Info(
+           title="MorgiHome API",
+           default_version='v1',
+           description="API ya MorgiHome - Mortgage Management System",
+           terms_of_service="https://www.morgihome.com/terms/",
+           contact=openapi.Contact(email="info@morgihome.com"),
+           license=openapi.License(name="MIT License"),
+       ),
+       public=True,
+       permission_classes=[permissions.AllowAny],
+   )
+
+   # Ongeza kwenye urlpatterns:
+   path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+   path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+
+--- KAZI 6.6: Test API ---
+TEKELEZA:
+1. Endesha server: python manage.py runserver
+2. Nenda kwenye: http://127.0.0.1:8000/api/swagger/ (API documentation)
+3. Test endpoints:
+   - GET /api/profile/ (Authentication required)
+   - GET /api/properties/
+   - POST /api/mortgages/ (Customer role)
+   - GET /api/mortgages/1/affordability/
+   - GET /api/contracts/
+   - GET /api/transactions/
+
+================================================================================
+TATIZO: "KAMA KITU KIKIKWAMA, USIENDELEE"
+================================================================================
+Kama unapata error yoyote, SIMAMA na unipe error hiyo.
+Nitasoma error na kukupa suluhisho kabla ya kuendelea.
+
+================================================================================
+BAADA YA KUKAMILISHA PHASE 6
+================================================================================
+NITAKUAMBIA: "PHASE 6 IMESHA. TUNAENDELEA PHASE 7"
+USIENDELEE HADI NIKUAMBIE.
+
+================================================================================

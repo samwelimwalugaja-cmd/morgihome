@@ -1,0 +1,193 @@
+{% extends 'customer/customer_base.html' %}
+{% load humanize %}
+{% block title %}Customer Dashboard - Corona{% endblock %}
+
+{% block content %}
+<!-- Corona Dashboard - EXACT like dist/index.html - only the data is real -->
+<div class="row">
+  <div class="col-xl-3 col-sm-6 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <div class="row">
+          <div class="col-9">
+            <div class="d-flex align-items-center align-self-start">
+              <h3 class="mb-0">{{ stats.properties|default:"0" }}</h3>
+              <p class="text-success ms-2 mb-0 font-weight-medium">Available</p>
+            </div>
+          </div>
+          <div class="col-3">
+            <div class="icon icon-box-success"><span class="mdi mdi-home icon-item"></span></div>
+          </div>
+        </div>
+        <h6 class="text-muted font-weight-normal">Properties</h6>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-sm-6 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <div class="row">
+          <div class="col-9">
+            <div class="d-flex align-items-center align-self-start">
+              <h3 class="mb-0">{{ stats.applications|default:"0" }}</h3>
+              <p class="text-success ms-2 mb-0 font-weight-medium">{{ stats.pending_applications|default:"0" }} pending</p>
+            </div>
+          </div>
+          <div class="col-3">
+            <div class="icon icon-box-success"><span class="mdi mdi-file-document icon-item"></span></div>
+          </div>
+        </div>
+        <h6 class="text-muted font-weight-normal">Applications</h6>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-sm-6 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <div class="row">
+          <div class="col-9">
+            <div class="d-flex align-items-center align-self-start">
+              <h3 class="mb-0">{% if stats.active_mortgage %}{{ stats.active_mortgage|truncatechars:10 }}{% else %}—{% endif %}</h3>
+              <p class="text-success ms-2 mb-0 font-weight-medium">{% if stats.active_mortgage %}Active{% else %}None{% endif %}</p>
+            </div>
+          </div>
+          <div class="col-3">
+            <div class="icon icon-box-success"><span class="mdi mdi-bank icon-item"></span></div>
+          </div>
+        </div>
+        <h6 class="text-muted font-weight-normal">Active Mortgage</h6>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-sm-6 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <div class="row">
+          <div class="col-9">
+            <div class="d-flex align-items-center align-self-start">
+              <h3 class="mb-0">{{ stats.payments_paid|default:"0" }}/{{ stats.payments_total|default:"0" }}</h3>
+              <p class="text-success ms-2 mb-0 font-weight-medium">Paid</p>
+            </div>
+          </div>
+          <div class="col-3">
+            <div class="icon icon-box-success"><span class="mdi mdi-wallet icon-item"></span></div>
+          </div>
+        </div>
+        <h6 class="text-muted font-weight-normal">Payments</h6>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-4 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="card-title">AI Assessment</h4>
+        {% if latest_application %}
+        <div class="d-flex flex-row justify-content-between mt-3">
+          <p class="text-muted">Affordability</p>
+          <p class="font-weight-bold">{{ latest_application.affordability_score|floatformat:0 }}/100</p>
+        </div>
+        <div class="d-flex flex-row justify-content-between">
+          <p class="text-muted">Risk Score</p>
+          <p class="font-weight-bold">{{ latest_application.risk_score|floatformat:0 }}/100</p>
+        </div>
+        <div class="d-flex flex-row justify-content-between">
+          <p class="text-muted">DTI Ratio</p>
+          <p class="font-weight-bold">{{ latest_application.dti_ratio|floatformat:1 }}%</p>
+        </div>
+        <div class="d-flex flex-row justify-content-between">
+          <p class="text-muted">Monthly Payment</p>
+          <p class="font-weight-bold">TZS {{ latest_application.monthly_installment|intcomma }}</p>
+        </div>
+        <a href="/customer/track/{{ latest_application.id }}/" class="btn btn-primary mt-3 w-100">View Details</a>
+        {% else %}
+        <div class="text-center py-4">
+          <i class="mdi mdi-cpu-64-bit" style="font-size: 48px; color: #6c7293;"></i>
+          <p class="text-muted mt-2">No assessment yet. Apply for mortgage to get AI analysis.</p>
+          <a href="/customer/apply/" class="btn btn-primary mt-2">Apply Now</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-8 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex flex-row justify-content-between">
+          <h4 class="card-title mb-1">Recent Applications</h4>
+          <a href="/customer/applications/" class="text-muted mb-1">View all →</a>
+        </div>
+        <div class="row">
+          <div class="col-12">
+            <div class="preview-list">
+              {% for app in recent_applications %}
+              <div class="preview-item border-bottom">
+                <div class="preview-thumbnail">
+                  <div class="preview-icon bg-dark rounded-circle"><i class="mdi mdi-file-document text-primary"></i></div>
+                </div>
+                <div class="preview-item-content d-sm-flex flex-grow">
+                  <div class="flex-grow">
+                    <h6 class="preview-subject">{{ app.property.title|default:"No Property"|truncatechars:30 }}</h6>
+                    <p class="text-muted mb-0">{{ app.application_number }} • {{ app.get_status_display }}</p>
+                  </div>
+                  <div class="mr-auto text-sm-right pt-2 pt-sm-0">
+                    <p class="text-muted">TZS {{ app.loan_amount|intcomma }}</p>
+                    <p class="text-muted mb-0">{{ app.created_at|date:"d M Y" }}</p>
+                  </div>
+                </div>
+              </div>
+              {% empty %}
+              <div class="text-center py-4">
+                <i class="mdi mdi-inbox" style="font-size: 48px; color: #6c7293;"></i>
+                <p class="text-muted mt-2">No applications yet. <a href="/customer/apply/" class="text-primary">Apply now</a></p>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex flex-row justify-content-between">
+          <h4 class="card-title mb-1">Recommended Properties</h4>
+          <a href="/customer/properties/" class="text-muted mb-1">Browse all →</a>
+        </div>
+        <div class="row" style="margin-top: 15px;">
+          {% for prop in recommended_properties %}
+          <div class="col-md-4 grid-margin stretch-card">
+            <div class="card" style="background: #191c24; border: 1px solid #2c2e33;">
+              {% if prop.cover_image_url %}
+                <img src="{{ prop.cover_image_url }}" alt="{{ prop.title }}" style="width: 100%; height: 180px; object-fit: cover; border-radius: 5px 5px 0 0;">
+              {% else %}
+                <div style="width: 100%; height: 180px; background: #2c2e33; display: flex; align-items: center; justify-content: center;"><i class="mdi mdi-home" style="font-size: 48px; color: #6c7293;"></i></div>
+              {% endif %}
+              <div class="card-body">
+                <h6 class="card-title">{{ prop.title|truncatechars:30 }}</h6>
+                <p class="text-muted"><i class="mdi mdi-map-marker"></i> {{ prop.location|truncatechars:25 }}</p>
+                <p class="text-muted"><i class="mdi mdi-hotel"></i> {{ prop.bedrooms }} bd • <i class="mdi mdi-hot-tub"></i> {{ prop.bathrooms }} ba • {{ prop.area }} m²</p>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                  <h5 class="text-primary mb-0">TZS {{ prop.price|intcomma }}</h5>
+                  <a href="/customer/properties/{{ prop.id }}/" class="btn btn-primary btn-sm">View</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <div class="col-12 text-center py-4">
+            <p class="text-muted">No properties available right now.</p>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends 'bank/bank_base.html' %}
+{% block title %}Repayment #{{ detail.id }} - MorgiHome Bank{% endblock %}
+{% block page_title %}Repayment Details{% endblock %}
+{% block breadcrumb %}Bank / Repayments / #{{ detail.id }}{% endblock %}
+
+{% block content %}
+<div class="flex items-center gap-3 mb-6">
+  <a href="{% url 'bank_repayments' %}" class="w-9 h-9 flex items-center justify-center rounded-lg border border-[var(--morgi-border)] bg-[var(--morgi-card)]"><i data-lucide="arrow-left" class="w-4 h-4"></i></a>
+  <div>
+    <h1 class="text-lg font-bold">{{ detail.customer }} <span class="ml-2 text-xs px-3 py-1 rounded-full bg-[var(--morgi-border)]/50">{{ detail.status }}</span></h1>
+    <p class="text-sm text-[var(--morgi-muted)]">Loan TZS {{ detail.amount }} • Paid {{ detail.total_paid }} • Balance {{ detail.balance }}</p>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+  <div class="morgi-card p-5"><p class="text-xs uppercase tracking-widest text-[var(--morgi-muted)] font-semibold">Total Paid</p><p class="text-2xl font-bold mt-2 text-emerald-600">{{ detail.total_paid }}</p></div>
+  <div class="morgi-card p-5"><p class="text-xs uppercase tracking-widest text-[var(--morgi-muted)] font-semibold">Remaining Balance</p><p class="text-2xl font-bold mt-2">{{ detail.balance }}</p></div>
+  <div class="morgi-card p-5"><p class="text-xs uppercase tracking-widest text-[var(--morgi-muted)] font-semibold">Loan Amount</p><p class="text-2xl font-bold mt-2">{{ detail.amount }}</p></div>
+</div>
+
+<div class="morgi-card overflow-hidden">
+  <div class="p-5 border-b border-[var(--morgi-border)]"><h3 class="font-semibold">Repayment Schedule</h3></div>
+  <div class="overflow-x-auto">
+    <table class="w-full morgi-table">
+      <thead><tr class="text-left"><th class="px-5 py-3">#</th><th class="px-5 py-3">Due Date</th><th class="px-5 py-3">Amount Due</th><th class="px-5 py-3">Paid</th><th class="px-5 py-3">Balance</th><th class="px-5 py-3">Status</th></tr></thead>
+      <tbody class="text-sm">
+        {% for s in detail.schedule %}
+        <tr class="border-t border-[var(--morgi-border)]"><td class="px-5 py-3">{{ s.installment_number }}</td><td class="px-5 py-3">{{ s.due_date }}</td><td class="px-5 py-3">{{ s.amount_due }}</td><td class="px-5 py-3">{{ s.amount_paid }}</td><td class="px-5 py-3">{{ s.balance_remaining }}</td><td class="px-5 py-3">{{ s.status }}</td></tr>
+        {% empty %}
+        <tr class="border-t border-[var(--morgi-border)]"><td colspan="6" class="px-5 py-6 text-center text-[var(--morgi-muted)]">No schedule yet (repayment has not started).</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

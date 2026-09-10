@@ -1,0 +1,120 @@
+{% extends 'plainadmin/base.html' %}
+{% load static %}
+{% block title %}Bank Verification - MorgiHome{% endblock %}
+{% block extra_css %}<link href="{% static 'css/verification.css' %}?v=1" rel="stylesheet">{% endblock %}
+{% block content %}
+<div class="pagetitle">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div>
+      <h1 style="font-weight:800;color:#0A2B4E">Bank Verification</h1>
+      <nav><ol class="breadcrumb mb-0"><li class="breadcrumb-item"><a href="/bank/dashboard/">Bank Dashboard</a></li><li class="breadcrumb-item active">Verification</li></ol></nav>
+      <p class="text-muted small mb-0">Verify your bank account to approve mortgages • 3 steps required</p>
+    </div>
+    <span id="bankVerifBadge" class="badge bg-warning text-dark" style="font-size:13px;padding:8px 12px;border-radius:20px">Not Verified</span>
+  </div>
+</div>
+
+<section class="section">
+  <!-- Progress -->
+  <div class="card mb-4" style="border-radius:16px;border:1px solid #e2e8f0">
+    <div class="card-body">
+      <h6 class="mb-3" style="font-weight:700;color:#0A2B4E">Verification Progress</h6>
+      <div class="progress" style="height:10px;background:#e2e8f0;border-radius:10px"><div id="bankProgressBar" class="progress-bar" style="width:0%;background:#0077B6;border-radius:10px;transition:width .4s"></div></div>
+      <div class="row g-2 mt-3 text-center small">
+        <div class="col-3"><div id="bStep1Icon" class="mx-auto d-flex align-items-center justify-content-center" style="width:36px;height:36px;border-radius:50%;background:#e2e8f0;color:#64748b;font-weight:700">1</div><div class="mt-1">Email</div><small id="bStep1Status" class="text-muted">Pending</small></div>
+        <div class="col-3"><div id="bStep2Icon" class="mx-auto d-flex align-items-center justify-content-center" style="width:36px;height:36px;border-radius:50%;background:#e2e8f0;color:#64748b;font-weight:700">2</div><div class="mt-1">License</div><small id="bStep2Status" class="text-muted">Pending</small></div>
+        <div class="col-3"><div id="bStep3Icon" class="mx-auto d-flex align-items-center justify-content-center" style="width:36px;height:36px;border-radius:50%;background:#e2e8f0;color:#64748b;font-weight:700">3</div><div class="mt-1">Tax</div><small id="bStep3Status" class="text-muted">Pending</small></div>
+        <div class="col-3"><div id="bStep4Icon" class="mx-auto d-flex align-items-center justify-content-center" style="width:36px;height:36px;border-radius:50%;background:#e2e8f0;color:#64748b;font-weight:700">4</div><div class="mt-1">Company</div><small id="bStep4Status" class="text-muted">Pending</small></div>
+      </div>
+      <div class="text-center mt-3"><span id="bankProgressText" class="badge bg-light text-dark border">0/3 Completed</span></div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Email -->
+    <div class="col-12">
+      <div class="card" style="border-radius:16px;border:1px solid #e2e8f0">
+        <div class="card-header d-flex justify-content-between align-items-center" style="background:#f8fafc;border-radius:16px 16px 0 0"><h6 class="mb-0" style="font-weight:700"><i class="bi bi-envelope me-2" style="color:#0077B6"></i> Email Verification</h6><span id="bankEmailBadge" class="badge bg-warning text-dark">Pending</span></div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between flex-wrap gap-2 mb-2"><div><small class="text-muted">Status: <span id="bankEmailStatus">Pending</span></small><br><small>Email: <strong id="bankEmailValue">-</strong></small><br><small class="text-muted">Verified: <span id="bankEmailDate">-</span></small></div><div id="bankEmailIcon" class="d-none" style="color:#16a34a;font-size:24px">✓</div></div>
+          <div id="bankEmailPending" class="p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0"><p class="small text-muted mb-2">We sent a verification link to your email. Please check your inbox.</p><button id="bankResendEmail" class="btn btn-sm btn-outline-primary"><i class="bi bi-send me-1"></i> Resend Verification Email</button><div id="bankEmailResult" class="mt-2 small d-none"></div></div>
+          <div id="bankEmailDone" class="alert alert-success d-none"><i class="bi bi-check-circle me-2"></i> Email verified successfully!</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Business License -->
+    <div class="col-12">
+      <div class="card" style="border-radius:16px;border:1px solid #e2e8f0">
+        <div class="card-header d-flex justify-content-between align-items-center" style="background:#f8fafc"><h6 class="mb-0" style="font-weight:700"><i class="bi bi-file-earmark-text me-2" style="color:#0077B6"></i> Business License</h6><span id="bankLicenseBadge" class="badge bg-secondary">Not Submitted</span></div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between mb-2"><small>Status: <span id="bankLicenseStatus">Not Submitted</span></small><small id="bankLicenseDate" class="text-muted">-</small></div>
+          <div id="bankLicensePending" class="p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0">
+            <label class="form-label small" style="font-weight:600">Upload Business License (PDF, JPG, PNG) *</label>
+            <input type="file" id="bankLicenseFile" class="form-control mb-2" accept=".pdf,.jpg,.jpeg,.png,.webp">
+            <div id="bankLicensePreview" class="small text-muted mb-2"></div>
+            <button id="bankLicenseBtn" class="btn btn-primary btn-sm" style="background:#0077B6;border-color:#0077B6"><i class="bi bi-cloud-upload me-1"></i> Upload License</button>
+            <div id="bankLicenseResult" class="mt-2 small d-none"></div>
+            <small class="text-muted d-block mt-2">License will be verified by Admin within 1-2 days.</small>
+          </div>
+          <div id="bankLicenseDone" class="alert alert-success d-none"><i class="bi bi-check-circle me-2"></i> Business License verified!</div>
+          <div id="bankLicensePendingAlert" class="alert alert-warning d-none"><i class="bi bi-clock me-2"></i> Pending admin verification</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tax Clearance -->
+    <div class="col-12">
+      <div class="card" style="border-radius:16px;border:1px solid #e2e8f0">
+        <div class="card-header d-flex justify-content-between align-items-center" style="background:#f8fafc"><h6 class="mb-0" style="font-weight:700"><i class="bi bi-receipt me-2" style="color:#0077B6"></i> Tax Clearance</h6><span id="bankTaxBadge" class="badge bg-secondary">Not Submitted</span></div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between mb-2"><small>Status: <span id="bankTaxStatus">Not Submitted</span></small><small id="bankTaxDate" class="text-muted">-</small></div>
+          <div id="bankTaxPending" class="p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0">
+            <label class="form-label small" style="font-weight:600">Upload Tax Clearance (PDF, JPG, PNG) *</label>
+            <input type="file" id="bankTaxFile" class="form-control mb-2" accept=".pdf,.jpg,.jpeg,.png,.webp">
+            <div id="bankTaxPreview" class="small text-muted mb-2"></div>
+            <button id="bankTaxBtn" class="btn btn-primary btn-sm" style="background:#0077B6;border-color:#0077B6"><i class="bi bi-cloud-upload me-1"></i> Upload Tax Clearance</button>
+            <div id="bankTaxResult" class="mt-2 small d-none"></div>
+          </div>
+          <div id="bankTaxDone" class="alert alert-success d-none"><i class="bi bi-check-circle me-2"></i> Tax Clearance verified!</div>
+          <div id="bankTaxPendingAlert" class="alert alert-warning d-none"><i class="bi bi-clock me-2"></i> Pending admin verification</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Company Registration -->
+    <div class="col-12">
+      <div class="card" style="border-radius:16px;border:1px solid #e2e8f0">
+        <div class="card-header d-flex justify-content-between align-items-center" style="background:#f8fafc"><h6 class="mb-0" style="font-weight:700"><i class="bi bi-building me-2" style="color:#0077B6"></i> Company Registration</h6><span id="bankCompanyBadge" class="badge bg-secondary">Not Submitted</span></div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between mb-2"><small>Status: <span id="bankCompanyStatus">Not Submitted</span></small><small id="bankCompanyDate" class="text-muted">-</small></div>
+          <div id="bankCompanyPending" class="p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0">
+            <label class="form-label small" style="font-weight:600">Upload Company Registration (PDF, JPG, PNG) *</label>
+            <input type="file" id="bankCompanyFile" class="form-control mb-2" accept=".pdf,.jpg,.jpeg,.png,.webp">
+            <div id="bankCompanyPreview" class="small text-muted mb-2"></div>
+            <button id="bankCompanyBtn" class="btn btn-primary btn-sm" style="background:#0077B6;border-color:#0077B6"><i class="bi bi-cloud-upload me-1"></i> Upload Registration</button>
+            <div id="bankCompanyResult" class="mt-2 small d-none"></div>
+          </div>
+          <div id="bankCompanyDone" class="alert alert-success d-none"><i class="bi bi-check-circle me-2"></i> Company Registration verified!</div>
+          <div id="bankCompanyPendingAlert" class="alert alert-warning d-none"><i class="bi bi-clock me-2"></i> Pending admin verification</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="card mt-4" style="border-radius:16px;border:1px solid #e2e8f0">
+    <div class="card-header" style="background:#f8fafc"><h6 class="mb-0" style="font-weight:700">Verification Summary</h6></div>
+    <div class="card-body p-0">
+      <div class="table-responsive"><table class="table table-hover mb-0" style="font-size:13px"><thead><tr><th>Step</th><th>Status</th><th>Date</th><th>Action</th></tr></thead><tbody>
+        <tr><td>Email</td><td id="sumEmail"><span class="badge bg-warning">Pending</span></td><td id="sumEmailDate">-</td><td><span class="text-muted small">Resend</span></td></tr>
+        <tr><td>Business License</td><td id="sumLicense"><span class="badge bg-secondary">Not Submitted</span></td><td id="sumLicenseDate">-</td><td><span class="text-muted small">Upload</span></td></tr>
+        <tr><td>Tax Clearance</td><td id="sumTax"><span class="badge bg-secondary">Not Submitted</span></td><td id="sumTaxDate">-</td><td><span class="text-muted small">Upload</span></td></tr>
+        <tr><td>Company Reg.</td><td id="sumCompany"><span class="badge bg-secondary">Not Submitted</span></td><td id="sumCompanyDate">-</td><td><span class="text-muted small">Upload</span></td></tr>
+      </tbody></table></div>
+      <div class="p-3 bg-light d-flex justify-content-between flex-wrap gap-2" style="border-radius:0 0 16px 16px"><div><strong>Overall:</strong> <span id="sumOverall">0/3 Completed</span></div><span id="sumBadge" class="badge bg-warning">Not Verified</span></div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block extra_js %}<script src="{% static 'js/bank_verification.js' %}?v=1"></script>{% endblock %}

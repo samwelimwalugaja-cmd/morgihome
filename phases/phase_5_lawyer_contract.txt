@@ -1,0 +1,319 @@
+================================================================================
+PHASE 5: LAWYER & CONTRACT MANAGEMENT
+================================================================================
+
+KABLA YA KUANZA: Hakikisha Phase 4 imekamilika (Mortgage + AI inafanya kazi).
+
+================================================================================
+KAZI ZA PHASE HII (TEKELEZA MOJA KWA MOJA)
+================================================================================
+
+--- KAZI 5.1: Unda Model ya Contract ---
+TEKELEZA:
+1. Nenda kwenye transactions/models.py
+2. Weka code hii:
+
+from django.db import models
+from django.conf import settings
+from mortgages.models import MortgageApplication
+
+class Contract(models.Model):
+    STATUS_CHOICES = (
+        ('draft', 'Rasimu'),
+        ('pending_signature', 'Inasubiri Kusainiwa'),
+        ('signed', 'Imesainiwa'),
+        ('executed', 'Imetekelezwa'),
+    )
+    
+    mortgage = models.ForeignKey(MortgageApplication, on_delete=models.CASCADE, related_name='contracts')
+    customer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='customer_contracts', limit_choices_to={'role': 'customer'})
+    seller = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='seller_contracts', limit_choices_to={'role': 'seller'})
+    bank = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bank_contracts', limit_choices_to={'role': 'bank'})
+    lawyer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='lawyer_contracts', limit_choices_to={'role': 'lawyer'})
+    
+    contract_file = models.FileField(upload_to='contracts/', blank=True, null=True)
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='draft')
+    
+    # Signatures tracking
+    customer_signed = models.BooleanField(default=False)
+    seller_signed = models.BooleanField(default=False)
+    bank_signed = models.BooleanField(default=False)
+    lawyer_signed = models.BooleanField(default=False)
+    
+    signed_date = models.DateField(null=True, blank=True)
+    executed_date = models.DateField(null=True, blank=True)
+    
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Contract: {self.mortgage} - {self.status}"
+    
+    def is_fully_signed(self):
+        return all([self.customer_signed, self.seller_signed, self.bank_signed, self.lawyer_signed])
+
+--- KAZI 5.2: Unda Model ya Transaction ---
+TEKELEZA:
+1. Ongeza kwenye transactions/models.py (chini ya Contract):
+
+class Transaction(models.Model):
+    TRANSACTION_TYPES = (
+        ('deposit', 'Deposit'),
+        ('mortgage_disbursement', 'Malipo ya Mkopo'),
+        ('installment', 'Marejesho'),
+        ('legal_fee', 'Ada ya Wakili'),
+    )
+    
+    STATUS_CHOICES = (
+        ('pending', 'Inasubiri'),
+        ('completed', 'Imekamilika'),
+        ('failed', 'Imeshindwa'),
+    )
+    
+    contract = models.ForeignKey(Contract, on_delete=models.CASCADE, related_name='transactions')
+    amount = models.DecimalField(max_digits=15, decimal_places=2)
+    transaction_type = models.CharField(max_length=30, choices=TRANSACTION_TYPES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    reference_number = models.CharField(max_length=50, unique=True, blank=True)
+    payment_date = models.DateTimeField(null=True, blank=True)
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.transaction_type} - {self.reference_number}"
+    
+    def save(self, *args, **kwargs):
+        if not self.reference_number:
+            import uuid
+            self.reference_number = f"TRX-{uuid.uuid4().hex[:12].upper()}"
+        super().save(*args, **kwargs)
+
+--- KAZI 5.3: Unda Serializers ---
+TEKELEZA:
+1. Nenda kwenye transactions/serializers.py
+2. Weka code hii:
+
+from rest_framework import serializers
+from .models import Contract, Transaction
+from mortgages.serializers import MortgageApplicationSerializer
+
+class ContractSerializer(serializers.ModelSerializer):
+    mortgage_details = MortgageApplicationSerializer(source='mortgage', read_only=True)
+    customer_name = serializers.SerializerMethodField()
+    seller_name = serializers.SerializerMethodField()
+    bank_name = serializers.SerializerMethodField()
+    lawyer_name = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Contract
+        fields = ['id', 'mortgage', 'mortgage_details', 'customer', 'customer_name', 
+                 'seller', 'seller_name', 'bank', 'bank_name', 'lawyer', 'lawyer_name',
+                 'contract_file', 'status', 'customer_signed', 'seller_signed', 
+                 'bank_signed', 'lawyer_signed', 'signed_date', 'executed_date',
+                 'notes', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']
+    
+    def get_customer_name(self, obj):
+        return obj.customer.username if obj.customer else None
+    def get_seller_name(self, obj):
+        return obj.seller.username if obj.seller else None
+    def get_bank_name(self, obj):
+        return obj.bank.username if obj.bank else None
+    def get_lawyer_name(self, obj):
+        return obj.lawyer.username if obj.lawyer else None
+
+class TransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = '__all__'
+        read_only_fields = ['reference_number', 'created_at']
+
+--- KAZI 5.4: Unda Views ---
+TEKELEZA:
+1. Nenda kwenye transactions/views.py
+2. Weka code hii:
+
+from rest_framework import viewsets, permissions, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from datetime import date
+from .models import Contract, Transaction
+from .serializers import ContractSerializer, TransactionSerializer
+from accounts.permissions import IsLawyer, IsCustomer, IsSeller, IsBank
+
+class ContractViewSet(viewsets.ModelViewSet):
+    queryset = Contract.objects.all()
+    serializer_class = ContractSerializer
+    
+    def get_permissions(self):
+        if self.action in ['create', 'execute']:
+            permission_classes = [permissions.IsAuthenticated, IsLawyer]
+        elif self.action in ['sign']:
+            permission_classes = [permissions.IsAuthenticated]
+        else:
+            permission_classes = [permissions.IsAuthenticated]
+        return [permission() for permission in permission_classes]
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'lawyer':
+            return Contract.objects.filter(lawyer=user)
+        elif user.role == 'customer':
+            return Contract.objects.filter(customer=user)
+        elif user.role == 'seller':
+            return Contract.objects.filter(seller=user)
+        elif user.role == 'bank':
+            return Contract.objects.filter(bank=user)
+        return Contract.objects.none()
+    
+    @action(detail=True, methods=['post'])
+    def sign(self, request, pk=None):
+        contract = self.get_object()
+        user = request.user
+        
+        if contract.status not in ['draft', 'pending_signature']:
+            return Response({'error': 'Contract cannot be signed'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if user.role == 'customer':
+            contract.customer_signed = True
+        elif user.role == 'seller':
+            contract.seller_signed = True
+        elif user.role == 'bank':
+            contract.bank_signed = True
+        elif user.role == 'lawyer':
+            contract.lawyer_signed = True
+        else:
+            return Response({'error': 'Invalid role'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        contract.status = 'pending_signature'
+        
+        if contract.is_fully_signed():
+            contract.status = 'signed'
+            contract.signed_date = date.today()
+        
+        contract.save()
+        return Response({'status': contract.status, 'message': 'Signed successfully'})
+    
+    @action(detail=True, methods=['post'])
+    def execute(self, request, pk=None):
+        contract = self.get_object()
+        
+        if contract.status != 'signed':
+            return Response({'error': 'Contract must be signed first'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        contract.status = 'executed'
+        contract.executed_date = date.today()
+        contract.save()
+        
+        # Update mortgage status
+        mortgage = contract.mortgage
+        mortgage.status = 'disbursed'
+        mortgage.save()
+        
+        return Response({'status': 'executed', 'message': 'Contract executed successfully'})
+
+class TransactionViewSet(viewsets.ModelViewSet):
+    queryset = Transaction.objects.all()
+    serializer_class = TransactionSerializer
+    
+    def get_permissions(self):
+        if self.action in ['create']:
+            permission_classes = [permissions.IsAuthenticated, (IsLawyer | IsBank)]
+        else:
+            permission_classes = [permissions.IsAuthenticated]
+        return [permission() for permission in permission_classes]
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.role in ['lawyer', 'bank']:
+            return Transaction.objects.all()
+        elif user.role == 'customer':
+            return Transaction.objects.filter(contract__customer=user)
+        elif user.role == 'seller':
+            return Transaction.objects.filter(contract__seller=user)
+        return Transaction.objects.none()
+    
+    def perform_create(self, serializer):
+        # Generate reference number automatically
+        serializer.save()
+
+--- KAZI 5.5: Unda URLs ---
+TEKELEZA:
+1. Nenda kwenye transactions/urls.py
+2. Weka code hii:
+
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import ContractViewSet, TransactionViewSet
+
+router = DefaultRouter()
+router.register(r'contracts', ContractViewSet, basename='contract')
+router.register(r'transactions', TransactionViewSet, basename='transaction')
+
+urlpatterns = [
+    path('', include(router.urls)),
+]
+
+3. Nenda kwenye morgihome_backend/urls.py
+4. Ongeza path hii:
+   path('api/', include('transactions.urls')),
+
+--- KAZI 5.6: Weka app kwenye INSTALLED_APPS ---
+TEKELEZA:
+1. Nenda kwenye morgihome_backend/settings.py
+2. Hakikisha 'transactions' ipo kwenye INSTALLED_APPS
+
+--- KAZI 5.7: Endesha Migrations ---
+TEKELEZA:
+python manage.py makemigrations
+python manage.py migrate
+
+--- KAZI 5.8: Unda Permission Classes (Kama hazipo) ---
+TEKELEZA:
+1. Nenda kwenye accounts/permissions.py
+2. Weka code hii (ikiwa haipo):
+
+from rest_framework import permissions
+
+class IsCustomer(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role == 'customer'
+
+class IsSeller(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role == 'seller'
+
+class IsBank(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role == 'bank'
+
+class IsRealEstate(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role == 'realestate'
+
+class IsLawyer(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role == 'lawyer'
+
+--- KAZI 5.9: Test ---
+TEKELEZA:
+1. Endesha server: python manage.py runserver
+2. Unda contract kupitia POST /api/contracts/ (Lawyer role pekee)
+3. Sign contract: POST /api/contracts/1/sign/ (kila mtumiaji)
+4. Execute contract: POST /api/contracts/1/execute/ (Lawyer pekee)
+5. Angalia transactions: GET /api/transactions/
+
+================================================================================
+TATIZO: "KAMA KITU KIKIKWAMA, USIENDELEE"
+================================================================================
+Kama unapata error yoyote, SIMAMA na unipe error hiyo.
+Nitasoma error na kukupa suluhisho kabla ya kuendelea.
+
+================================================================================
+BAADA YA KUKAMILISHA PHASE 5
+================================================================================
+NITAKUAMBIA: "PHASE 5 IMESHA. TUNAENDELEA PHASE 6"
+USIENDELEE HADI NIKUAMBIE.
+
+================================================================================

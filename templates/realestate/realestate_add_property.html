@@ -1,0 +1,559 @@
+{% extends 'realestate/realestate_base.html' %}
+{% block title %}Add Property - Corona{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Choose File buttons ziwe na rangi (Corona dark theme) */
+  .form-control[type="file"] {
+    color: #fff !important;
+    background: #2c2e33 !important;
+    border: 1px solid #444 !important;
+    padding: 8px !important;
+  }
+  .form-control[type="file"]::file-selector-button {
+    background: #0077B6 !important;
+    color: #fff !important;
+    border: none !important;
+    padding: 8px 16px !important;
+    border-radius: 6px !important;
+    margin-right: 12px !important;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .form-control[type="file"]::file-selector-button:hover {
+    background: #005a8c !important;
+  }
+  .form-control[type="file"]::-webkit-file-upload-button {
+    background: #0077B6 !important;
+    color: #fff !important;
+    border: none !important;
+    padding: 8px 16px !important;
+    border-radius: 6px !important;
+    margin-right: 12px !important;
+    cursor: pointer;
+    font-weight: 600;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h3 class="page-title">
+    <span class="page-title-icon bg-gradient-primary text-white me-2"><i class="mdi mdi-plus-circle"></i></span> Add Property
+  </h3>
+  <nav aria-label="breadcrumb">
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/realestate/properties/">My Properties</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Add {% if category == 'plot' %}Plot{% else %}House{% endif %}</li>
+    </ul>
+  </nav>
+</div>
+
+<!-- Category Toggle - House / Plot -->
+<div class="row">
+  <div class="col-12 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="card-title">Choose Property Type</h4>
+        <p class="card-description">Select whether you are adding a House or a Plot</p>
+        <div class="d-flex gap-3">
+          <a href="?category=house" class="btn {% if category == 'house' or not category %}btn-primary{% else %}btn-outline-primary{% endif %}" style="{% if category == 'house' or not category %}background:#0077B6; border-color:#0077B6;{% endif %}"><i class="mdi mdi-home"></i> House</a>
+          <a href="?category=plot" class="btn {% if category == 'plot' %}btn-primary{% else %}btn-outline-primary{% endif %}" style="{% if category == 'plot' %}background:#0077B6; border-color:#0077B6;{% endif %}"><i class="mdi mdi-map"></i> Plot</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" class="forms-sample">
+  {% csrf_token %}
+  <input type="hidden" name="property_category" value="{{ category|default:'house' }}">
+
+  {% if category == 'plot' %}
+  <!-- ==================== PLOT FORM (20 fields, 5 sections) ==================== -->
+  <div class="row">
+    <div class="col-12 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title">SECTION 1: PLOT INFORMATION (Land Details)</h4>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label>Plot Title <span class="text-danger">*</span></label>
+                <input type="text" name="title" class="form-control" placeholder="Enter plot name" example="Mikocheni Plot 45" required>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label>Price <span class="text-danger">*</span></label>
+                <input type="number" name="price" class="form-control" placeholder="Enter price (TZS)" required>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Plot Description <span class="text-danger">*</span></label>
+            <textarea name="description" class="form-control" rows="3" placeholder="Write plot description..." required></textarea>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label>Land Type <span class="text-danger">*</span></label>
+                <select name="land_type" class="form-control" required>
+                  <option value="">-- Select --</option>
+                  <option value="residential">Residential</option>
+                  <option value="commercial">Commercial</option>
+                  <option value="agricultural">Agricultural</option>
+                  <option value="mixed">Mixed Use</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label>Plot Status <span class="text-danger">*</span></label>
+                <select name="status" class="form-control" required>
+                  <option value="available">Available</option>
+                  <option value="sold">Sold</option>
+                  <option value="pending">Pending</option>
+                  <option value="reserved">Reserved</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Location <span class="text-danger">*</span></label>
+            <input type="text" name="location" class="form-control" placeholder="Enter plot location" required>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title">SECTION 2: LAND FEATURES</h4>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label>Area <span class="text-danger">*</span></label>
+                <input type="number" name="area" class="form-control" placeholder="Area in square meters (sqm)" required>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label>Plot Dimensions <span class="text-danger">*</span></label>
+                <input type="text" name="plot_dimensions" class="form-control" placeholder="Enter dimensions (m x m)" required>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Land Use <span class="text-danger">*</span></label>
+            <select name="land_use" class="form-control" required>
+              <option value="">-- Select --</option>
+              <option value="residential">Residential</option>
+              <option value="commercial">Commercial</option>
+              <option value="agricultural">Agricultural</option>
+              <option value="mixed">Mixed Use</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Infrastructure - Optional</label>
+            <div class="row">
+              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_road" class="form-check-input"> Road Access</label></div></div>
+              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_electricity" class="form-check-input"> Electricity</label></div></div>
+              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_water" class="form-check-input"> Water</label></div></div>
+              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_sewage" class="form-check-input"> Sewage System</label></div></div>
+              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_internet" class="form-check-input"> Internet</label></div></div>
+              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_fenced" class="form-check-input"> Fenced</label></div></div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label>Title Deed Available? <span class="text-danger">*</span></label>
+                <div>
+                  <div class="form-check"><label class="form-check-label"><input type="radio" name="title_deed_available" value="yes" class="form-check-input" required> Yes</label></div>
+                  <div class="form-check"><label class="form-check-label"><input type="radio" name="title_deed_available" value="no" class="form-check-input"> No</label></div>
+                  <div class="form-check"><label class="form-check-label"><input type="radio" name="title_deed_available" value="in_process" class="form-check-input"> In Process</label></div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label>Survey Plan Available? <span class="text-danger">*</span></label>
+                <div>
+                  <div class="form-check"><label class="form-check-label"><input type="radio" name="survey_plan_available" value="yes" class="form-check-input" required> Yes</label></div>
+                  <div class="form-check"><label class="form-check-label"><input type="radio" name="survey_plan_available" value="no" class="form-check-input"> No</label></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Zoning - Optional</label>
+            <select name="zoning" class="form-control">
+              <option value="">-- Select --</option>
+              <option value="residential">Residential Zone</option>
+              <option value="commercial">Commercial Zone</option>
+              <option value="industrial">Industrial Zone</option>
+              <option value="agricultural">Agricultural Zone</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title">SECTION 3: SELLER DETAILS (Owner Details)</h4>
+          <div class="form-group">
+            <label>Seller Selection <span class="text-danger">*</span></label>
+            <select name="seller" class="form-control" required>
+              <option value="">-- Select Seller --</option>
+              {% for s in sellers %}
+              <option value="{{ s.id }}">{{ s.get_full_name }} — {{ s.email }}</option>
+              {% endfor %}
+              <option value="self">Real Estate Company Owns Land</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title">SECTION 4: PLOT IMAGES (Land Images)</h4>
+          <div class="form-group">
+            <label>Upload Images <span class="text-danger">*</span></label>
+            <input type="file" name="images" multiple accept=".jpg,.jpeg,.png" class="form-control" required>
+            <small class="text-muted">Supported: JPG, PNG, JPEG • Max 2MB per image • Max 5 photos • Max 5 photos • 2MB each</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title">SECTION 5: PLOT DOCUMENTS (Land Documents)</h4>
+          <div class="form-group">
+            <label>Title Deed <span class="text-danger">*</span></label>
+            <input type="file" name="title_deed_file" accept=".pdf,.jpg,.png" class="form-control" required>
+            <small class="text-muted">PDF, JPG, PNG • Max 5MB</small>
+          </div>
+          <div class="form-group">
+            <label>Survey Plan <span class="text-danger">*</span></label>
+            <input type="file" name="survey_plan_file" accept=".pdf,.jpg,.png" class="form-control" required>
+            <small class="text-muted">PDF, JPG, PNG • Max 5MB</small>
+          </div>
+          <div class="form-group">
+            <label>Tax Clearance - Optional</label>
+            <input type="file" name="tax_clearance_file" accept=".pdf,.jpg,.png" class="form-control">
+            <small class="text-muted">PDF, JPG, PNG • Max 5MB</small>
+          </div>
+          <div class="form-group">
+            <label>Land Certificate - Optional</label>
+            <input type="file" name="land_certificate_file" accept=".pdf,.jpg,.png" class="form-control">
+            <small class="text-muted">PDF, JPG, PNG • Max 5MB</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% else %}
+  <!-- ==================== HOUSE FORM (31 fields, 6 sections) ==================== -->
+  <div class="row">
+    <div class="col-12 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title">SECTION 1: HOUSE INFORMATION (Property Details)</h4>
+          <div class="form-group">
+            <label>Property Title <span class="text-danger">*</span></label>
+            <input type="text" name="title" class="form-control" placeholder="Enter house name" required>
+          </div>
+          <div class="form-group">
+            <label>Property Description <span class="text-danger">*</span></label>
+            <textarea name="description" class="form-control" rows="3" placeholder="Write house description..." required></textarea>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label>Property Type <span class="text-danger">*</span></label>
+                <select name="property_type" class="form-control" required>
+                  <option value="house">House</option>
+                  <option value="apartment">Apartment</option>
+                  <option value="townhouse">Townhouse</option>
+                  <option value="villa">Villa</option>
+                  <option value="bungalow">Bungalow</option>
+                  <option value="duplex">Duplex</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label>Property Status <span class="text-danger">*</span></label>
+                <select name="status" class="form-control" required>
+                  <option value="available">Available</option>
+                  <option value="sold">Sold</option>
+                  <option value="rented">Rented</option>
+                  <option value="pending">Pending</option>
+                  <option value="under_construction">Under Construction</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label>Price <span class="text-danger">*</span></label>
+                <input type="number" name="price" class="form-control" placeholder="Enter price (TZS)" required>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label>Location <span class="text-danger">*</span></label>
+                <input type="text" name="location" class="form-control" placeholder="Enter house location" required>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title">SECTION 2: HOUSE FEATURES (Property Features)</h4>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group">
+                <label>Bedrooms <span class="text-danger">*</span></label>
+                <input type="number" name="bedrooms" class="form-control" placeholder="Number of bedrooms" required>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label>Bathrooms <span class="text-danger">*</span></label>
+                <input type="number" name="bathrooms" class="form-control" placeholder="Number of bathrooms" required>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label>Area <span class="text-danger">*</span></label>
+                <input type="number" name="area" class="form-control" placeholder="Area in square meters (sqm)" required>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group">
+                <label>Floor Number - For Apartments</label>
+                <input type="number" name="floor_number" class="form-control" placeholder="Floor number (for apartments)">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label>Total Floors - For Apartments</label>
+                <input type="number" name="total_floors" class="form-control" placeholder="Total number of floors">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label>Parking</label>
+                <input type="number" name="parking" class="form-control" placeholder="Number of parking spaces" value="0">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group">
+                <label>Furnished</label>
+                <select name="furnished" class="form-control">
+                  <option value="">-- Select --</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="partially">Partially</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-8">
+              <div class="form-group">
+                <label>Additional Features</label>
+                <div class="row">
+                  <div class="col-md-3"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="security" class="form-check-input"> Security</label></div></div>
+                  <div class="col-md-3"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="swimming_pool" class="form-check-input"> Swimming Pool</label></div></div>
+                  <div class="col-md-3"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="garden" class="form-check-input"> Garden</label></div></div>
+                  <div class="col-md-3"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="balcony" class="form-check-input"> Balcony</label></div></div>
+                  <div class="col-md-3"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="elevator" class="form-check-input"> Elevator</label></div></div>
+                  <div class="col-md-3"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="air_conditioning" class="form-check-input"> Air Conditioning</label></div></div>
+                  <div class="col-md-3"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="backup_generator" class="form-check-input"> Backup Generator</label></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title">SECTION 3: HOUSE DETAILS (Property Details)</h4>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group">
+                <label>Year Built <span class="text-danger">*</span></label>
+                <input type="number" name="year_built" class="form-control" placeholder="Year built" required>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label>Property Condition <span class="text-danger">*</span></label>
+                <select name="property_condition" class="form-control" required>
+                  <option value="new">New</option>
+                  <option value="good">Good</option>
+                  <option value="needs_renovation">Needs Renovation</option>
+                  <option value="under_construction">Under Construction</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label>Property Size <span class="text-danger">*</span></label>
+                <input type="number" name="property_size" class="form-control" placeholder="House size (sqm)" required>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Land Size - For Houses <span class="text-danger">*</span></label>
+            <input type="number" name="land_size" class="form-control" placeholder="Plot size (sqm)" required>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title">SECTION 5: HOUSE IMAGES (Property Images)</h4>
+          <div class="form-group">
+            <label>Upload Images <span class="text-danger">*</span></label>
+            <input type="file" name="images" multiple accept=".jpg,.jpeg,.png" class="form-control" required>
+            <small class="text-muted">JPG, PNG, JPEG • Max 2MB per image • Max 5 photos • Max 5 photos • 2MB each</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title">SECTION 6: HOUSE DOCUMENTS (Property Documents)</h4>
+          <div class="form-group">
+            <label>Title Deed <span class="text-danger">*</span></label>
+            <input type="file" name="title_deed_file" accept=".pdf,.jpg,.png" class="form-control" required>
+            <small class="text-muted">PDF, JPG, PNG • Max 5MB</small>
+          </div>
+          <div class="form-group">
+            <label>Survey Plan - Optional</label>
+            <input type="file" name="survey_plan_file" accept=".pdf,.jpg,.png" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Tax Clearance - Optional</label>
+            <input type="file" name="tax_clearance_file" accept=".pdf,.jpg,.png" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Building Permit - Optional</label>
+            <input type="file" name="building_permit_file" accept=".pdf,.jpg,.png" class="form-control">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="row">
+    <div class="col-12">
+      <button type="submit" class="btn btn-primary me-2" style="background:#0077B6; border-color:#0077B6;"><i class="mdi mdi-check"></i> Submit Property</button>
+      <a href="/realestate/properties/" class="btn btn-dark">Cancel</a>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+(function(){
+  function shortAlert(msg){ if(window.Swal){ Swal.fire({icon:'error', title:msg, toast:true, position:'top-end', showConfirmButton:false, timer:4000}); } else { alert(msg); } }
+  document.querySelectorAll('input[name="images"]').forEach(function(inp){
+    var form = inp.closest('form');
+    // hidden cover index
+    if(form && !form.querySelector('input[name="cover_index"]')){
+      var h=document.createElement('input'); h.type='hidden'; h.name='cover_index'; h.value='0'; form.appendChild(h);
+    }
+    if(form && !form.querySelector('input[name="cover_new_index"]')){
+      var h2=document.createElement('input'); h2.type='hidden'; h2.name='cover_new_index'; h2.value='-1'; form.appendChild(h2);
+    }
+    var prev = document.createElement('div');
+    prev.className='mt-2 d-flex gap-2 flex-wrap';
+    inp.parentNode.appendChild(prev);
+    inp.addEventListener('change', function(){
+      prev.innerHTML='';
+      var files = Array.prototype.slice.call(inp.files||[]);
+      var existing = 0;
+      try{
+        existing = document.querySelectorAll('[data-existing-img]').length;
+      }catch(e){}
+      if(files.length + existing > 5){ shortAlert('Maximum 5 photos allowed.'); inp.value=''; return; }
+      for(var i=0;i<files.length;i++){
+        if(files[i].size > 2*1024*1024){ shortAlert('Photo "'+files[i].name+'" exceeds 2MB.'); inp.value=''; prev.innerHTML=''; return; }
+      }
+      files.forEach(function(f, idx){
+        var url = URL.createObjectURL(f);
+        var box = document.createElement('label');
+        box.style.cssText='width:90px; cursor:pointer; font-size:11px;';
+        box.innerHTML='<img src="'+url+'" style="width:90px;height:70px;object-fit:cover;border-radius:8px;border:2px solid #2c2e33;"><br><input type="radio" name="cover_pick" value="'+idx+'"'+(idx===0?' checked':'')+'> Cover';
+        prev.appendChild(box);
+      });
+      prev.querySelectorAll('input[name="cover_pick"]').forEach(function(r){
+        r.addEventListener('change', function(){
+          var h=form.querySelector('input[name="cover_index"]'); if(h) h.value=r.value;
+          var h2=form.querySelector('input[name="cover_new_index"]'); if(h2) h2.value=r.value;
+        });
+      });
+    });
+    if(form){
+      form.addEventListener('submit', function(e){
+        var files = inp.files||[];
+        var existing = 0;
+        try{ existing = document.querySelectorAll('[data-existing-img]').length; }catch(e2){}
+        if(files.length + existing > 5){ e.preventDefault(); shortAlert('Maximum 5 photos allowed.'); return false; }
+        for(var i=0;i<files.length;i++){ if(files[i].size > 2*1024*1024){ e.preventDefault(); shortAlert('Photo "'+files[i].name+'" exceeds 2MB.'); return false; } }
+      });
+    }
+  });
+  // existing cover select
+  document.querySelectorAll('input[name="cover_image_id"]').forEach(function(){});
+})();
+</script>
+
+{% endblock %}

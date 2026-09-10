@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* MorgiHome extra layer - kuhakikisha rangi ziko sawa light/dark */
+@layer base {
+  :root {
+    --morgi-primary: #0077B6;
+    --morgi-bg: #FFFFFF;
+  }
+  .dark {
+    --morgi-bg: #0A2B4E;
+  }
+}

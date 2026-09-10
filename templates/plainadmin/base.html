@@ -1,0 +1,393 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}MorgiHome{% endblock %}</title>
+  <link href="{% static 'images/favicon.ico' %}?v=4" rel="icon">
+  <link href="{% static 'vendors/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="{% static 'vendors/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/light/style.css" rel="stylesheet">
+  <link href="{% static 'css/modernadmin.css' %}?v=3" rel="stylesheet">
+  <link href="{% static 'css/toast.css' %}" rel="stylesheet">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <!-- Header - ModernAdmin -->
+  <header class="header">
+    <div class="header-left">
+      <a href="{% url 'home' %}" class="header-logo">
+        <img src="{% static 'images/morgihome-official-logo.png' %}" alt="MorgiHome" style="max-height:36px; width:auto;">
+      </a>
+      <button class="sidebar-toggle" title="Toggle Sidebar"><i class="bi bi-list"></i></button>
+    </div>
+    <div class="header-search">
+      <form class="search-form" onsubmit="return false;">
+        <i class="bi bi-search search-icon"></i>
+        <input type="search" placeholder="Search..." autocomplete="off" id="headerSearchInput">
+        <kbd class="search-shortcut">Ctrl+K</kbd>
+      </form>
+    </div>
+    <div class="header-right">
+      <div class="header-actions-desktop">
+        <div class="header-action dropdown apps-dropdown">
+          <button class="dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Apps"><i class="bi bi-grid-3x3-gap"></i></button>
+          <div class="dropdown-menu dropdown-menu-end apps-menu">
+            <div class="apps-menu-header"><h6>Quick Access</h6></div>
+            <div class="apps-grid">
+              <a href="#" class="apps-item" data-view="overview"><div class="apps-item-icon primary"><i class="bi bi-speedometer2"></i></div><span class="apps-item-title">Dashboard</span></a>
+              <a href="#" class="apps-item" data-view="properties"><div class="apps-item-icon success"><i class="bi bi-houses"></i></div><span class="apps-item-title">Properties</span></a>
+              <a href="#" class="apps-item" data-view="mortgages"><div class="apps-item-icon info"><i class="bi bi-bank"></i></div><span class="apps-item-title">Mortgages</span></a>
+              <a href="#" class="apps-item" data-view="profile"><div class="apps-item-icon warning"><i class="bi bi-person"></i></div><span class="apps-item-title">Profile</span></a>
+            </div>
+          </div>
+        </div>
+        <button class="header-action theme-toggle" title="Toggle Theme" style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:8px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-color)"><i class="bi bi-moon-fill theme-icon-dark" style="font-size:18px;"></i><i class="bi bi-sun-fill theme-icon-light" style="font-size:18px;color:#f59e0b;"></i></button>
+        <div class="header-action dropdown language-dropdown">
+          <button class="dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Language"><span class="lang-flag">🇺🇸</span></button>
+          <ul class="dropdown-menu dropdown-menu-end"><li><a class="dropdown-item active" href="#"><span class="lang-flag">🇺🇸</span><span>English</span></a></li></ul>
+        </div>
+        <div class="header-action dropdown notification-dropdown">
+          <button class="dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications"><i class="bi bi-bell"></i><span class="badge">3</span></button>
+          <div class="dropdown-menu dropdown-menu-end">
+            <div class="notification-header"><h6>Notifications</h6><span class="notification-count">3 new</span></div>
+            <div class="notification-list">
+              <a href="#" class="notification-item unread"><div class="notification-avatar success"><i class="bi bi-check-circle"></i></div><div class="notification-content"><div class="notification-title">Welcome to MorgiHome</div><div class="notification-text">Your dashboard is ready</div><div class="notification-time">Just now</div></div></a>
+            </div>
+            <div class="notification-footer"><a href="#" data-view="notifications">View all notifications <i class="bi bi-arrow-right"></i></a></div>
+          </div>
+        </div>
+        <div class="header-action dropdown user-dropdown">
+          <button class="dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            <span id="headerAvatarWrap"><span class="avatar-initial avatar-initial--header">M</span></span>
+          </button>
+          <div class="dropdown-menu dropdown-menu-end">
+            <div class="user-dropdown-header">
+              <span id="dropdownAvatarWrap"><span class="avatar-initial avatar-initial--sm">M</span></span>
+              <div class="user-dropdown-info">
+                <div class="user-dropdown-name" id="dropdownName">—</div>
+                <div class="user-dropdown-role" id="dropdownRole" style="color:#0A2B4E;font-weight:600">Customer</div>
+              </div>
+            </div>
+            <div class="user-dropdown-body">
+              <a class="user-dropdown-item" href="#" data-view="profile"><i class="bi bi-person"></i><span>My Profile</span></a>
+              <a class="user-dropdown-item" href="#" data-view="settings"><i class="bi bi-gear"></i><span>Account Settings</span></a>
+              <a class="user-dropdown-item" href="#" data-view="activity"><i class="bi bi-clock-history"></i><span>Activity Log</span></a>
+            </div>
+            <div class="user-dropdown-footer">
+              <a class="user-dropdown-logout" href="#" id="headerLogoutBtn"><i class="bi bi-box-arrow-right"></i><span>Sign Out</span></a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="header-actions-mobile">
+        <button class="header-action search-toggle" title="Search"><i class="bi bi-search"></i></button>
+        <button class="header-action mobile-menu-toggle" title="More"><i class="bi bi-three-dots-vertical"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-search"><form class="search-form"><input type="search" placeholder="Search..." autocomplete="off"><button type="submit"><i class="bi bi-search"></i></button></form></div>
+  <div class="mobile-header-menu">
+    <div class="mobile-header-menu-content">
+      <button class="mobile-menu-item theme-toggle" title="Toggle Theme"><i class="bi bi-moon-fill theme-icon-dark"></i><i class="bi bi-sun-fill theme-icon-light" style="color:#f59e0b"></i><span class="mobile-menu-label">Theme</span></button>
+      <a href="#" class="mobile-menu-item" data-view="profile"><i class="bi bi-person"></i><span class="mobile-menu-label">Profile</span></a>
+      <a href="#" class="mobile-menu-item" id="mobileLogoutBtn"><i class="bi bi-box-arrow-right"></i><span class="mobile-menu-label">Sign Out</span></a>
+    </div>
+  </div>
+
+  <!-- Sidebar - ModernAdmin -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <a href="{% url 'home' %}" class="sidebar-logo">
+        <img src="{% static 'images/morgihome-official-logo.png' %}" alt="MorgiHome" style="max-height:36px; width:auto;">
+      </a>
+      <button class="sidebar-close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <nav class="sidebar-nav">
+      <ul class="nav-menu" id="dynamicSidebar"></ul>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-user">
+        <a href="#" class="sidebar-footer-profile" data-view="profile">
+          <span id="sidebarAvatarWrap"><span class="avatar-initial avatar-initial--sm">M</span></span>
+          <div class="sidebar-footer-info">
+            <div class="sidebar-footer-name" id="sidebarName">User</div>
+            <div class="sidebar-footer-role" id="sidebarRole">Customer</div>
+          </div>
+        </a>
+        <div class="sidebar-footer-actions">
+          <a href="#" class="sidebar-footer-action" data-view="profile" title="Settings"><i class="ph-light ph-gear"></i></a>
+          <a href="#" class="sidebar-footer-action sidebar-footer-logout" id="sidebarFooterLogout" title="Logout"><i class="ph-light ph-sign-out"></i></a>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-overlay"></div>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="main-content">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <script src="{% static 'vendors/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'js/modernadmin-main.js' %}?v=1"></script>
+  <script src="{% static 'js/modernadmin.js' %}?v=1"></script>
+  <script src="{% static 'js/toast.js' %}"></script>
+  <script>
+    const API_BASE = '/api/';
+    function getToken(){ return localStorage.getItem('access'); }
+    function getUser(){ try{return JSON.parse(localStorage.getItem('user')||'null')}catch(e){return null} }
+    function authHeaders(){ const t=getToken(); return t? {'Authorization':'Bearer '+t,'Content-Type':'application/json'} : {'Content-Type':'application/json'} }
+    function requireAuth(){ if(!getToken()){ window.location.replace('/login/'); return false; } return true; }
+    // Every action should give feedback - toast helper
+    function notifySuccess(msg, title){ if(window.showToast) showToast(msg, 'success', title||'Success ✅'); else alert(msg); }
+    function notifyError(msg, title){ if(window.showToast) showToast(msg, 'error', title||'Failed ❌'); else alert(msg); }
+    function notifyInfo(msg, title){ if(window.showToast) showToast(msg, 'info', title||'Notice'); else alert(msg); }
+    function logout(){
+      // Every action must show an alert - the toast must be visible before redirect
+      try{ if(window.showToast) showToast('You are logging out...', 'info', 'Logout'); }catch(e){}
+      // show the toast for 1.5 seconds before clearing and returning to login
+      setTimeout(function(){
+        localStorage.clear();
+        sessionStorage.clear();
+        try{ history.pushState(null, '', '/login/'); history.replaceState(null, '', '/login/'); }catch(e){}
+        window.location.replace('/login/');
+      }, 1500);
+    }
+    // Prevent back button after logout - even if pressed, do not re-enter the dashboard
+    window.addEventListener('pageshow', function(e){
+      if(e.persisted || performance.getEntriesByType('navigation')[0]?.type === 'back_forward'){
+        if(!getToken()) window.location.replace('/login/');
+      }
+    });
+    window.addEventListener('load', function(){ if(!getToken() && window.location.pathname.startsWith('/dashboard')) window.location.replace('/login/'); });
+    // Also block dashboard bfcache
+    if(window.performance && performance.navigation){ /* legacy */ }
+    document.getElementById('sidebarLogoutBtn')?.addEventListener('click',e=>{e.preventDefault();logout()});
+    document.getElementById('sidebarFooterLogout')?.addEventListener('click',e=>{e.preventDefault();logout()});
+    document.getElementById('headerLogoutBtn')?.addEventListener('click',e=>{e.preventDefault();logout()});
+    document.getElementById('mobileLogoutBtn')?.addEventListener('click',e=>{e.preventDefault();logout()});
+    // Header search - works on Enter, goes to the results page based on role
+    (function(){
+      const headerInput=document.getElementById('headerSearchInput');
+      const headerForm=document.querySelector('.header-search .search-form');
+      const mobileForm=document.querySelector('.mobile-search .search-form');
+      function doSearch(q){
+        q=(q||'').trim();
+        if(!q) return;
+        const u=getUser(); const role=(u&&u.role||'customer').toLowerCase();
+        // Sellers go to seller properties with a query, customers to global properties
+        if(role==='seller' || role==='realestate'){
+          window.location.href='/seller/properties/?q='+encodeURIComponent(q);
+        } else {
+          window.location.href='/properties/?q='+encodeURIComponent(q);
+        }
+      }
+      if(headerInput){
+        headerInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); doSearch(headerInput.value); }});
+        // also handle icon click
+        const icon=headerInput.parentElement?.querySelector('.search-icon');
+        if(icon) icon.addEventListener('click', ()=> doSearch(headerInput.value));
+      }
+      if(headerForm) headerForm.addEventListener('submit', e=>{ e.preventDefault(); const inp=headerForm.querySelector('input'); if(inp) doSearch(inp.value); });
+      if(mobileForm) mobileForm.addEventListener('submit', e=>{ e.preventDefault(); const inp=mobileForm.querySelector('input'); if(inp) doSearch(inp.value); });
+      // If the URL has ?q=, fill it into the input
+      try{
+        const params=new URLSearchParams(window.location.search);
+        const q=params.get('q');
+        if(q && headerInput) headerInput.value=q;
+        if(q){
+          const mobileInp=document.querySelector('.mobile-search input'); if(mobileInp) mobileInp.value=q;
+        }
+      }catch(e){}
+    })();
+
+    function renderHeaderAvatars(u){
+      if(!u) return;
+      function displayName(u){ return u.full_name || (u.first_name ? (u.first_name+' '+(u.last_name||'')).trim() : '') || u.email?.split('@')[0] || u.username || 'User'; }
+      function safeAvatar(u,size){
+        try{ if(typeof avatarHtml==='function') return avatarHtml(u,size); }catch(e){}
+        const init=(u.initials|| getInitials(displayName(u)) );
+        return '<span class="avatar-initial avatar-initial--'+size+'">'+init+'</span>';
+      }
+      const hWrap=document.getElementById('headerAvatarWrap');
+      if(hWrap) hWrap.innerHTML=safeAvatar(u,'header');
+      const dWrap=document.getElementById('dropdownAvatarWrap');
+      if(dWrap) dWrap.innerHTML=safeAvatar(u,'sm');
+      const sWrap=document.getElementById('sidebarAvatarWrap');
+      if(sWrap) sWrap.innerHTML=safeAvatar(u,'sm');
+      const dn=displayName(u);
+      const hn=document.getElementById('dropdownName'); if(hn) hn.textContent=dn;
+      const dr=document.getElementById('dropdownRole'); if(dr) dr.textContent=(u.role||'customer').toUpperCase();
+      const sn=document.getElementById('sidebarName'); if(sn) sn.textContent=dn;
+      const sr=document.getElementById('sidebarRole'); if(sr) sr.textContent=(u.role||'customer').toUpperCase();
+    }
+    (function(){
+      const u=getUser();
+      if(u) renderHeaderAvatars(u);
+    })();
+
+    // Role-based Sidebar - ModernAdmin exact per spec
+    const roleSidebars = {
+      customer: [
+        {label:'Dashboard', href:'/customer/dashboard/', icon:'ph-squares-four', view:'overview'},
+        {label:'Properties', href:'/properties/', icon:'ph-house', view:'properties'},
+        {label:'Mortgage Applications', icon:'ph-files', dropdown:[
+          {label:'Apply for Mortgage', href:'/customer/apply/', view:'mortgages'},
+          {label:'My Applications', href:'/customer/applications/', view:'applications'},
+          {label:'Application Tracking', href:'/customer/track/', view:'tracking'}
+        ]},
+        {label:'Repayment Schedule', href:'/customer/repayment/', icon:'ph-calendar-blank', view:'repayment'},
+        {label:'My Contracts', href:'/customer/contracts/', icon:'ph-file-text', view:'contracts'},
+        {label:'Profile', href:'/profile/', icon:'ph-user', view:'profile'},
+        {label:'Logout', href:'/logout/', icon:'ph-sign-out', view:'logout'}
+      ],
+      seller: [
+        {label:'Dashboard', href:'/seller/dashboard/', icon:'ph-squares-four', view:'overview'},
+        {label:'Properties Management', icon:'ph-house', dropdown:[
+          {label:'Add Property', href:'/seller/properties/add/', view:''},
+          {label:'My Properties', href:'/seller/properties/', view:''},
+          {label:'My Listings', href:'/seller/properties/', view:''}
+        ]},
+        {label:'Interested Buyers', href:'/seller/buyers/', icon:'ph-eye', view:''},
+        {label:'My Contracts', href:'/seller/contracts/', icon:'ph-file-text', view:'contracts'},
+        {label:'Profile', href:'/profile/', icon:'ph-user', view:'profile'},
+        {label:'Logout', href:'/logout/', icon:'ph-sign-out', view:'logout'}
+      ],
+      bank: [
+        {label:'Dashboard', href:'/bank/dashboard/', icon:'ph-squares-four', view:'overview'},
+        {label:'Mortgage Applications', icon:'ph-files', dropdown:[
+          {label:'All Applications', href:'/bank/applications/all/', view:'applications'},
+          {label:'Pending Approvals', href:'/bank/applications/pending/', view:'applications'},
+          {label:'Approved Applications', href:'/bank/applications/approved/', view:'applications'},
+          {label:'Rejected Applications', href:'/bank/applications/rejected/', view:'applications'}
+        ]},
+        {label:'Risk Analysis', icon:'ph-warning-circle', dropdown:[
+          {label:'AI Risk Scores', href:'/bank/risk/scores/', view:'risk'},
+          {label:'Affordability Reports', href:'/bank/risk/affordability/', view:'risk'},
+          {label:'High Risk Borrowers', href:'/bank/risk/high/', view:'risk'}
+        ]},
+        {label:'Contracts', href:'/bank/contracts/', icon:'ph-file-text', view:'contracts'},
+        {label:'Reports', icon:'ph-chart-bar', dropdown:[
+          {label:'Mortgage Reports', href:'/bank/reports/mortgages/', view:'reports'},
+          {label:'Financial Reports', href:'/bank/reports/financial/', view:'reports'},
+          {label:'Monthly Summary', href:'/bank/reports/summary/', view:'reports'}
+        ]},
+        {label:'Bank Verification', href:'/verify/bank/', icon:'ph-shield-check'},
+        {label:'Profile', href:'/profile/', icon:'ph-user', view:'profile'},
+        {label:'Logout', href:'/logout/', icon:'ph-sign-out', view:'logout'}
+      ],
+      realestate: [
+        {label:'Dashboard', href:'/realestate/dashboard/', icon:'ph-squares-four', view:'overview'},
+        {label:'Properties', icon:'ph-house', dropdown:[
+          {label:'Add Property', href:'/realestate/properties/add/', view:'properties'},
+          {label:'All Properties', href:'/realestate/properties/list/', view:'properties'},
+          {label:'Property Valuation', href:'/realestate/properties/valuation/', view:'properties'}
+        ]},
+        {label:'Mortgage Applications', icon:'ph-files', dropdown:[
+          {label:'All Applications', href:'/realestate/applications/all/', view:'applications'},
+          {label:'Property Linked Applications', href:'/realestate/applications/property/', view:'applications'}
+        ]},
+        {label:'Contracts', href:'/realestate/contracts/', icon:'ph-file-text', view:'contracts'},
+        {label:'Profile', href:'/profile/', icon:'ph-user', view:'profile'},
+        {label:'Logout', href:'/logout/', icon:'ph-sign-out', view:'logout'}
+      ],
+        {label:'Contracts Management', icon:'ph-file-text', dropdown:[
+        ]},
+        {label:'Signature Management', icon:'ph-pen-nib', dropdown:[
+        ]},
+        {label:'Profile', href:'/profile/', icon:'ph-user', view:'profile'},
+        {label:'Logout', href:'/logout/', icon:'ph-sign-out', view:'logout'}
+      ]
+    };
+    function renderSidebar(role){
+      role=(role||'customer').toLowerCase();
+      if(!roleSidebars[role]) role='customer';
+      const menu=roleSidebars[role];
+      const container=document.getElementById('dynamicSidebar');
+      if(!container) return;
+      let html='';
+      menu.forEach(item=>{
+        if(item.dropdown){
+          html+=`<li class="nav-item has-submenu"><a class="nav-link" href="#" aria-expanded="false" data-sidebar-tooltip="${item.label}"><i class="ph-light ${item.icon}"></i><span>${item.label}</span><i class="ph-light ph-caret-down nav-arrow"></i></a><ul class="nav-submenu">`;
+          item.dropdown.forEach(sub=>{
+            const viewAttr=sub.view?` data-view="${sub.view}"`:'';
+            html+=`<li><a class="nav-link" href="${sub.href}"${viewAttr}>${sub.label}</a></li>`;
+          });
+          html+='</ul></li>';
+        } else {
+          const viewAttr=item.view?` data-view="${item.view}"`:'';
+          const isLogout=item.view==='logout'?' id="dynamicLogoutBtn"':'';
+          html+=`<li class="nav-item"><a class="nav-link" href="${item.href}"${viewAttr}${isLogout} data-sidebar-tooltip="${item.label}"><i class="ph-light ${item.icon}"></i><span>${item.label}</span></a></li>`;
+        }
+      });
+      container.innerHTML=html;
+      // Bind submenu toggles
+      container.querySelectorAll('.has-submenu > .nav-link').forEach(link=>{
+        link.addEventListener('click', function(e){
+          e.preventDefault();
+          const parent=this.parentElement;
+          const submenu=parent.querySelector(':scope > .nav-submenu');
+          if(!submenu) return;
+          const isOpen=parent.classList.contains('open');
+          // close siblings
+          parent.parentElement.querySelectorAll(':scope > .has-submenu.open').forEach(sib=>{
+            if(sib!==parent){ sib.classList.remove('open'); const s=sib.querySelector(':scope > .nav-submenu'); if(s) s.style.maxHeight=null; const l=sib.querySelector(':scope > .nav-link'); if(l) l.setAttribute('aria-expanded','false'); }
+          });
+          if(isOpen){
+            parent.classList.remove('open');
+            this.setAttribute('aria-expanded','false');
+            submenu.style.maxHeight=null;
+          } else {
+            parent.classList.add('open');
+            this.setAttribute('aria-expanded','true');
+            submenu.style.maxHeight=submenu.scrollHeight+'px';
+          }
+        });
+      });
+      // Bind view navigation
+      container.querySelectorAll('[data-view]').forEach(a=>{
+        a.addEventListener('click', e=>{
+          const view=a.dataset.view;
+          if(!view) return;
+          if(view==='logout'){ e.preventDefault(); logout(); return; }
+          if(document.getElementById('view-'+view)){
+            e.preventDefault();
+            if(typeof showView==='function') showView(view);
+            else { document.querySelectorAll('.view-section').forEach(el=>el.classList.add('d-none')); const t=document.getElementById('view-'+view); if(t) t.classList.remove('d-none'); }
+          } else if(view==='repayment' || view==='contracts' || view==='buyers' || view==='risk' || view==='reports' || view==='signatures' || view==='transactions' || view==='buyers'){
+            e.preventDefault();
+            // Show generic placeholder or contracts view if exists
+            const target=document.getElementById('view-'+view) || document.getElementById('view-contracts') || document.getElementById('view-overview');
+            if(target){ document.querySelectorAll('.view-section').forEach(el=>el.classList.add('d-none')); target.classList.remove('d-none'); }
+            if(window.showToast) showToast(view.charAt(0).toUpperCase()+view.slice(1)+' - Coming soon','info');
+          }
+        });
+      });
+      const dynLogout=document.getElementById('dynamicLogoutBtn');
+      if(dynLogout) dynLogout.addEventListener('click', e=>{e.preventDefault(); logout();});
+    }
+    // Render on load
+    (function(){
+      const u=getUser();
+      const role=u?u.role:'customer';
+      renderSidebar(role);
+      // Re-render if user changes (e.g., after login)
+      const origRenderHeader=renderHeaderAvatars;
+      window.renderHeaderAvatars=function(u){
+        origRenderHeader(u);
+        if(u && u.role) renderSidebar(u.role);
+      };
+    })();
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,111 @@
+{% extends 'plainadmin/base.html' %}
+{% load static %}
+{% block title %}Identity Verification - MorgiHome{% endblock %}
+{% block content %}
+<div class="pagetitle">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div>
+      <h1>Identity Verification</h1>
+      <nav><ol class="breadcrumb mb-0"><li class="breadcrumb-item"><a href="/dashboard/">Home</a></li><li class="breadcrumb-item active">Identity</li></ol></nav>
+      <p class="text-muted small mb-0">Upload ID, Passport or Driving License (for Seller, Bank, Lawyer, Real Estate)</p>
+    </div>
+  </div>
+</div>
+
+<section class="section">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-body">
+          <div id="identityStatus" class="alert alert-info"><i class="bi bi-info-circle me-2"></i> Loading status...</div>
+          <form id="identityForm" enctype="multipart/form-data">
+            <div class="mb-3">
+              <label class="form-label">Document Type <span class="text-danger">*</span></label>
+              <select id="docType" name="document_type" class="form-select" required>
+                <option value="id">Bytional ID</option>
+                <option value="passport">Passport</option>
+                <option value="driving_license">Driving License</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Upload Document <span class="text-danger">*</span></label>
+              <input type="file" id="docFile" name="document" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+              <div class="form-text">Supported: PDF, JPG, PNG. Max 5MB.</div>
+              <div id="filePreview" class="mt-2"></div>
+            </div>
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary" style="background:#0077B6;border-color:#0077B6"><i class="bi bi-cloud-upload me-1"></i> Upload for Verification</button>
+            </div>
+          </form>
+          <div id="uploadResult" class="mt-3" style="display:none"></div>
+          <div class="mt-4 p-3 bg-light rounded">
+            <h6>What happens next?</h6>
+            <ul class="small text-muted mb-0">
+              <li>Your document will be reviewed by admin/loan officer</li>
+              <li>Status will change to <span class="badge bg-warning">Pending</span> → <span class="badge bg-success">Verified</span> or <span class="badge bg-danger">Rejected</span></li>
+              <li>You will be notified when verified</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="text-center mt-3"><a href="/verify/status/" class="btn btn-outline-secondary">Check Verification Status</a></div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function(){
+  const API='/api/';
+  function authHeaders(){ const t=localStorage.getItem('access'); const h={}; if(t) h['Authorization']='Bearer '+t; return h; }
+  function authHeadersJson(){ const t=localStorage.getItem('access'); const h={'Content-Type':'application/json'}; if(t) h['Authorization']='Bearer '+t; return h; }
+  const statusEl=document.getElementById('identityStatus');
+  async function loadStatus(){
+    try{
+      const res=await fetch(API+'verify/status/', {headers: authHeadersJson()});
+      const data=await res.json();
+      const el=document.getElementById('identityStatus');
+      const map={not_submitted:'Not Submitted',pending:'Pending ⏳',verified:'Verified ✅',rejected:'Rejected ❌'};
+      el.className='alert '+(data.identity_status==='verified'?'alert-success':data.identity_status==='pending'?'alert-warning':data.identity_status==='rejected'?'alert-danger':'alert-info');
+      el.innerHTML=`<i class="bi bi-card-image me-2"></i> Current status: <strong>${map[data.identity_status]||data.identity_status}</strong> ${data.identity_rejection_reason?' - '+data.identity_rejection_reason:''}`;
+    }catch(e){ statusEl.textContent='Failed to load'; }
+  }
+  document.getElementById('docFile')?.addEventListener('change', (e)=>{
+    const file=e.target.files[0];
+    const preview=document.getElementById('filePreview');
+    if(!file){ preview.innerHTML=''; return; }
+    if(file.type.startsWith('image/')){
+      const url=URL.createObjectURL(file);
+      preview.innerHTML=`<img src="${url}" style="max-width:200px;max-height:150px;border-radius:8px;border:1px solid #eef2f7"><br><small class="text-muted">${file.name} (${(file.size/1024).toFixed(1)} KB)</small>`;
+    } else {
+      preview.innerHTML=`<i class="bi bi-file-earmark-pdf" style="font-size:32px;color:#DC3545"></i><br><small>${file.name}</small>`;
+    }
+  });
+  document.getElementById('identityForm')?.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const file=document.getElementById('docFile').files[0];
+    const type=document.getElementById('docType').value;
+    if(!file){ showToast('Please select a file','warning'); return; }
+    const fd=new FormData();
+    fd.append('document', file);
+    fd.append('document_type', type);
+    try{
+      const res=await fetch(API+'verify/identity/', {method:'POST', headers: authHeaders(), body: fd});
+      const data=await res.json();
+      const resultEl=document.getElementById('uploadResult');
+      resultEl.style.display='block';
+      if(res.ok){
+        resultEl.className='alert alert-success';
+        resultEl.innerHTML='<i class="bi bi-check-circle me-2"></i> '+data.message;
+        showToast(data.message,'success');
+        loadStatus();
+      } else {
+        resultEl.className='alert alert-danger';
+        resultEl.textContent=data.error||'Upload failed';
+        showToast(data.error,'error');
+      }
+    }catch(err){ showToast(err.message,'error'); }
+  });
+  loadStatus();
+})();
+</script>
+{% endblock %}

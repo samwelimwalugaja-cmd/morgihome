@@ -1,0 +1,75 @@
+{% extends 'bank/bank_base.html' %}
+{% block title %}Search - MorgiHome Bank{% endblock %}
+{% block page_title %}Search{% endblock %}
+{% block breadcrumb %}Bank / Search{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+  <div class="flex items-center gap-3 mb-6">
+    <div class="flex-1 flex items-center gap-2 morgi-input rounded-lg px-4 py-3">
+      <i data-lucide="search" class="w-5 h-5 text-[var(--morgi-muted)]"></i>
+      <input id="searchPageInput" type="text" value="{{ query }}" placeholder="Search applications, customers..." class="bg-transparent outline-none text-sm flex-1" onkeypress="if(event.key==='Enter'){ window.location.href='{% url 'bank_search' %}?q='+encodeURIComponent(this.value) }">
+    </div>
+    <a href="{% url 'bank_applications' %}" class="btn-secondary px-4 py-3 rounded-lg text-sm font-medium">All Applications</a>
+  </div>
+
+  {% if query %}
+    <div class="mb-4">
+      <h1 class="text-xl font-bold">Search results for "{{ query }}"</h1>
+      <p class="text-sm text-[var(--morgi-muted)]">{{ total }} result{{ total|pluralize }} found • Try name, ID, or type (House, Business, Construction)</p>
+    </div>
+
+    {% if results %}
+      <div class="morgi-card overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full morgi-table">
+            <thead>
+              <tr>
+                <th class="px-5 py-3 text-left">Customer / ID</th>
+                <th class="px-5 py-3 text-left">Amount & Type</th>
+                <th class="px-5 py-3 text-left">AI Risk</th>
+                <th class="px-5 py-3 text-left">Status</th>
+                <th class="px-5 py-3 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody class="text-sm">
+              {% for app in results %}
+              <tr>
+                <td class="px-5 py-4"><div class="flex items-center gap-3"><div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold" style="background: linear-gradient(135deg, #0077B6, #0A2B4E);">{{ app.initials|default:"-" }}</div><div><p class="font-semibold">{{ app.customer }}</p><p class="text-xs text-[var(--morgi-muted)]">{{ app.ref|default:app.id }}{% if app.kind %} • {{ app.kind }}{% endif %}</p></div></div></td>
+                <td class="px-5 py-4"><p class="font-semibold">TZS {{ app.amount }}</p><p class="text-xs text-[var(--morgi-muted)]">{{ app.type }}{% if app.term != '-' %} • {{ app.term }} years{% endif %}</p></td>
+                <td class="px-5 py-4"><span class="px-2.5 py-1 rounded-full text-xs font-semibold {% if app.ai_risk == 'Low' %}bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300{% elif app.ai_risk == 'Medium' %}bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300{% else %}bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300{% endif %}">{{ app.ai_risk }}{% if app.ai_percent %} {{ app.ai_percent }}%{% endif %}</span></td>
+                <td class="px-5 py-4"><span class="px-2.5 py-1 rounded-full text-xs font-semibold border {% if app.status == 'pending' %}bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300{% elif app.status == 'approved' %}bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700{% else %}bg-slate-50 text-slate-600{% endif %}">{{ app.status|title }}</span></td>
+                <td class="px-5 py-4 text-right"><a href="{{ app.link }}" class="btn-primary px-3 py-1.5 rounded-lg text-xs font-medium">View</a></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% else %}
+      <div class="morgi-card p-12 text-center">
+        <div class="w-16 h-16 rounded-full bg-[var(--morgi-border)] flex items-center justify-center mx-auto"><i data-lucide="search-x" class="w-8 h-8 text-[var(--morgi-muted)]"></i></div>
+        <h3 class="font-semibold mt-4">No results for "{{ query }}"</h3>
+        <p class="text-sm text-[var(--morgi-muted)] mt-1">Try a different keyword or <a href="{% url 'bank_applications' %}" class="underline" style="color:#0077B6">view all applications</a></p>
+      </div>
+    {% endif %}
+  {% else %}
+    <div class="morgi-card p-8 text-center">
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto" style="background:#0077B611;color:#0077B6"><i data-lucide="search" class="w-8 h-8"></i></div>
+      <h1 class="text-xl font-bold mt-4">Search Applications</h1>
+      <p class="text-sm text-[var(--morgi-muted)] mt-1">Enter a name, application ID, or loan type</p>
+      <div class="mt-6 flex flex-wrap gap-2 justify-center">
+        <a href="{% url 'bank_search' %}?q=residential" class="px-3 py-1.5 rounded-full border border-[var(--morgi-border)] text-sm hover:bg-[var(--morgi-border)]/30">Residential</a>
+        <a href="{% url 'bank_search' %}?q=land" class="px-3 py-1.5 rounded-full border border-[var(--morgi-border)] text-sm hover:bg-[var(--morgi-border)]/30">Land</a>
+        <a href="{% url 'bank_search' %}?q=construction" class="px-3 py-1.5 rounded-full border border-[var(--morgi-border)] text-sm hover:bg-[var(--morgi-border)]/30">Construction</a>
+        <a href="{% url 'bank_search' %}?q=commercial" class="px-3 py-1.5 rounded-full border border-[var(--morgi-border)] text-sm hover:bg-[var(--morgi-border)]/30">Commercial</a>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+  document.getElementById('searchPageInput')?.focus();
+</script>
+{% endblock %}

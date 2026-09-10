@@ -1,0 +1,238 @@
+/* MorgiHome - Shadcn Admin Customization
+   Primary: Blue Bahari #0077B6
+   Secondary: Dark Blue #0A2B4E
+   Background: White #FFFFFF
+   Theme Toggle inahifadhi class 'dark' kwenye html
+*/
+
+:root {
+  --morgi-primary: #0077B6;
+  --morgi-primary-hover: #005a8c;
+  --morgi-secondary: #0A2B4E;
+  --morgi-bg: #FFFFFF;
+  --morgi-text: #0f172a;
+  --morgi-muted: #64748b;
+  --morgi-border: #e2e8f0;
+  --morgi-card: #ffffff;
+  --morgi-card-foreground: #0f172a;
+  --morgi-sidebar: #f8fafc;
+  --morgi-sidebar-foreground: #0f172a;
+  --morgi-ring: #0077B6;
+  --radius: 0.625rem;
+}
+
+/* Dark mode variables - aktiviert kwa class="dark" kwenye html */
+.dark {
+  --morgi-bg: #0A2B4E;
+  --morgi-text: #f1f5f9;
+  --morgi-muted: #94a3b8;
+  --morgi-border: #1e3a5f;
+  --morgi-card: #0f2f4e;
+  --morgi-card-foreground: #f1f5f9;
+  --morgi-sidebar: #081e36;
+  --morgi-sidebar-foreground: #f1f5f9;
+}
+
+/* Base apply */
+html {
+  scrollbar-gutter: stable;
+}
+body {
+  background-color: var(--morgi-bg);
+  color: var(--morgi-text);
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Cards - kuhakikisha contrast nzuri light/dark */
+.morgi-card {
+  background: var(--morgi-card);
+  color: var(--morgi-card-foreground);
+  border: 1px solid var(--morgi-border);
+  border-radius: var(--radius);
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+/* Usalama: content ndani ya card isibane kwenye border.
+   Card yoyote isiyo na padding class wala overflow-hidden (tables/dropdowns)
+   inapata padding ya default. */
+.morgi-card:not([class*="p-"]):not([class*="overflow-hidden"]) {
+  padding: 1.25rem;
+}
+@media (min-width: 1024px) {
+  .morgi-card:not([class*="p-"]):not([class*="overflow-hidden"]) {
+    padding: 1.5rem;
+  }
+}
+
+/* Toggle switch (inategemewa na settings) - CSS safi bila Tailwind peer variants */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 2.75rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  background: var(--morgi-border);
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+}
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  top: 0.125rem;
+  left: 0.125rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 9999px;
+  background: #fff;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+input:checked + .toggle-switch {
+  background: #0077B6;
+}
+input:checked + .toggle-switch::after {
+  transform: translateX(1.25rem);
+}
+
+/* Buttons Primary */
+.btn-primary {
+  background-color: var(--morgi-primary);
+  color: #ffffff !important;
+  border: 1px solid transparent;
+  transition: background-color 0.15s;
+}
+.btn-primary:hover {
+  background-color: var(--morgi-primary-hover);
+}
+.btn-primary:focus-visible {
+  outline: 2px solid var(--morgi-ring);
+  outline-offset: 2px;
+}
+.dark .btn-primary {
+  background-color: #0096c7;
+}
+.dark .btn-primary:hover {
+  background-color: #0077B6;
+}
+
+/* Secondary button */
+.btn-secondary {
+  background: transparent;
+  color: var(--morgi-text);
+  border: 1px solid var(--morgi-border);
+}
+.btn-secondary:hover {
+  background: var(--morgi-border);
+}
+.dark .btn-secondary {
+  color: var(--morgi-card-foreground);
+}
+
+/* Sidebar */
+.morgi-sidebar {
+  background: var(--morgi-sidebar);
+  color: var(--morgi-sidebar-foreground);
+  border-right: 1px solid var(--morgi-border);
+}
+.morgi-sidebar .nav-link {
+  color: var(--morgi-muted);
+  border-radius: 0.5rem;
+  transition: all 0.15s;
+}
+.morgi-sidebar .nav-link:hover {
+  background: color-mix(in srgb, var(--morgi-primary) 10%, transparent);
+  color: var(--morgi-text);
+}
+.morgi-sidebar .nav-link.active {
+  background: var(--morgi-primary);
+  color: #fff !important;
+}
+.dark .morgi-sidebar .nav-link.active {
+  background: #0077B6;
+  color: #fff !important;
+}
+.dark .morgi-sidebar .nav-link:hover {
+  background: rgba(0, 119, 182, 0.2);
+}
+
+/* Header */
+.morgi-header {
+  background: var(--morgi-card);
+  border-bottom: 1px solid var(--morgi-border);
+  backdrop-filter: blur(8px);
+}
+
+/* Status badges - contrast kubwa */
+.badge-pending {
+  background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;
+}
+.badge-approved {
+  background: #dcfce7; color: #166534; border: 1px solid #86efac;
+}
+.badge-rejected {
+  background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;
+}
+.badge-disbursed {
+  background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd;
+}
+.badge-review {
+  background: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe;
+}
+.dark .badge-pending { background: #78350f; color: #fef3c7; border-color: #92400e; }
+.dark .badge-approved { background: #14532d; color: #dcfce7; border-color: #166534; }
+.dark .badge-rejected { background: #7f1d1d; color: #fee2e2; border-color: #991b1b; }
+.dark .badge-disbursed { background: #1e3a5f; color: #dbeafe; border-color: #1e40af; }
+.dark .badge-review { background: #4c1d95; color: #f3e8ff; border-color: #6b21a8; }
+
+/* Chart container */
+.chart-container {
+  background: var(--morgi-card);
+  border: 1px solid var(--morgi-border);
+}
+
+/* Table */
+.morgi-table th {
+  color: var(--morgi-muted);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.morgi-table td {
+  border-top: 1px solid var(--morgi-border);
+}
+.morgi-table tr:hover td {
+  background: color-mix(in srgb, var(--morgi-border) 40%, transparent);
+}
+.dark .morgi-table tr:hover td {
+  background: rgba(255,255,255,0.04);
+}
+
+/* Input / Search */
+.morgi-input {
+  background: var(--morgi-card);
+  border: 1px solid var(--morgi-border);
+  color: var(--morgi-text);
+}
+.morgi-input::placeholder { color: var(--morgi-muted); }
+.morgi-input:focus {
+  outline: none;
+  border-color: var(--morgi-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--morgi-primary) 20%, transparent);
+}
+.dark .morgi-input {
+  background: #0f2f4e;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--morgi-border); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--morgi-muted); }
+
+/* Focus visible */
+*:focus-visible {
+  outline: 2px solid var(--morgi-primary);
+  outline-offset: 2px;
+}

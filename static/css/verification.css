@@ -1,0 +1,20 @@
+/* Verification - MorgiHome */
+.step-icon {
+  transition: all .3s;
+}
+.step-icon.verified {
+  background: #D4EDDA !important;
+  color: #155724 !important;
+}
+.step-icon.pending {
+  background: #FFF3CD !important;
+  color: #856404 !important;
+}
+.step-icon.not-verified {
+  background: #F8D7DA !important;
+  color: #721C24 !important;
+}
+.verification-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06);
+}

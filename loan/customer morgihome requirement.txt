@@ -1,0 +1,397 @@
+================================================================================
+PROJECT: MorgiHome - CUSTOMER PAGES (Mortgage Applicant)
+================================================================================
+
+MUHIMU: Login na Register pages tayari zipo. Usiunde tena.
+
+Nataka kuunda pages zote za Customer (Mortgage Applicant) kwenye MorgiHome kwa kutumia template ya corona-free/dist/ (iliyopo kwenye downloads/corona-free/dist/).
+
+================================================================================
+TEMPLATE: corona-free/dist/
+================================================================================
+
+Tumia template hii kama msingi wa pages zote. Hata hivyo, template hii haina pages zote zinazohitajika. Kwa hiyo:
+
+1. Tumia header, footer, na sidebar kutoka template
+2. Unda pages mpya kwa muundo unaoendana na template
+3. Hakikisha pages zote zina Professional UI (safi, kisasa, na inaonekana vizuri)
+
+RANGI ZA MORGIHOME:
+- Primary: #0077B6 (Blue Bahari)
+- Secondary: #0A2B4E (Dark Blue)
+- Background: #FFFFFF (White)
+- Accent: #0077B6 (Buttons, links)
+
+================================================================================
+CUSTOMER SIDEBAR LINKS
+================================================================================
+
+1. Dashboard
+2. Apply Mortgage
+   - Residential Mortgage
+   - Home Construction Mortgage
+   - Renovation Mortgage
+   - Land Purchase Mortgage
+   - Commercial Property Mortgage
+3. Application Status
+4. My Contracts
+5. Property Verification
+6. Bank Requirements
+   - CRDB Bank
+   - NMB Bank
+   - NCBA Bank
+   - NBC Bank
+   - TCB Bank
+   - Mwanqa Hakika Bank
+7. Profile (Page mpya - haipo kwenye template)
+8. Logout
+
+================================================================================
+PAGES ZA KUUNDA (Professional UI)
+================================================================================
+
+PAGE 1: CUSTOMER DASHBOARD (/customer/dashboard/)
+--------------------------------------------------------------------------------
+Tumia template ya corona-free/dist/ kwa dashboard.
+
+Sections:
+1. Loan Progress Card
+   - Total Loan: TZS 50,000,000
+   - Paid: TZS 5,500,000
+   - Remaining: TZS 44,500,000
+   - Progress Bar (11%)
+   - Next Payment: TZS 550,000 (Due: 2025-06-15)
+
+2. Quick Stats Cards (4 cards)
+   - Total Applications: 3
+   - Active Mortgage: 1
+   - Pending Documents: 2
+   - Upcoming Payments: 1
+
+3. Recent Activities (Table)
+   - 2025-01-20 | Applied for Mortgage | Modern Villa | Pending
+   - 2025-01-18 | Document Uploaded | Beach House | Completed
+   - 2025-01-15 | Signed Contract | City Center | Completed
+
+4. Quick Actions (Buttons)
+   - Apply for Mortgage
+   - View Properties
+   - Check Application Status
+
+5. Mortgage Calculator (Widget)
+   - Loan Amount: [Input]
+   - Interest Rate: [Auto-filled]
+   - Repayment Period: [Dropdown]
+   - Monthly Installment: [Calculated]
+
+
+PAGE 2: PROPERTY LIST (/customer/properties/)
+--------------------------------------------------------------------------------
+Template: Corona-free (Grid layout)
+
+Features:
+- Grid view (3 columns kwenye desktop, 1 column kwenye mobile)
+- Search Bar (Tafuta kwa title, location)
+- Filters:
+  - Property Type (House, Apartment, Land, Commercial)
+  - Price Range (Min - Max)
+  - Bedrooms
+  - Location
+- Each Property Card:
+  - Image
+  - Title
+  - Price
+  - Location
+  - Bedrooms, Bathrooms, Area
+  - Status (Available, Sold, Pending)
+  - Button: "View Details"
+
+
+PAGE 3: PROPERTY DETAILS (/customer/properties/<id>/)
+--------------------------------------------------------------------------------
+Template: Professional UI (Haipo kwenye corona-free)
+
+Sections:
+1. Image Gallery (Slider)
+2. Property Information:
+   - Title, Price, Location
+   - Description
+   - Features (Bedrooms, Bathrooms, Area, etc.)
+   - Status
+3. Seller Information (Kulia):
+   - Name
+   - Email
+   - Phone
+   - Button: "Contact Seller"
+4. Apply Mortgage Button (Chini ya property details)
+5. Similar Properties (Grid)
+
+
+PAGE 4: APPLY MORTGAGE (/customer/apply/)
+--------------------------------------------------------------------------------
+Template: Professional UI (Haipo kwenye corona-free)
+
+FORM: Segment by Segment (Hatua kwa hatua)
+
+Top Progress Bar (Inaonyesha step ya sasa):
+[Step 1] ---- [Step 2] ---- [Step 3] ---- [Step 4] ---- [Step 5] ---- [Step 6] ---- [Step 7] ---- [Step 8]
+
+SEGMENT 1: Customer Type
+- Je, wewe ni: [Mjasiriamali] au [Mwaajiriwa]?
+- Kama Mwaajiriwa: Anajaza taarifa za muajili wake
+- Kama Mjasiriamali: Anajaza taarifa za biashara yake
+- Buttons: [Previous] [Next] [Save & Exit]
+
+SEGMENT 2: Personal Information
+- Full Name (Auto-filled)
+- Email (Auto-filled)
+- Phone Number (Auto-filled)
+- Date of Birth
+- Marital Status (Single, Married, Divorced)
+- Number of Dependents
+- Buttons: [Previous] [Next] [Save & Exit]
+
+SEGMENT 3: Employment Information
+- Employment Status (Employed, Self-Employed, Business Owner, Unemployed)
+- Employer Name
+- Job Title
+- Years of Employment
+- Monthly Income (TZS)
+- Monthly Expenses (TZS)
+- Buttons: [Previous] [Next] [Save & Exit]
+
+SEGMENT 4: Business Information (Kama Mjasiriamali)
+- Business Name
+- Business Registration Number
+- Business Type
+- Years in Business
+- Monthly Business Income (TZS)
+- Monthly Business Expenses (TZS)
+- Buttons: [Previous] [Next] [Save & Exit]
+
+SEGMENT 5: Loan Details
+- Property (Auto-filled)
+- Loan Amount (TZS)
+- Down Payment (TZS)
+- Repayment Period (Dropdown: 12, 24, 36, 48, 60, 72, 84, 96, 108, 120, 180, 240, 300, 360)
+- Buttons: [Previous] [Next] [Save & Exit]
+
+SEGMENT 6: Bank Selection
+- Chagua Bank:
+  - CRDB Bank
+  - NMB Bank
+  - NCBA Bank
+  - NBC Bank
+  - TCB Bank
+  - Mwanqa Hakika Bank
+- Buttons: [Previous] [Next] [Save & Exit]
+
+SEGMENT 7: Documents Upload
+- Upload Documents:
+  - ID/Passport Copy
+  - Pay Slip (Salipu)
+  - Bank Statement
+  - Tax Clearance
+  - Business Registration (Kama Mjasiriamali)
+- Buttons: [Previous] [Next] [Save & Exit]
+
+SEGMENT 8: Review & Submit
+- Summary ya taarifa zote
+- AI Prediction Alert: "Kulingana na taarifa zako na bank uliyochagua, huna vigezo vya kupata mkopo huu. Jaribu kurekebisha kitu fulani au jaribu bank fulani."
+- Button: "Submit Application"
+- After Submit: "Application submitted successfully!"
+
+NOTE: Kila segment inajisave automatically (Auto-save)
+Alert: "Segment [Namba] imejazwa kikamilifu!"
+
+
+PAGE 5: APPLICATION STATUS (/customer/applications/)
+--------------------------------------------------------------------------------
+Template: Professional UI (Haipo kwenye corona-free)
+
+1. Orodha ya maombi yote (Table)
+   - Application Reference
+   - Property Name
+   - Loan Amount
+   - Status (Badge: Pending, CRB Check, Document Verification, Valuation, Credit Assessment, Approved, Rejected, Disbursed)
+   - Date Applied
+   - Action: [View Details]
+
+2. Application Tracking Timeline (Kwa kubonyeza "View Details")
+   - Application Submitted ✅ (Date)
+   - CRB Checking 🔄 (Inaonyesha inafanyiwa CRB)
+   - Document Verification ⏳
+   - Property Valuation ⏳
+   - Credit Assessment ⏳
+   - Approval ⏳
+   - Disbursement ⏳
+
+3. Notification: "Your application has been approved. Please visit [Bank Name] at [Branch] on [Date] to sign your contract."
+
+
+PAGE 6: MY CONTRACTS (/customer/contracts/)
+--------------------------------------------------------------------------------
+Template: Professional UI (Haipo kwenye corona-free)
+
+1. Orodha ya mikataba yote (Cards au Table)
+   - Contract Reference
+   - Property Name
+   - Loan Amount
+   - Status (Draft, Pending Signature, Signed, Executed)
+   - Created Date
+   - Action: [View Details]
+
+2. Contract Details Page (Inafunguka kwa kubonyeza "View Details")
+   - Contract Reference
+   - Property Name
+   - Loan Amount
+   - Parties: Customer, Seller, Bank, Lawyer
+   - Signature Status (Kila party)
+   - PDF Viewer (Inaonyesha mkataba)
+   - Download Button (Pakua PDF)
+   - Sign Button (Ikiwa haijasainiwa)
+
+
+PAGE 7: PROPERTY VERIFICATION (/customer/verify-property/)
+--------------------------------------------------------------------------------
+Template: Professional UI (Haipo kwenye corona-free)
+
+- Maelezo: "Tafadhali thibitisha nyumba yako kwenye tovuti ya Wizara ya Ardhi."
+- Button: "Go to Wizara ya Ardhi" (Inafungua https://eardhi.lands.go.tz/login)
+- Status: "Verification Pending" au "Verification Completed"
+
+
+PAGE 8: BANK REQUIREMENTS (/customer/bank-requirements/)
+--------------------------------------------------------------------------------
+Template: Professional UI (Haipo kwenye corona-free)
+
+Orodha ya bank zote kwa Cards:
+- CRDB Bank
+  - Interest Rate: 12% p.a.
+  - Processing Fee: 1%
+  - Min Loan: TZS 5,000,000
+  - Max Loan: TZS 500,000,000
+  - Repayment Period: 12 - 360 months
+  - Requirements: Valid ID, Pay Slip, Bank Statement, Tax Clearance
+
+- NMB Bank
+  - Interest Rate: 13% p.a.
+  - Processing Fee: 1.5%
+  - Min Loan: TZS 3,000,000
+  - Max Loan: TZS 300,000,000
+  - Repayment Period: 12 - 300 months
+  - Requirements: Valid ID, Pay Slip, Bank Statement
+
+- NCBA Bank
+  - Interest Rate: 11.5% p.a.
+  - Processing Fee: 1%
+  - Min Loan: TZS 10,000,000
+  - Max Loan: TZS 400,000,000
+  - Repayment Period: 12 - 360 months
+  - Requirements: Valid ID, Pay Slip, Bank Statement, Business Registration
+
+- NBC Bank
+  - Interest Rate: 12.5% p.a.
+  - Processing Fee: 1%
+  - Min Loan: TZS 5,000,000
+  - Max Loan: TZS 350,000,000
+  - Repayment Period: 12 - 300 months
+  - Requirements: Valid ID, Pay Slip, Bank Statement
+
+- TCB Bank
+  - Interest Rate: 14% p.a.
+  - Processing Fee: 0.5%
+  - Min Loan: TZS 1,000,000
+  - Max Loan: TZS 200,000,000
+  - Repayment Period: 12 - 240 months
+  - Requirements: Valid ID, Pay Slip, Bank Statement, Tax Clearance
+
+- Mwanqa Hakika Bank
+  - Interest Rate: 15% p.a.
+  - Processing Fee: 0%
+  - Min Loan: TZS 500,000
+  - Max Loan: TZS 100,000,000
+  - Repayment Period: 12 - 180 months
+  - Requirements: Valid ID, Pay Slip, Bank Statement
+
+
+PAGE 9: CUSTOMER PROFILE (/customer/profile/)
+--------------------------------------------------------------------------------
+Template: Professional UI (Haipo kwenye corona-free)
+
+Sections:
+1. Profile Header
+   - Profile Photo (Avatar)
+   - Full Name
+   - Email
+   - Phone
+   - Role: Customer
+
+2. Personal Information
+   - Full Name
+   - Email
+   - Phone Number
+   - Date of Birth
+   - Marital Status
+   - Dependents
+
+3. Employment Information
+   - Employment Status
+   - Employer Name
+   - Job Title
+   - Years of Employment
+   - Monthly Income
+
+4. Account Settings
+   - Change Password
+   - Notification Preferences
+
+5. Quick Actions
+   - [Edit Profile] [Change Password] [Logout]
+
+================================================================================
+NOTIFICATIONS
+================================================================================
+
+- In-app notifications tu (Hakuna email)
+- Notifications zinaonekana kwenye dashboard (Top right corner)
+- Notification types:
+  - Application Submitted
+  - Application Approved
+  - Application Rejected
+  - Document Required
+  - Contract Ready for Signing
+  - Payment Reminder
+
+================================================================================
+ADDITIONAL FEATURES
+================================================================================
+
+1. Mortgage Calculator (Dashboard + Apply Page)
+   - Auto-calculates monthly installment
+   - Shows affordability score
+
+2. AI Prediction (Apply Page - Segment 8)
+   - Alert inaonyesha kama customer ana vigezo au la
+   - Button ya Submit HAIDISABLEDI
+
+3. Auto-save (Apply Page)
+   - Kila segment inajisave automatically
+   - Alert: "Segment [Namba] imejazwa kikamilifu!", tumia sweetalert
+
+4. Responsive Design
+   - Inaonekana vizuri kwenye simu na laptop
+
+5. Professional UI
+   - Pages zote ziwe safi, kisasa, na za kitaalamu
+
+6. kote kwenye alert tumia sweetalert
+
+================================================================================
+NISAIDIE KUUNDA
+================================================================================
+
+Nisaidie kuunda pages zote zilizotajwa hapo juu kwa kutumia template ya corona-free/dist/ kama msingi.
+
+Usiunde Login au Register pages (Tayari zipo).
+Hakikisha pages zote zina Professional UI na zinaendana na template.

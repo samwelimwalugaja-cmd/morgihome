@@ -1,0 +1,27 @@
+{% extends 'plainadmin/base.html' %}
+{% block title %}Bank Details - MorgiHome{% endblock %}
+{% block content %}
+<div class="pagetitle"><h1>Bank Details</h1><nav><ol class="breadcrumb"><li class="breadcrumb-item"><a href="/banks/">Banks</a></li><li class="breadcrumb-item active">Details</li></ol></nav></div>
+<section class="section">
+  <div id="bankDetail" class="card"><div class="card-body text-center py-5"><div class="spinner-border text-primary"></div></div></div>
+  <a href="/customer/apply/" class="btn btn-primary mt-3" style="background:#0077B6;border-color:#0077B6">Apply for Mortgage</a>
+</section>
+<script>
+(function(){
+  const id=window.location.pathname.split('/').filter(Boolean).pop();
+  function getToken(){return localStorage.getItem('access');}
+  async function load(){
+    const el=document.getElementById('bankDetail');
+    try{
+      const res=await fetch('/api/banks/', {headers: getToken()?{Authorization:'Bearer '+getToken()}:{} });
+      const data=await res.json();
+      const banks=Array.isArray(data)?data:data.results||data;
+      const b=banks.find(x=>String(x.id)===String(id));
+      if(!b){ el.innerHTML='<div class="alert alert-warning">Bank not found</div>'; return; }
+      el.innerHTML=`<div class="p-3"><h4>${b.name}</h4><p>${b.email}</p><table class="table table-bordered small"><tr><th>Interest</th><td>${b.interest_rate||'12.00'}%</td></tr><tr><th>Fee</th><td>${b.processing_fee||'—'}</td></tr><tr><th>Range</th><td>${b.min_loan_amount||'0'} - ${b.max_loan_amount||'∞'}</td></tr><tr><th>Requirements</th><td>${b.bank_requirements||'—'}</td></tr></table><a href="/customer/apply/?bank=${b.id}" class="btn btn-primary" style="background:#0077B6">Apply with this Bank</a></div>`;
+    }catch(e){ el.innerHTML='<div class="alert alert-danger">'+e.message+'</div>'; }
+  }
+  load();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends 'bank/bank_base.html' %}
+{% block title %}Help - MorgiHome Bank{% endblock %}
+{% block page_title %}Help{% endblock %}
+{% block breadcrumb %}Bank / Help{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+  <div>
+    <h1 class="text-2xl font-bold">Help & Support</h1>
+    <p class="text-sm text-[var(--morgi-muted)]">Guides for the Bank Portal (Shadcn Admin)</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="morgi-card p-5">
+      <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600"><i data-lucide="file-text" class="w-5 h-5"></i></div>
+      <h3 class="font-semibold mt-3">Review Applications</h3>
+      <p class="text-sm text-[var(--morgi-muted)] mt-1">Go to Applications → click Eye icon → Review documents → Approve/Reject with reason.</p>
+      <a href="{% url 'bank_applications' %}" class="inline-flex mt-3 text-sm font-medium" style="color:#0077B6">Go to Applications →</a>
+    </div>
+    <div class="morgi-card p-5">
+      <div class="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600"><i data-lucide="search" class="w-5 h-5"></i></div>
+      <h3 class="font-semibold mt-3">Search</h3>
+      <p class="text-sm text-[var(--morgi-muted)] mt-1">Use the header search (⌘K) or press Enter to go to dedicated search results at <code>/bank/search/?q=...</code>.</p>
+      <a href="{% url 'bank_search' %}" class="inline-flex mt-3 text-sm font-medium" style="color:#0077B6">Try Search →</a>
+    </div>
+    <div class="morgi-card p-5">
+      <div class="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600"><i data-lucide="bell" class="w-5 h-5"></i></div>
+      <h3 class="font-semibold mt-3">Notifications</h3>
+      <p class="text-sm text-[var(--morgi-muted)] mt-1">Click the bell icon in the header to see 3 recent notifications (new applications, approvals, overdue). Data comes from <code>/bank/api/notifications/</code>.</p>
+    </div>
+    <div class="morgi-card p-5">
+      <div class="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600"><i data-lucide="moon" class="w-5 h-5"></i></div>
+      <h3 class="font-semibold mt-3">Theme</h3>
+      <p class="text-sm text-[var(--morgi-muted)] mt-1">Toggle Dark/Light via header moon/sun button. Choice is saved in <code>localStorage.theme</code> and applied as <code>class="dark"</code> on <code>&lt;html&gt;</code>.</p>
+    </div>
+  </div>
+
+  <div class="morgi-card p-6 p-5">
+    <h3 class="font-semibold mb-3">Frequently Asked Questions</h3>
+    <div class="space-y-3">
+      <details class="p-3 rounded-lg border border-[var(--morgi-border)]"><summary class="font-medium text-sm cursor-pointer">How to approve a loan?</summary><p class="text-sm text-[var(--morgi-muted)] mt-2">Open Applications → Detail → Review → select Approve, set amount, add reason, confirm.</p></details>
+      <details class="p-3 rounded-lg border border-[var(--morgi-border)]"><summary class="font-medium text-sm cursor-pointer">Why logout not working?</summary><p class="text-sm text-[var(--morgi-muted)] mt-2">Click Logout in sidebar → clears localStorage and redirects to <code>/accounts/login/</code>. If still logged in, clear browser storage manually.</p></details>
+      <details class="p-3 rounded-lg border border-[var(--morgi-border)]"><summary class="font-medium text-sm cursor-pointer">Where are contracts?</summary><p class="text-sm text-[var(--morgi-muted)] mt-2">Contracts at <code>/bank/contracts/</code> — filter by Active/Pending Signature.</p></details>
+    </div>
+  </div>
+
+  <div class="morgi-card p-6 text-center p-5">
+    <p class="text-sm font-medium">Need more help?</p>
+    <p class="text-sm text-[var(--morgi-muted)]">Contact support@morgihome.co.tz or call +255 700 000 000</p>
+    <a href="mailto:support@morgihome.co.tz" class="inline-flex mt-3 btn-primary px-5 py-2 rounded-lg text-sm font-medium">Contact Support</a>
+  </div>
+</div>
+{% endblock %}

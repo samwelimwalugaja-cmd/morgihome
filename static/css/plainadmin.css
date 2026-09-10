@@ -1,0 +1,144 @@
+/* MorgiHome PlainAdmin Overrides - Brand Colors #0077B6 / #0A2B4E */
+@import url('plainadmin-base.css');
+@import url('lineicons.css');
+
+:root {
+  --mh-primary: #0077B6;
+  --mh-primary-hover: #0090db;
+  --mh-dark: #0A2B4E;
+  --mh-bg: #f1f5f9;
+}
+
+/* Primary color replacement */
+.primary-btn, .main-btn.primary-btn, .status-btn.primary-btn, .active-btn { background: var(--mh-primary) !important; }
+.primary-btn-outline, .active-btn-outline { color: var(--mh-primary) !important; border-color: var(--mh-primary) !important; }
+.primary-btn-outline:hover { background: var(--mh-primary) !important; color:#fff !important; }
+.text-primary { color: var(--mh-primary) !important; }
+a:hover { color: var(--mh-primary) !important; }
+.breadcrumb-wrapper .breadcrumb li { color: var(--mh-primary) !important; }
+.base-accordion .accordion-button:not(.collapsed) { background-color: var(--mh-primary) !important; }
+
+/* Sidebar - logo juu kabisa */
+.sidebar-nav-wrapper {
+  background: #fff;
+  width: 250px;
+  box-shadow: 0 0 20px rgba(1,41,112,.08);
+}
+.sidebar-nav-wrapper .navbar-logo { padding: 10px 16px 12px; border-bottom: 1px solid #eef2f7; text-align:left; margin-top:0; }
+.sidebar-nav-wrapper .navbar-logo a { display:flex; align-items:center; gap:10px; text-decoration:none; font-family:"Montserrat",sans-serif; font-weight:700; font-size:20px; color:var(--mh-dark); line-height:1; }
+.sidebar-nav-wrapper .navbar-logo img { width:36px !important; height:36px !important; }
+.sidebar-nav-wrapper .navbar-logo i { color: var(--mh-primary); font-size:26px; }
+.sidebar-nav ul li a { color: #5d657b; }
+.sidebar-nav ul li a.active, .sidebar-nav ul li a:hover { color: var(--mh-primary); background: rgba(0,119,182,0.08); border-radius:6px; }
+.sidebar-nav .nav-item-has-children > a[aria-expanded="true"] { color: var(--mh-dark); }
+
+/* Header */
+.header { background:#fff; box-shadow:0 2px 20px rgba(1,41,112,.08); padding: 12px 0; }
+.header .header-left .menu-toggle-btn .main-btn { background: var(--mh-primary); border-radius:6px; padding:8px 16px; }
+.header .profile-box .info h6 { color: var(--mh-dark); }
+
+/* Main wrapper */
+.main-wrapper { margin-left: 250px; transition: all .3s; background: var(--mh-bg); min-height:100vh; }
+.main-wrapper.active { margin-left: 0; }
+@media(max-width:1200px){ .main-wrapper{margin-left:0} .sidebar-nav-wrapper{left:-250px} .sidebar-nav-wrapper.active{left:0} }
+
+/* Cards */
+.card-style, .icon-card { border-radius:8px; }
+.icon-card .icon { background: rgba(0,119,182,0.10) !important; color: var(--mh-primary) !important; }
+.icon-card .icon.purple { background: rgba(0,119,182,0.12) !important; color: var(--mh-primary) !important; }
+.icon-card .icon.success { background: rgba(0,119,182,0.10) !important; }
+.icon-card .icon.primary { background: rgba(0,119,182,0.12) !important; }
+
+/* Avatar fallback - Herufi kubwa - header pembeni ya notification - MOJA TU */
+.avatar-initial {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background: #0077B6;
+  background-color: #0077B6;
+  color:#fff;
+  font-weight:700;
+  text-transform:uppercase;
+  flex-shrink:0;
+  user-select:none;
+  line-height:1;
+  text-align:center;
+  overflow:hidden;
+}
+.avatar-initial--sm { width:36px; height:36px; font-size:14px; }
+.avatar-initial--md { width:64px; height:64px; font-size:24px; }
+.avatar-initial--lg { width:96px; height:96px; font-size:38px; border:3px solid #fff; box-shadow:0 4px 16px rgba(0,0,0,.12); }
+.avatar-initial--header { width:36px; height:36px; font-size:14px; }
+.avatar-initial--sidebar { width:64px; height:64px; font-size:22px; border:3px solid #eef2f7; }
+
+.profile-image-wrap { position:relative; display:inline-block; }
+.profile-image-wrap img { object-fit:cover; }
+.avatar-hidden { display:none !important; }
+
+/* PlainAdmin title wrapper */
+.title-wrapper h2 { color: var(--mh-dark); }
+
+/* Footer */
+.footer { background:#fff; border-top:1px solid #eef2f7; padding:18px 0; text-align:center; font-size:14px; color:#5d657b; }
+
+/* Overlay */
+.overlay.active { opacity:1; visibility:visible; }
+
+/* Fix for bootstrap icons in plainadmin */
+.lni { font-family: 'LineIcons' !important; }
+
+/* Toast position fix for plainadmin */
+#toast-container { z-index: 9999; }
+
+/* ===== Light / Dark Theme - PlainAdmin style ===== */
+.darkTheme {
+  background: #02021E !important;
+  color: #838C9A !important;
+}
+.darkTheme .sidebar-nav-wrapper {
+  background: #0A2B4E !important;
+}
+.darkTheme .sidebar-nav-wrapper .navbar-logo {
+  border-bottom-color: rgba(255,255,255,0.08) !important;
+}
+.darkTheme .sidebar-nav-wrapper .navbar-logo span {
+  color: #fff !important;
+}
+.darkTheme .sidebar-nav ul li a {
+  color: #9AA4CA !important;
+}
+.darkTheme .sidebar-nav ul li a.active,
+.darkTheme .sidebar-nav ul li a:hover {
+  background: rgba(0,119,182,0.15) !important;
+  color: #fff !important;
+}
+.darkTheme .header {
+  background: #0A2B4E !important;
+  box-shadow: none !important;
+}
+.darkTheme .header .profile-box .info h6,
+.darkTheme .header .profile-box .info p {
+  color: #fff !important;
+}
+.darkTheme .header .header-search form input {
+  background: #14142D !important;
+  color: #fff !important;
+  border-color: #3F4053 !important;
+}
+.darkTheme .card-style,
+.darkTheme .icon-card {
+  background: #14142D !important;
+  border-color: #3F4053 !important;
+}
+.darkTheme .title-wrapper h2,
+.darkTheme .card-style h6,
+.darkTheme .icon-card h6,
+.darkTheme .icon-card h3 {
+  color: #fff !important;
+}
+.darkTheme .footer {
+  background: #0A2B4E !important;
+  border-top-color: #3F4053 !important;
+  color: #838C9A !important;
+}

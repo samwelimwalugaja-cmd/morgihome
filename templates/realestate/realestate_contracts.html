@@ -1,0 +1,61 @@
+{% extends 'realestate/realestate_base.html' %}
+{% load humanize %}
+{% block title %}My Contracts - Corona{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h3 class="page-title">
+    <span class="page-title-icon bg-gradient-primary text-white me-2"><i class="mdi mdi-file-sign"></i></span> My Contracts
+  </h3>
+  <nav aria-label="breadcrumb">
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item active" aria-current="page">Real Estate / Contracts <span class="badge badge-outline-primary ms-2">{{ contracts|length }}</span></li>
+    </ul>
+  </nav>
+</div>
+
+<div class="row">
+  <div class="col-12 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="card-title">Contracts</h4>
+        <p class="card-description">Agreements where you are involved — real data</p>
+        <div class="table-responsive">
+          <table class="table table-dark">
+            <thead>
+              <tr>
+                <th>Contract</th>
+                <th>Property</th>
+                <th>Customer / Seller</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in contracts %}
+              <tr>
+                <td><span class="font-weight-bold">#CTR-{{ c.id }}</span><br><small class="text-muted">{{ c.created_at|date:"d M Y" }}</small></td>
+                <td>
+                  <div>{{ c.mortgage.property.title|truncatechars:25 }}</div>
+                  <small class="text-muted">{{ c.mortgage.property.location|truncatechars:20 }}</small>
+                </td>
+                <td>
+                  <small>Customer: {{ c.customer.get_full_name|default:"Customer" }}</small><br>
+                  <small>Seller: {{ c.seller.get_full_name|default:c.seller.email }}</small>
+                </td>
+                <td class="font-weight-bold">TZS {{ c.mortgage.loan_amount|intcomma }}</td>
+                <td><span class="badge {% if c.status == 'executed' %}badge-outline-success{% elif c.status == 'signed' %}badge-outline-primary{% else %}badge-outline-warning{% endif %}">{{ c.get_status_display }}</span></td>
+                <td>{% if c.contract_file %}<a href="{{ c.contract_file.url }}" class="btn btn-dark btn-sm"><i class="mdi mdi-download"></i></a>{% endif %}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="6" class="text-center text-muted py-4">No contracts yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

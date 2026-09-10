@@ -1,0 +1,238 @@
+================================================================================
+PHASE 1: MAZINGIRA (ENVIRONMENT) NA AUTHENTICATION
+================================================================================
+
+KABLA YA KUANZA: Hakikisha uko kwenye folder C:\morgihome
+
+KATIKA PHASE HII, TEKELEZA KAZI ZIFUATAZO MOJA KWA MOJA.
+USIENDELEE HADI KILA KAZI IMEKAMILIKA NA HAKUNA MAKOSA.
+
+================================================================================
+KAZI 1.1: Virtual Environment
+================================================================================
+TEKELEZA:
+python -m venv venv
+source venv/Scripts/activate
+
+================================================================================
+KAZI 1.2: Dependencies
+================================================================================
+TEKELEZA:
+pip install django djangorestframework djangorestframework-simplejwt django-cors-headers psycopg2-binary python-dotenv
+
+================================================================================
+KAZI 1.3: Mradi wa Django
+================================================================================
+TEKELEZA:
+django-admin startproject morgihome_backend .
+python manage.py startapp accounts
+python manage.py startapp properties
+python manage.py startapp mortgages
+python manage.py startapp transactions
+python manage.py startapp api
+
+================================================================================
+KAZI 1.4: Settings
+================================================================================
+TEKELEZA:
+1. Fungua morgihome_backend/settings.py
+2. Weka apps zote kwenye INSTALLED_APPS:
+   [
+       'django.contrib.admin',
+       'django.contrib.auth',
+       'django.contrib.contenttypes',
+       'django.contrib.sessions',
+       'django.contrib.messages',
+       'django.contrib.staticfiles',
+       'rest_framework',
+       'rest_framework_simplejwt',
+       'corsheaders',
+       'accounts',
+       'properties',
+       'mortgages',
+       'transactions',
+       'api',
+   ]
+3. Weka MIDDLEWARE:
+   [
+       'django.middleware.security.SecurityMiddleware',
+       'corsheaders.middleware.CorsMiddleware',
+       'django.contrib.sessions.middleware.SessionMiddleware',
+       'django.middleware.common.CommonMiddleware',
+       'django.middleware.csrf.CsrfViewMiddleware',
+       'django.contrib.auth.middleware.AuthenticationMiddleware',
+       'django.contrib.messages.middleware.MessageMiddleware',
+       'django.middleware.clickjacking.XFrameOptionsMiddleware',
+   ]
+4. Weka CORS settings:
+   CORS_ALLOW_ALL_ORIGINS = True  # (Badilisha baadae)
+5. Weka REST_FRAMEWORK settings:
+   REST_FRAMEWORK = {
+       'DEFAULT_AUTHENTICATION_CLASSES': (
+           'rest_framework_simplejwt.authentication.JWTAuthentication',
+       ),
+       'DEFAULT_PERMISSION_CLASSES': (
+           'rest_framework.permissions.IsAuthenticated',
+       ),
+   }
+6. Weka JWT settings:
+   from datetime import timedelta
+   SIMPLE_JWT = {
+       'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+       'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+   }
+
+================================================================================
+KAZI 1.5: Faili ya .env
+================================================================================
+TEKELEZA:
+1. Unda faili .env kwenye mzizi wa mradi
+2. Weka:
+   SECRET_KEY=your-secret-key-here
+   DEBUG=True
+3. Badilisha settings.py kusoma .env:
+   import os
+   from dotenv import load_dotenv
+   load_dotenv()
+   SECRET_KEY = os.getenv('SECRET_KEY')
+   DEBUG = os.getenv('DEBUG') == 'True'
+
+================================================================================
+KAZI 1.6: Custom User Model
+================================================================================
+TEKELEZA:
+1. Nenda kwenye accounts/models.py
+2. Unda Custom User Model:
+   from django.contrib.auth.models import AbstractUser
+   from django.db import models
+
+   class User(AbstractUser):
+       ROLE_CHOICES = (
+           ('customer', 'Customer'),
+           ('seller', 'Seller'),
+           ('bank', 'Bank'),
+           ('realestate', 'Real Estate Company'),
+           ('lawyer', 'Lawyer'),
+       )
+       role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='customer')
+       phone_number = models.CharField(max_length=15, blank=True, null=True)
+       is_verified = models.BooleanField(default=False)
+
+       def __str__(self):
+           return f"{self.username} ({self.get_role_display()})"
+
+3. Nenda kwenye morgihome_backend/settings.py
+4. Badilisha AUTH_USER_MODEL = 'accounts.User'
+
+================================================================================
+KAZI 1.7: Serializers
+================================================================================
+TEKELEZA:
+1. Unda accounts/serializers.py
+2. Weka:
+   from rest_framework import serializers
+   from .models import User
+
+   class UserSerializer(serializers.ModelSerializer):
+       class Meta:
+           model = User
+           fields = ['id', 'username', 'email', 'role', 'phone_number', 'is_verified']
+
+   class RegisterSerializer(serializers.ModelSerializer):
+       password = serializers.CharField(write_only=True, min_length=8)
+
+       class Meta:
+           model = User
+           fields = ['username', 'email', 'password', 'role', 'phone_number']
+
+       def create(self, validated_data):
+           user = User.objects.create_user(**validated_data)
+           return user
+
+================================================================================
+KAZI 1.8: Views
+================================================================================
+TEKELEZA:
+1. Unda accounts/views.py
+2. Weka:
+   from rest_framework import generics, status
+   from rest_framework.response import Response
+   from rest_framework.permissions import AllowAny, IsAuthenticated
+   from rest_framework_simplejwt.tokens import RefreshToken
+   from .serializers import RegisterSerializer, UserSerializer
+   from .models import User
+
+   class RegisterView(generics.CreateAPIView):
+       queryset = User.objects.all()
+       permission_classes = [AllowAny]
+       serializer_class = RegisterSerializer
+
+   class LoginView(generics.GenericAPIView):
+       permission_classes = [AllowAny]
+
+       def post(self, request):
+           username = request.data.get('username')
+           password = request.data.get('password')
+           user = User.objects.filter(username=username).first()
+           if user and user.check_password(password):
+               refresh = RefreshToken.for_user(user)
+               return Response({
+                   'refresh': str(refresh),
+                   'access': str(refresh.access_token),
+                   'user': UserSerializer(user).data
+               })
+           return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+
+   class ProfileView(generics.RetrieveUpdateAPIView):
+       permission_classes = [IsAuthenticated]
+       serializer_class = UserSerializer
+
+       def get_object(self):
+           return self.request.user
+
+================================================================================
+KAZI 1.9: URLs
+================================================================================
+TEKELEZA:
+1. Unda accounts/urls.py
+2. Weka:
+   from django.urls import path
+   from .views import RegisterView, LoginView, ProfileView
+
+   urlpatterns = [
+       path('signup/', RegisterView.as_view(), name='signup'),
+       path('login/', LoginView.as_view(), name='login'),
+       path('profile/', ProfileView.as_view(), name='profile'),
+   ]
+
+3. Nenda kwenye morgihome_backend/urls.py
+4. Weka:
+   from django.contrib import admin
+   from django.urls import path, include
+
+   urlpatterns = [
+       path('admin/', admin.site.urls),
+       path('api/auth/', include('accounts.urls')),
+   ]
+
+================================================================================
+KAZI 1.10: Migrations
+================================================================================
+TEKELEZA:
+python manage.py makemigrations
+python manage.py migrate
+python manage.py createsuperuser
+
+================================================================================
+TATIZO: "KAMA KITU KIKIKWAMA, USIENDELEE"
+================================================================================
+Kama unapata error yoyote, SIMAMA na unipe error hiyo.
+Nitasoma error na kukupa suluhisho kabla ya kuendelea.
+
+================================================================================
+BAADA YA KUKAMILISHA PHASE 1
+================================================================================
+NITAKUAMBIA: "PHASE 1 IMESHA. TUNAENDELEA PHASE 2"
+USIENDELEE HADI NIKUAMBIE.
+
+================================================================================

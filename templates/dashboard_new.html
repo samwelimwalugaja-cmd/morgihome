@@ -1,0 +1,444 @@
+{% extends 'plainadmin/base.html' %}
+{% load static %}
+{% block title %}Dashboard - MorgiHome{% endblock %}
+{% block content %}
+
+<!-- Title wrapper -->
+<div class="title-wrapper pt-30">
+  <div class="row align-items-center">
+    <div class="col-md-6">
+      <div class="title">
+        <h2>Dashboard</h2>
+        <p class="text-sm text-muted mb-0" id="welcomeMsg">Welcome back! This is where you manage everything.</p>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="breadcrumb-wrapper">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            <li class="breadcrumb-item active" id="breadcrumbCurrent">Dashboard</li>
+            <li class="breadcrumb-item active"><span class="badge bg-light text-dark border ms-2" id="roleBadge">ROLE</span></li>
+          </ol>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Overview View -->
+<section id="view-overview" class="view-section">
+  <div class="d-flex justify-content-end mb-2">
+    <button class="main-btn primary-btn btn-hover btn-sm" id="refreshBtn"><i class="bi bi-arrow-clockwise me-1"></i> Refresh</button>
+  </div>
+  <!-- Stats - PlainAdmin icon-card -->
+  <div class="row">
+    <div class="col-xl-3 col-lg-4 col-sm-6">
+      <div class="icon-card mb-30">
+        <div class="icon purple"><i class="bi bi-houses"></i></div>
+        <div class="content">
+          <h6 class="mb-10">Properties <span class="text-sm text-muted">| Available</span></h6>
+          <h3 class="text-bold mb-10" id="statProperties">—</h3>
+          <p class="text-sm text-success" id="statPropertiesSub">Loading...</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-lg-4 col-sm-6">
+      <div class="icon-card mb-30">
+        <div class="icon success"><i class="bi bi-cash-stack"></i></div>
+        <div class="content">
+          <h6 class="mb-10">Mortgages <span class="text-sm text-muted">| Applications</span></h6>
+          <h3 class="text-bold mb-10" id="statMortgages">—</h3>
+          <p class="text-sm text-muted" id="statMortgagesSub">My applications</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-lg-4 col-sm-6">
+      <div class="icon-card mb-30">
+        <div class="icon primary"><i class="bi bi-wallet2"></i></div>
+        <div class="content">
+          <h6 class="mb-10">Wallet <span class="text-sm text-muted">| Balance</span></h6>
+          <h3 class="text-bold mb-10" id="statBalance">TZS 0</h3>
+          <p class="text-sm text-success">Secure <span class="text-muted">transactions</span></p>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-lg-4 col-sm-6">
+      <div class="icon-card mb-30">
+        <div class="icon orange"><i class="bi bi-shield-check"></i></div>
+        <div class="content">
+          <h6 class="mb-10">Role <span class="text-sm text-muted">| Access</span></h6>
+          <h3 class="text-bold mb-10" id="statRole">—</h3>
+          <p class="text-sm text-muted" id="statRoleSub">Authenticated</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card-style mb-30">
+        <h6 class="mb-10">Properties Overview <span class="text-sm text-muted">| Recent</span></h6>
+        <div id="propertiesTableWrap">
+          <div class="text-center py-4"><div class="spinner-border text-primary"></div><p class="text-muted mt-2">Loading...</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card-style mb-30">
+        <h6 class="mb-10">Quick Actions</h6>
+        <div class="d-grid gap-2">
+          <a href="#" class="main-btn primary-btn btn-hover btn-sm" data-view="properties"><i class="bi bi-search me-2"></i>Browse Properties</a>
+          <a href="#" class="main-btn success-btn btn-hover btn-sm" data-view="mortgages"><i class="bi bi-bank me-2"></i>Apply for Mortgage</a>
+          <a href="#" class="main-btn secondary-btn btn-hover btn-sm" data-view="profile"><i class="bi bi-person me-2"></i>View Profile</a>
+        </div>
+        <div class="mt-4" id="roleHintBox">
+          <h6 class="fw-bold" style="font-size:14px">Role Guide</h6>
+          <p class="text-muted small" id="roleHintText">—</p>
+        </div>
+      </div>
+      <div class="card-style mb-30">
+        <h6 class="mb-10">System Info</h6>
+        <ul class="list-unstyled small mb-0">
+          <li class="d-flex justify-content-between py-2 border-bottom"><span class="text-muted">API</span><span class="fw-medium" id="apiStatus">Checking...</span></li>
+          <li class="d-flex justify-content-between py-2 border-bottom"><span class="text-muted">User ID</span><span class="fw-medium" id="infoUserId">—</span></li>
+          <li class="d-flex justify-content-between py-2"><span class="text-muted">Email</span><span class="fw-medium" id="infoEmail">—</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Properties View -->
+<section id="view-properties" class="view-section d-none">
+  <div class="title-wrapper pt-30">
+    <div class="row align-items-center">
+      <div class="col-md-6"><div class="title"><h2>Properties</h2><p class="text-sm text-muted">All houses in the system</p></div></div>
+      <div class="col-md-6"><div class="breadcrumb-wrapper"><nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="#" data-view="overview">Dashboard</a></li><li class="breadcrumb-item active">Properties</li></ol></nav></div></div>
+    </div>
+  </div>
+  <div class="card-style mb-30">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+      <div class="d-flex gap-2">
+        <input type="text" id="propSearch" class="form-control form-control-sm" placeholder="Search location/title..." style="width:220px">
+        <select id="propFilter" class="form-select form-select-sm" style="width:140px"><option value="*">All types</option><option value="house">House</option><option value="apartment">Apartment</option><option value="commercial">Commercial</option><option value="land">Land</option></select>
+      </div>
+      <button class="main-btn primary-btn btn-hover btn-sm" id="reloadProps"><i class="bi bi-arrow-clockwise"></i> Reload</button>
+    </div>
+    <div id="propsGrid" class="row g-3"></div>
+    <div id="propsEmpty" class="text-center py-5 d-none"><i class="bi bi-houses" style="font-size:48px;color:#cbd5e0"></i><p class="text-muted mt-3">No properties available. No listings have been added yet.</p></div>
+  </div>
+</section>
+
+<!-- Mortgages View -->
+<section id="view-mortgages" class="view-section d-none">
+  <div class="title-wrapper pt-30">
+    <div class="row align-items-center">
+      <div class="col-md-6"><div class="title"><h2>Mortgages</h2><p class="text-sm text-muted">Apply for and track home loans</p></div></div>
+      <div class="col-md-6"><div class="breadcrumb-wrapper"><nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="#" data-view="overview">Dashboard</a></li><li class="breadcrumb-item active">Mortgages</li></ol></nav></div></div>
+    </div>
+  </div>
+  <div class="row g-3">
+    <div class="col-lg-5"><div class="card-style mb-30">
+      <h6 class="mb-10">Apply for Mortgage</h6>
+      <form id="mortgageForm" class="row g-3">
+        <div class="col-12"><label class="form-label">Property</label><select id="mProp" class="form-select" required><option value="">-- Select property --</option></select></div>
+        <div class="col-md-6"><label class="form-label">Loan Amount (TZS)</label><input type="number" id="mAmount" class="form-control" required placeholder="50000000"></div>
+        <div class="col-md-6"><label class="form-label">Down Payment (TZS)</label><input type="number" id="mDown" class="form-control" required placeholder="5000000"></div>
+        <div class="col-md-6"><label class="form-label">Monthly Income (TZS)</label><input type="number" id="mIncome" class="form-control" required placeholder="3000000"></div>
+        <div class="col-md-6"><label class="form-label">Monthly Expenses (TZS)</label><input type="number" id="mExpenses" class="form-control" required placeholder="1200000"></div>
+        <div class="col-md-6"><label class="form-label">Repayment Period (months)</label><input type="number" id="mTerm" class="form-control" value="240" required></div>
+        <div class="col-md-6"><label class="form-label">Employment</label><select id="mEmployment" class="form-select"><option value="employed">Employed</option><option value="self_employed">Self Employed</option><option value="unemployed">Unemployed</option></select></div>
+        <div class="col-12"><button type="submit" class="main-btn primary-btn btn-hover w-100">Submit Application</button></div>
+      </form>
+    </div></div>
+    <div class="col-lg-7"><div class="card-style mb-30">
+      <h6 class="mb-10">My Applications</h6>
+      <div id="mortgageList"><div class="text-center py-4"><div class="spinner-border text-primary"></div></div></div>
+    </div></div>
+  </div>
+</section>
+
+<!-- Applications View -->
+<section id="view-applications" class="view-section d-none">
+  <div class="title-wrapper pt-30">
+    <div class="row align-items-center"><div class="col-md-6"><div class="title"><h2>Applications</h2><p class="text-sm text-muted">All mortgage applications (role filtered)</p></div></div><div class="col-md-6"><div class="breadcrumb-wrapper"><nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="#" data-view="overview">Dashboard</a></li><li class="breadcrumb-item active">Applications</li></ol></nav></div></div></div>
+  </div>
+  <div class="card-style mb-30"><div id="appsTableWrap"><div class="text-center py-4"><div class="spinner-border text-primary"></div></div></div></div>
+</section>
+
+<!-- Profile View - PlainAdmin + Avatar fallback -->
+<section id="view-profile" class="view-section d-none">
+  <div class="title-wrapper pt-30">
+    <div class="row align-items-center"><div class="col-md-6"><div class="title"><h2>Profile</h2></div></div><div class="col-md-6"><div class="breadcrumb-wrapper"><nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="#" data-view="overview">Dashboard</a></li><li class="breadcrumb-item active">Profile</li></ol></nav></div></div></div>
+  </div>
+  <div class="row g-3">
+    <div class="col-xl-4">
+      <div class="card-style text-center mb-30">
+        <div id="profileAvatarWrap" class="d-flex justify-content-center mb-3"></div>
+        <h4 id="profileName" class="mb-1">—</h4>
+        <p id="profileRole" class="text-muted text-sm mb-2">—</p>
+        <div class="mb-3"><span class="badge bg-success" id="profileVerified">Not Verified</span></div>
+        <!-- Upload photo -->
+        <div class="mt-3">
+          <label class="form-label small">Change Photo</label>
+          <input type="file" id="profileImageInput" accept="image/*" class="form-control form-control-sm mb-2">
+          <button class="main-btn primary-btn btn-hover btn-sm w-100" id="uploadAvatarBtn"><i class="bi bi-cloud-upload me-1"></i> Upload Photo</button>
+          <small class="text-muted d-block mt-2">If no photo is set, the initial of your name will be shown.</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-8"><div class="card-style mb-30">
+      <h6 class="mb-10">Details</h6>
+      <div class="row g-3" id="profileDetails"></div>
+      <div class="mt-4">
+        <h6 class="mb-2">Avatar Logic</h6>
+        <p class="text-sm text-muted">The system checks <code>profile_image</code>. If there is no photo, it shows the <b>first letter of the username</b> inside a <code>#0077B6</code> colored circle. If you upload a photo, the photo is shown instead of the letter.</p>
+        <div class="d-flex gap-3 align-items-center mt-2">
+          <div class="text-center"><div id="demoInitial" class="avatar-initial avatar-initial--md">A</div><small class="d-block text-xs mt-1">Initial</small></div>
+          <div class="text-center"><img src="https://via.placeholder.com/64/0077B6/fff?text=P" class="rounded-circle" width="64" height="64" style="object-fit:cover"><small class="d-block text-xs mt-1">With Image</small></div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Navigation for PlainAdmin base
+  function showView(name){
+    document.querySelectorAll('.view-section').forEach(el=>el.classList.add('d-none'));
+    const target=document.getElementById('view-'+name);
+    if(target) target.classList.remove('d-none');
+    // update breadcrumb
+    const bc=document.getElementById('breadcrumbCurrent');
+    if(bc) bc.textContent = name.charAt(0).toUpperCase()+name.slice(1);
+    // sidebar active
+    document.querySelectorAll('.sidebar-nav a[data-view]').forEach(a=>{
+      a.classList.toggle('active', a.dataset.view===name);
+    });
+    if(name==='properties') loadPropertiesGrid();
+    if(name==='mortgages') loadMortgages();
+    if(name==='applications') loadApplications();
+    if(name==='profile') renderProfile();
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  document.querySelectorAll('[data-view]').forEach(a=>{
+    a.addEventListener('click', e=>{ e.preventDefault(); if(a.dataset.view) showView(a.dataset.view); });
+  });
+
+  // Init user UI with avatar fallback
+  (function initUser(){
+    if(!requireAuth()) return;
+    const u=getUser();
+    if(!u){ fetchProfile(); return; }
+    renderUserUI(u);
+    fetchProfile();
+  })();
+
+  function renderUserUI(u){
+    const name=u.username||'User'; const role=(u.role||'customer').toUpperCase();
+    const email=u.email||'';
+    // Use shared renderHeaderAvatars from base
+    if(window.renderHeaderAvatars) renderHeaderAvatars(u);
+    // profile section avatar
+    const pWrap=document.getElementById('profileAvatarWrap');
+    if(pWrap){
+      pWrap.innerHTML=avatarHtml(u,'lg');
+    }
+    document.getElementById('profileName').textContent=name;
+    document.getElementById('profileRole').textContent=role;
+    document.getElementById('demoInitial').textContent=getInitials(name);
+    document.getElementById('statRole').textContent=role;
+    const rb=document.getElementById('roleBadge'); if(rb) rb.textContent=role;
+    document.getElementById('infoUserId').textContent=u.id||'—';
+    document.getElementById('infoEmail').textContent=email;
+    document.getElementById('welcomeMsg').textContent='Welcome '+name+'! Your role is '+role+'.'';
+    const vBadge=document.getElementById('profileVerified');
+    if(u.is_verified){ vBadge.textContent='Verified'; vBadge.className='badge bg-success'; } else { vBadge.textContent='Not Verified'; vBadge.className='badge bg-warning text-dark'; }
+    const hints={
+      customer:'Browse houses, apply for loans, and track your payments.',
+      seller:'Add your houses, manage sales and customers.',
+      realestate:'Manage the company portfolio and your agents.',
+      bank:'Review and approve loan applications.',
+      admin:'Administrator of the entire system.'
+    };
+    const ht=document.getElementById('roleHintText'); if(ht) ht.textContent=hints[u.role]||hints.customer;
+    const details=document.getElementById('profileDetails');
+    if(details) details.innerHTML=`
+      <div class="col-md-6"><label class="form-label">Username</label><input class="form-control" value="${u.username||''}" disabled></div>
+      <div class="col-md-6"><label class="form-label">Email</label><input class="form-control" value="${u.email||''}" disabled></div>
+      <div class="col-md-6"><label class="form-label">Phone</label><input class="form-control" value="${u.phone_number||'—'}" disabled></div>
+      <div class="col-md-6"><label class="form-label">Role</label><input class="form-control" value="${u.role||''}" disabled></div>
+      <div class="col-md-6"><label class="form-label">Verified</label><input class="form-control" value="${u.is_verified?'Yes':'No'}" disabled></div>
+      <div class="col-md-6"><label class="form-label">User ID</label><input class="form-control" value="${u.id||''}" disabled></div>
+      <div class="col-md-6"><label class="form-label">Initials</label><input class="form-control" value="${u.initials||getInitials(u.username)}" disabled></div>
+      <div class="col-md-6"><label class="form-label">Avatar URL</label><input class="form-control" value="${u.avatar_url||'— (initials shown)'}" disabled></div>
+    `;
+  }
+
+  async function fetchProfile(){
+    try{
+      const res=await fetch(API_BASE+'auth/profile/',{headers:authHeaders()});
+      if(res.ok){ const data=await res.json(); localStorage.setItem('user',JSON.stringify(data)); renderUserUI(data); document.getElementById('apiStatus').textContent='Online'; document.getElementById('apiStatus').className='fw-medium text-success'; }
+      else if(res.status===401){ showToast('Session expired, login again','error'); setTimeout(()=>window.location.href='/login/',1200); }
+      else { document.getElementById('apiStatus').textContent='Error '+res.status; }
+    }catch(e){ document.getElementById('apiStatus').textContent='Offline'; document.getElementById('apiStatus').className='fw-medium text-danger'; }
+    loadStats();
+  }
+
+  async function loadStats(){
+    try{
+      const [pRes,mRes]=await Promise.all([
+        fetch(API_BASE+'properties/',{headers:authHeaders()}),
+        fetch(API_BASE+'mortgages/',{headers:authHeaders()}).catch(()=>null)
+      ]);
+      if(pRes && pRes.ok){
+        const data=await pRes.json(); const arr=Array.isArray(data)?data:(data.results||[]);
+        document.getElementById('statProperties').textContent=arr.length;
+        document.getElementById('statPropertiesSub').textContent=arr.length? arr.filter(x=>x.status==='available').length+' available':'No data';
+        renderPropsTable(arr.slice(0,5));
+        fillPropSelect(arr);
+      } else {
+        document.getElementById('statProperties').textContent='—';
+        document.getElementById('statPropertiesSub').textContent='Failed';
+      }
+      if(mRes && mRes.ok){
+        const mData=await mRes.json(); const mArr=Array.isArray(mData)?mData:(mData.results||[]);
+        document.getElementById('statMortgages').textContent=mArr.length;
+        document.getElementById('statMortgagesSub').textContent=mArr.length? 'active':'No applications';
+      } else {
+        document.getElementById('statMortgages').textContent='0';
+      }
+    }catch(e){
+      document.getElementById('statPropertiesSub').textContent='Offline';
+    }
+  }
+  function renderPropsTable(arr){
+    const wrap=document.getElementById('propertiesTableWrap');
+    if(!wrap) return;
+    if(!arr.length){ wrap.innerHTML='<p class="text-muted text-center py-3">No properties yet. No listings have been added.</p>'; return; }
+    let html='<div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th>Title</th><th>Location</th><th>Price</th><th>Status</th></tr></thead><tbody>';
+    arr.forEach(p=>{
+      html+=`<tr><td>${p.title}</td><td class="text-muted small">${p.location}</td><td class="fw-bold" style="color:#0077B6">${Number(p.price).toLocaleString()} TZS</td><td><span class="badge ${p.status==='available'?'bg-success':'bg-warning'}">${p.status}</span></td></tr>`;
+    });
+    html+='</tbody></table></div><div class="text-center mt-2"><a href="#" class="main-btn primary-btn btn-hover btn-sm" data-view="properties">View All Properties</a></div>';
+    wrap.innerHTML=html;
+    wrap.querySelector('[data-view="properties"]')?.addEventListener('click',e=>{e.preventDefault();showView('properties')});
+  }
+  function fillPropSelect(arr){
+    const sel=document.getElementById('mProp'); if(!sel) return;
+    sel.innerHTML='<option value="">-- Select property --</option>';
+    arr.forEach(p=>{ const o=document.createElement('option'); o.value=p.id; o.textContent=p.title+' ('+p.location+')'; sel.appendChild(o); });
+  }
+
+  async function loadPropertiesGrid(){
+    const grid=document.getElementById('propsGrid'); const empty=document.getElementById('propsEmpty');
+    if(!grid) return;
+    grid.innerHTML='<div class="col-12 text-center py-4"><div class="spinner-border text-primary"></div></div>';
+    try{
+      const res=await fetch(API_BASE+'properties/',{headers:authHeaders()});
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const data=await res.json(); const arr=Array.isArray(data)?data:(data.results||[]);
+      const q=(document.getElementById('propSearch').value||'').toLowerCase();
+      const f=document.getElementById('propFilter').value;
+      let filtered=arr.filter(p=>{
+        const matchQ=!q || p.title.toLowerCase().includes(q) || p.location.toLowerCase().includes(q);
+        const matchF=f==='*' || p.property_type===f;
+        return matchQ && matchF;
+      });
+      if(!filtered.length){ grid.innerHTML=''; empty.classList.remove('d-none'); return; }
+      empty.classList.add('d-none');
+      grid.innerHTML=filtered.map(p=>{
+        let img=p.image||''; if(img && img.startsWith('/')) img=window.location.origin+img;
+        const imgHtml=img?`<img src="${img}" class="card-img-top" style="height:180px;object-fit:cover" onerror="this.style.display='none'">`:`<div style="height:180px;background:#eef2f7;display:flex;align-items:center;justify-content:center"><i class="bi bi-house" style="font-size:42px;color:#a0aec0"></i></div>`;
+        return `<div class="col-md-6 col-xl-4"><div class="card-style h-100">${imgHtml}<div class="p-3"><h6 class="mb-1">${p.title}</h6><p class="text-muted small mb-2"><i class="bi bi-geo-alt me-1"></i>${p.location}</p><p class="fw-bold mb-2" style="color:#0077B6">${Number(p.price).toLocaleString()} TZS</p><p class="small text-muted">${(p.description||'').slice(0,90)}...</p><div class="d-flex gap-2 mt-2"><span class="badge bg-light text-dark border">${p.bedrooms} Beds</span><span class="badge bg-light text-dark border">${p.bathrooms} Baths</span><span class="badge ${p.status==='available'?'bg-success':'bg-warning'}">${p.status}</span></div></div></div></div>`;
+      }).join('');
+    }catch(e){
+      grid.innerHTML=`<div class="col-12"><div class="alert alert-danger">Failed to load properties: ${e.message}</div></div>`;
+    }
+  }
+  document.getElementById('propSearch')?.addEventListener('input', loadPropertiesGrid);
+  document.getElementById('propFilter')?.addEventListener('change', loadPropertiesGrid);
+  document.getElementById('reloadProps')?.addEventListener('click', loadPropertiesGrid);
+  document.getElementById('refreshBtn')?.addEventListener('click', ()=>{ loadStats(); if(window.showToast) showToast('Refreshed','info'); });
+
+  async function loadMortgages(){
+    const wrap=document.getElementById('mortgageList');
+    if(!wrap) return;
+    wrap.innerHTML='<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+    try{
+      const res=await fetch(API_BASE+'mortgages/',{headers:authHeaders()});
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const data=await res.json(); const arr=Array.isArray(data)?data:(data.results||[]);
+      if(!arr.length){ wrap.innerHTML='<p class="text-muted text-center py-3">You have no loan applications yet. Fill in the form on the left.</p>'; return; }
+      wrap.innerHTML=arr.map(m=>`<div class="border rounded p-3 mb-2"><div class="d-flex justify-content-between"><strong>#${m.id} - ${m.property_details? m.property_details.title : ('Property '+m.property)}</strong><span class="badge ${m.status==='approved'?'bg-success':m.status==='rejected'?'bg-danger':'bg-warning'}">${m.status||'pending'}</span></div><div class="small text-muted mt-1">Amount: ${Number(m.loan_amount||m.amount||0).toLocaleString()} TZS · Installment: ${Number(m.monthly_installment||0).toLocaleString()} TZS · Term: ${m.repayment_period||m.term_months||'-'} months</div></div>`).join('');
+    }catch(e){
+      wrap.innerHTML=`<div class="alert alert-danger small">Failed: ${e.message}</div>`;
+    }
+  }
+  async function loadApplications(){
+    const wrap=document.getElementById('appsTableWrap');
+    if(!wrap) return;
+    wrap.innerHTML='<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+    try{
+      const res=await fetch(API_BASE+'mortgages/',{headers:authHeaders()});
+      const data=await res.json(); const arr=Array.isArray(data)?data:(data.results||[]);
+      if(!arr.length){ wrap.innerHTML='<p class="text-muted text-center py-3">No applications.</p>'; return; }
+      let html='<div class="table-responsive"><table class="table table-sm"><thead><tr><th>ID</th><th>Property</th><th>Amount</th><th>Status</th></tr></thead><tbody>';
+      arr.forEach(m=>{ html+=`<tr><td>${m.id}</td><td>${m.property_title||m.property}</td><td>${Number(m.amount||m.requested_amount||m.loan_amount||0).toLocaleString()}</td><td><span class="badge bg-info">${m.status}</span></td></tr>`; });
+      html+='</tbody></table></div>';
+      wrap.innerHTML=html;
+    }catch(e){ wrap.innerHTML=`<div class="alert alert-danger">${e.message}</div>`; }
+  }
+  function renderProfile(){
+    const u=getUser(); if(u) renderUserUI(u);
+  }
+
+  document.getElementById('mortgageForm')?.addEventListener('submit', async e=>{
+    e.preventDefault();
+    const payload={
+      property: parseInt(document.getElementById('mProp').value),
+      loan_amount: parseFloat(document.getElementById('mAmount').value),
+      down_payment: parseFloat(document.getElementById('mDown').value||0),
+      monthly_income: parseFloat(document.getElementById('mIncome').value),
+      monthly_expenses: parseFloat(document.getElementById('mExpenses').value),
+      repayment_period: parseInt(document.getElementById('mTerm').value),
+      employment_status: document.getElementById('mEmployment').value
+    };
+    if(!payload.property){ showToast('Choose a property','warning'); return; }
+    try{
+      const res=await fetch(API_BASE+'mortgages/',{method:'POST',headers:authHeaders(),body:JSON.stringify(payload)});
+      const data=await res.json();
+      if(res.ok || res.status===201){ showToast('Application submitted!','success'); loadMortgages(); loadStats(); }
+      else { showToast(JSON.stringify(data).slice(0,200),'error','Failed'); }
+    }catch(err){ showToast(err.message,'error'); }
+  });
+
+  // Upload avatar
+  document.getElementById('uploadAvatarBtn')?.addEventListener('click', async ()=>{
+    const input=document.getElementById('profileImageInput');
+    if(!input.files.length){ showToast('Choose a photo first','warning'); return; }
+    const form=new FormData();
+    form.append('profile_image', input.files[0]);
+    try{
+      const token=getToken();
+      const res=await fetch(API_BASE+'auth/profile/',{method:'PATCH', headers:{'Authorization':'Bearer '+token}, body:form});
+      const data=await res.json();
+      if(res.ok){
+        localStorage.setItem('user', JSON.stringify(data));
+        renderUserUI(data);
+        renderHeaderAvatars(data);
+        showToast('Photo saved!','success');
+      } else {
+        showToast(JSON.stringify(data).slice(0,200),'error');
+      }
+    }catch(e){ showToast(e.message,'error'); }
+  });
+
+  // initial
+  loadStats();
+</script>
+{% endblock %}

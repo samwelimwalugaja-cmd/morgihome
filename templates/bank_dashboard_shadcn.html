@@ -1,0 +1,327 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="{% static 'images/favicon.ico' %}?v=4" rel="icon" sizes="48x48">
+  <link href="{% static 'images/favicon-32x32.png' %}?v=4" rel="icon" type="image/png" sizes="32x32">
+  <link href="{% static 'images/favicon-16x16.png' %}?v=4" rel="icon" type="image/png" sizes="16x16">
+  <link href="{% static 'images/apple-touch-icon.png' %}?v=4" rel="apple-touch-icon" type="image/png">
+  <title>Bank Dashboard - MorgiHome - Shadcn</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+  <link href="{% static 'css/toast.css' %}" rel="stylesheet">
+  <script>
+    tailwind.config={darkMode:'class', theme:{extend:{colors:{border:'hsl(214.3 31.8% 91.4%)', card:'hsl(0 0% 100%)'}}}}
+  </script>
+  <style>
+    *{font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial}
+    .shadcn-card{border:1px solid hsl(214.3 31.8% 91.4%);border-radius:12px;background:white;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+    .shadcn-btn{border-radius:8px;padding:8px 16px;font-size:13px;font-weight:500;transition:all .15s}
+  </style>
+</head>
+<body class="bg-[#f8fafc] text-[#0f172a] antialiased">
+  <div class="flex min-h-screen">
+    <!-- Sidebar - Shadcn style -->
+    <aside id="bankSidebar" class="w-[260px] bg-white border-r flex flex-col fixed h-screen overflow-y-auto z-20 transition-all">
+      <div class="h-[64px] flex items-center gap-2 px-6 border-b">
+        <div class="w-8 h-8 rounded-lg bg-[#0077B6] flex items-center justify-center text-white"><i class="ri-bank-line"></i></div>
+        <span class="font-bold text-[16px]">MorgiHome</span>
+        <span class="ml-auto text-[11px] bg-[#eef2ff] text-[#4338ca] px-2 py-1 rounded-full font-medium">BANK</span>
+      </div>
+      <nav class="flex-1 p-3 space-y-1">
+        <a href="/bank/dashboard/" class="flex items-center gap-3 px-3 py-2 rounded-lg bg-[#f1f5f9] text-[#0f172a] font-medium text-sm"><i class="ri-dashboard-line text-lg"></i> Dashboard</a>
+        <div class="pt-3 pb-1 text-[11px] font-semibold text-[#64748b] tracking-widest uppercase">Mortgage</div>
+        <a href="#apps" onclick="showBankView('apps')" class="bank-nav flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#f8fafc] text-sm"><i class="ri-file-list-line"></i> All Applications <span id="navAppsCount" class="ml-auto text-xs bg-[#e2e8f0] px-2 py-0.5 rounded-full">0</span></a>
+        <a href="#pending" onclick="event.preventDefault();filterApps('pending')" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#f8fafc] text-sm"><i class="ri-time-line text-[#eab308]"></i> Pending <span id="navPending" class="ml-auto text-xs bg-[#fef3c7] text-[#92400e] px-2 py-0.5 rounded-full">0</span></a>
+        <a href="#approved" onclick="event.preventDefault();filterApps('approved')" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#f8fafc] text-sm"><i class="ri-checkbox-circle-line text-[#16a34a]"></i> Approved</a>
+        <a href="#rejected" onclick="event.preventDefault();filterApps('rejected')" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#f8fafc] text-sm"><i class="ri-close-circle-line text-[#dc2626]"></i> Rejected</a>
+        <div class="pt-3 pb-1 text-[11px] font-semibold text-[#64748b] tracking-widest uppercase">Analytics</div>
+        <a href="#risk" onclick="showBankView('risk')" class="bank-nav flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#f8fafc] text-sm"><i class="ri-shield-keyhole-line"></i> Risk Analysis</a>
+        <a href="#contracts" onclick="showBankView('contracts')" class="bank-nav flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#f8fafc] text-sm"><i class="ri-quill-pen-line"></i> Contracts</a>
+        <a href="#reports" onclick="showBankView('reports')" class="bank-nav flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#f8fafc] text-sm"><i class="ri-bar-chart-line"></i> Reports</a>
+      </nav>
+      <div class="p-3 border-t">
+        <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-[#f8fafc] cursor-pointer" onclick="window.location.href='/profile/'">
+          <div id="bankAvatar" class="w-8 h-8 rounded-full bg-[#0077B6] text-white flex items-center justify-center text-sm font-bold">B</div>
+          <div class="flex-1 min-w-0"><div id="bankName" class="text-sm font-medium truncate">Bank User</div><div id="bankEmail" class="text-xs text-[#64748b] truncate">bank@morgihome.com</div></div>
+        </div>
+        <button onclick="bankLogout()" class="w-full mt-2 flex items-center justify-center gap-2 text-sm py-2 rounded-lg border hover:bg-[#fef2f2] hover:text-[#dc2626] hover:border-[#fecaca]"><i class="ri-logout-box-line"></i> Sign Out</button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="flex-1 ml-[260px]">
+      <!-- Header -->
+      <header class="h-[64px] bg-white border-b sticky top-0 z-10 flex items-center justify-between px-6">
+        <div class="flex items-center gap-3 flex-1 max-w-xl">
+          <button onclick="document.getElementById('bankSidebar').classList.toggle('-translate-x-full')" class="lg:hidden p-2 rounded-lg border"><i class="ri-menu-line"></i></button>
+          <div class="relative flex-1">
+            <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8]"></i>
+            <input id="bankSearch" placeholder="Search applications, customers..." class="w-full pl-9 pr-4 py-2 rounded-lg border bg-[#f8fafc] text-sm focus:outline-none focus:ring-2 focus:ring-[#0077B6]/20 focus:border-[#0077B6]">
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="p-2 rounded-lg border hover:bg-[#f8fafc] relative"><i class="ri-notification-3-line"></i><span class="absolute -top-1 -right-1 w-2 h-2 bg-[#ef4444] rounded-full"></span></button>
+          <div class="w-px h-6 bg-[#e2e8f0]"></div>
+          <span id="bankVerifiedBadge" class="hidden text-xs px-2 py-1 rounded-full bg-[#dcfce7] text-[#166534] border border-[#bbf7d0]">Verified</span>
+          <span id="bankRoleBadge" class="text-xs px-2 py-1 rounded-full bg-[#0A2B4E] text-white">BANK</span>
+        </div>
+      </header>
+
+      <!-- Verification Banner REMOVED per spec - Email/Phone/NIN zimeondolewa. Banner ya Bank inaonekana tu kwenye /verify/bank/ -->
+      <div id="bankVerifBanner" class="hidden" style="display:none !important"></div>
+
+      <!-- Content -->
+      <main class="p-6 space-y-6">
+        <!-- Overview with Tabs like shadcn-admin -->
+        <div id="bankView-overview">
+          <div class="flex items-center justify-between mb-2">
+            <div><h1 class="text-2xl font-bold tracking-tight">Dashboard</h1><p class="text-sm text-[#64748b]">Bank overview and analytics</p></div>
+            <div class="flex items-center gap-2">
+              <button onclick="loadBankStats()" class="shadcn-btn border bg-white hover:bg-[#f8fafc]"><i class="ri-refresh-line mr-1"></i> Refresh</button>
+              <a href="/verify/bank/" class="shadcn-btn bg-[#0077B6] text-white">Verification</a>
+            </div>
+          </div>
+          <!-- Tabs -->
+          <div class="border-b mb-4">
+            <div class="flex gap-6 text-sm">
+              <button onclick="switchBankTab('overview')" id="bankTab-overview" class="pb-3 border-b-2 border-[#0A2B4E] font-medium">Overview</button>
+              <button onclick="switchBankTab('analytics')" id="bankTab-analytics" class="pb-3 border-b-2 border-transparent text-[#64748b]">Analytics</button>
+              <button disabled class="pb-3 border-b-2 border-transparent text-[#94a3b8] cursor-not-allowed">Reports</button>
+              <button disabled class="pb-3 border-b-2 border-transparent text-[#94a3b8] cursor-not-allowed">Notifications</button>
+            </div>
+          </div>
+
+          <div id="bankOverviewContent">
+          <!-- Stats - Shadcn cards -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="shadcn-card p-5">
+              <div class="flex items-center justify-between"><span class="text-sm text-[#64748b]">Total Applications</span><span class="w-8 h-8 rounded-lg bg-[#eff6ff] flex items-center justify-center"><i class="ri-file-list-line text-[#2563eb]"></i></span></div>
+              <div class="text-2xl font-bold mt-2" id="statTotal">—</div>
+              <div class="text-xs text-[#64748b] mt-1"><span class="text-[#16a34a]">+12%</span> from last month</div>
+            </div>
+            <div class="shadcn-card p-5">
+              <div class="flex items-center justify-between"><span class="text-sm text-[#64748b]">Pending Review</span><span class="w-8 h-8 rounded-lg bg-[#fef3c7] flex items-center justify-center"><i class="ri-time-line text-[#d97706]"></i></span></div>
+              <div class="text-2xl font-bold mt-2" id="statPending">—</div>
+              <div class="text-xs text-[#64748b] mt-1">Awaiting decision</div>
+            </div>
+            <div class="shadcn-card p-5">
+              <div class="flex items-center justify-between"><span class="text-sm text-[#64748b]">Approved</span><span class="w-8 h-8 rounded-lg bg-[#dcfce7] flex items-center justify-center"><i class="ri-checkbox-circle-line text-[#16a34a]"></i></span></div>
+              <div class="text-2xl font-bold mt-2" id="statApproved">—</div>
+              <div class="text-xs text-[#64748b] mt-1">Ready for disbursement</div>
+            </div>
+            <div class="shadcn-card p-5">
+              <div class="flex items-center justify-between"><span class="text-sm text-[#64748b]">Portfolio Value</span><span class="w-8 h-8 rounded-lg bg-[#f0fdf4] flex items-center justify-center"><i class="ri-money-dollar-circle-line text-[#16a34a]"></i></span></div>
+              <div class="text-2xl font-bold mt-2" id="statValue">—</div>
+              <div class="text-xs text-[#64748b] mt-1">Total approved</div>
+            </div>
+            <!-- Filters + Table - part of Overview -->
+            <div class="shadcn-card mt-6">
+              <div class="p-5 border-b flex flex-wrap gap-3 items-center justify-between">
+                <h3 class="font-semibold">Recent Applications</h3>
+                <div class="flex gap-2">
+                  <select id="bankStatusFilter" class="rounded-lg border px-3 py-2 text-sm bg-white"><option value="all">All Status</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option><option value="disbursed">Disbursed</option></select>
+                  <select id="bankSort" class="rounded-lg border px-3 py-2 text-sm bg-white"><option value="newest">Newest</option><option value="amount_high">Amount High</option><option value="risk_high">Risk High</option></select>
+                </div>
+              </div>
+              <div class="overflow-auto">
+                <table class="w-full text-sm">
+                  <thead class="bg-[#f8fafc] text-[#64748b] text-xs uppercase tracking-wide"><tr><th class="px-5 py-3 text-left">Customer</th><th class="px-5 py-3 text-left">Property</th><th class="px-5 py-3 text-left">Amount</th><th class="px-5 py-3 text-left">Risk</th><th class="px-5 py-3 text-left">Status</th><th class="px-5 py-3 text-right">Action</th></tr></thead>
+                  <tbody id="bankTableBody" class="divide-y"><tr><td colspan="6" class="px-5 py-10 text-center text-[#94a3b8]"><div class="w-8 h-8 border-2 border-[#e2e8f0] border-t-[#0077B6] rounded-full animate-spin mx-auto"></div><div class="mt-2">Loading...</div></td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div id="bankAnalyticsContent" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div class="shadcn-card p-5"><h3 class="font-semibold mb-2">Avg Risk Score</h3><div class="text-3xl font-bold" id="riskAvg2">—</div><div class="text-xs text-[#64748b]">Lower is better</div></div>
+              <div class="shadcn-card p-5"><h3 class="font-semibold mb-2">High Risk</h3><div class="text-3xl font-bold text-[#dc2626]" id="riskHigh2">—</div></div>
+              <div class="shadcn-card p-5"><h3 class="font-semibold mb-2">Avg Affordability</h3><div class="text-3xl font-bold text-[#16a34a]" id="riskAfford2">—</div></div>
+            </div>
+            <div class="shadcn-card mt-6 p-5"><h3 class="font-semibold">Analytics Chart</h3><p class="text-sm text-[#64748b]">Applications over time (placeholder for chart)</p><div class="h-[200px] bg-[#f8fafc] rounded-lg flex items-center justify-center text-[#94a3b8]">Chart placeholder</div></div>
+          </div>
+        </div>
+
+        <!-- Risk view -->
+        <div id="bankView-risk" class="hidden">
+          <h2 class="text-xl font-bold mb-4">Risk Analysis</h2>
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="shadcn-card p-5"><h3 class="font-semibold mb-2">Avg Risk Score</h3><div class="text-3xl font-bold" id="riskAvg">—</div><div class="text-xs text-[#64748b]">Lower is better</div></div>
+            <div class="shadcn-card p-5"><h3 class="font-semibold mb-2">High Risk</h3><div class="text-3xl font-bold text-[#dc2626]" id="riskHigh">—</div><div class="text-xs text-[#64748b]">Score >70</div></div>
+            <div class="shadcn-card p-5"><h3 class="font-semibold mb-2">Avg Affordability</h3><div class="text-3xl font-bold text-[#16a34a]" id="riskAfford">—</div></div>
+          </div>
+        </div>
+
+        <!-- Contracts view -->
+        <div id="bankView-contracts" class="hidden">
+          <h2 class="text-xl font-bold mb-4">Contracts</h2>
+          <div class="shadcn-card p-8 text-center text-[#64748b]">Contracts for approved mortgages will appear here. <br><small>Bank signs after customer & seller.</small></div>
+        </div>
+
+        <!-- Reports view -->
+        <div id="bankView-reports" class="hidden">
+          <h2 class="text-xl font-bold mb-4">Reports</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="shadcn-card p-5"><h4 class="font-medium">Mortgage Reports</h4><p class="text-xs text-[#64748b] mt-1">Monthly performance</p><button class="mt-3 shadcn-btn bg-[#0A2B4E] text-white w-full">Download CSV</button></div>
+            <div class="shadcn-card p-5"><h4 class="font-medium">Financial Summary</h4><p class="text-xs text-[#64748b] mt-1">Disbursed vs pending</p><button class="mt-3 shadcn-btn border w-full">View</button></div>
+            <div class="shadcn-card p-5"><h4 class="font-medium">Risk Export</h4><p class="text-xs text-[#64748b] mt-1">AI scores export</p><button class="mt-3 shadcn-btn border w-full">Export</button></div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div id="bankDetailModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4"><div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-auto"><div class="p-6 border-b flex justify-between items-center"><h3 class="font-bold" id="bankModalTitle">Application #0</h3><button onclick="closeBankModal()" class="p-2 rounded-lg hover:bg-[#f1f5f9]"><i class="ri-close-line text-xl"></i></button></div><div class="p-6" id="bankModalBody"></div></div></div>
+
+  <script src="{% static 'js/toast.js' %}"></script>
+  <script>
+    const API='/api/';
+    function getToken(){return localStorage.getItem('access');}
+    function getUser(){try{return JSON.parse(localStorage.getItem('user')||'null')}catch(e){return null}}
+    function authH(){const t=getToken();return t?{'Authorization':'Bearer '+t}:{};}
+    function authHJ(){const t=getToken();const h={'Content-Type':'application/json'};if(t)h['Authorization']='Bearer '+t;return h;}
+    function bankLogout(){localStorage.clear();sessionStorage.clear();location.replace('/login/');}
+    // Show bank info
+    (function(){
+      const u=getUser();
+      if(!u){ location.replace('/login/'); return; }
+      if(u.role!=='bank' && u.role!=='realestate'){ /* still allow but warn */ }
+      document.getElementById('bankName').textContent=u.full_name||u.first_name+' '+(u.last_name||'');
+      document.getElementById('bankEmail').textContent=u.email;
+      document.getElementById('bankAvatar').textContent=(u.initials||u.first_name.charAt(0).toUpperCase());
+      if(u.is_verified) document.getElementById('bankVerifiedBadge').classList.remove('hidden');
+    })();
+    function switchBankTab(name){
+      document.querySelectorAll('[id^="bankTab-"]').forEach(el=>{ el.classList.remove('border-[#0A2B4E]','font-medium'); el.classList.add('border-transparent','text-[#64748b]'); });
+      const active=document.getElementById('bankTab-'+name);
+      if(active){ active.classList.add('border-[#0A2B4E]','font-medium'); active.classList.remove('border-transparent','text-[#64748b]'); }
+      // Show corresponding content inside overview
+      if(name==='overview'){
+        document.getElementById('bankOverviewContent').classList.remove('hidden');
+        document.getElementById('bankAnalyticsContent').classList.add('hidden');
+      } else if(name==='analytics'){
+        document.getElementById('bankOverviewContent').classList.add('hidden');
+        document.getElementById('bankAnalyticsContent').classList.remove('hidden');
+        // also show risk view
+        showBankView('risk');
+      }
+    }
+    function showBankView(name){
+      document.querySelectorAll('[id^="bankView-"]').forEach(el=>el.classList.add('hidden'));
+      const t=document.getElementById('bankView-'+name);
+      if(t) t.classList.remove('hidden');
+      if(name==='apps') loadBankApps();
+      // also handle tabs
+      if(name==='risk' || name==='analytics') switchBankTab('analytics');
+      else if(name==='apps' || name==='overview') switchBankTab('overview');
+    }
+    // Bank verification banner REMOVED - no Email/Phone/NIN banner. Badge tu ya business docs
+    async function loadBankVerifBanner(){
+      try{
+        const b=document.getElementById('bankVerifBanner'); if(b) b.style.display='none';
+        const res=await fetch(API+'verify/status/',{headers:authHJ()});
+        const d=await res.json();
+        if(d.is_fully_verified || d.is_verified) document.getElementById('bankVerifiedBadge').classList.remove('hidden');
+      }catch(e){}
+    }
+    loadBankVerifBanner();
+    let allApps=[];
+    async function loadBankStats(){
+      try{
+        const res=await fetch(API+'mortgages/',{headers:authHJ()});
+        const data=await res.json();
+        allApps=Array.isArray(data)?data:(data.results||[]);
+        document.getElementById('statTotal').textContent=allApps.length;
+        document.getElementById('statPending').textContent=allApps.filter(a=>a.status==='pending').length;
+        document.getElementById('statApproved').textContent=allApps.filter(a=>a.status==='approved').length;
+        document.getElementById('navAppsCount').textContent=allApps.length;
+        document.getElementById('navPending').textContent=allApps.filter(a=>a.status==='pending').length;
+        const totalVal=allApps.filter(a=>a.status==='approved').reduce((s,a)=>s+parseFloat(a.loan_amount||0),0);
+        document.getElementById('statValue').textContent='TZS '+totalVal.toLocaleString();
+        // risk
+        const avgRisk=allApps.length? (allApps.reduce((s,a)=>s+parseFloat(a.risk_score||0),0)/allApps.length).toFixed(1):'—';
+        const highRisk=allApps.filter(a=>parseFloat(a.risk_score||0)>70).length;
+        const avgAfford=allApps.length? (allApps.reduce((s,a)=>s+parseFloat(a.affordability_score||0),0)/allApps.length).toFixed(1):'—';
+        document.getElementById('riskAvg').textContent=avgRisk;
+        document.getElementById('riskHigh').textContent=highRisk;
+        document.getElementById('riskAfford').textContent=avgAfford+'%';
+        renderBankTable();
+      }catch(e){ console.error(e); }
+    }
+    function renderBankTable(){
+      const tbody=document.getElementById('bankTableBody');
+      const q=(document.getElementById('bankSearch')?.value||'').toLowerCase();
+      const status=document.getElementById('bankStatusFilter')?.value||'all';
+      const sort=document.getElementById('bankSort')?.value||'newest';
+      let arr=[...allApps];
+      if(q) arr=arr.filter(a=> (a.customer_name||'').toLowerCase().includes(q) || (a.property_details?.title||'').toLowerCase().includes(q));
+      if(status!=='all') arr=arr.filter(a=>a.status===status);
+      if(sort==='amount_high') arr.sort((a,b)=>parseFloat(b.loan_amount)-parseFloat(a.loan_amount));
+      else if(sort==='risk_high') arr.sort((a,b)=>parseFloat(b.risk_score||0)-parseFloat(a.risk_score||0));
+      else arr.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+      if(!arr.length){
+        tbody.innerHTML='<tr><td colspan="6" class="px-5 py-8 text-center text-[#64748b]">No applications found</td></tr>'; return;
+      }
+      tbody.innerHTML=arr.map(a=>{
+        const risk=parseFloat(a.risk_score||0);
+        const riskColor=risk>70?'text-[#dc2626] bg-[#fef2f2] border-[#fecaca]':risk>40?'text-[#d97706] bg-[#fffbeb] border-[#fde68a]':'text-[#16a34a] bg-[#f0fdf4] border-[#bbf7d0]';
+        const statusColor=a.status==='approved'?'bg-[#dcfce7] text-[#166534] border-[#bbf7d0]':a.status==='pending'?'bg-[#fef3c7] text-[#92400e] border-[#fde68a]':a.status==='rejected'?'bg-[#fee2e2] text-[#991b1b] border-[#fecaca]':'bg-[#f1f5f9] text-[#475569] border-[#e2e8f0]';
+        return `<tr class="hover:bg-[#f8fafc]">
+          <td class="px-5 py-3"><div class="font-medium">${a.customer_name||'Customer #'+a.customer}</div><div class="text-xs text-[#64748b]">${a.customer_is_verified?'<span class="text-[#16a34a]">Verified</span>':'<span class="text-[#eab308]">Not Verified</span>'} • ${a.employment_status||''}</div></td>
+          <td class="px-5 py-3"><div class="font-medium">${a.property_details?.title||'Property #'+a.property}</div><div class="text-xs text-[#64748b]">${a.property_details?.location||''}</div></td>
+          <td class="px-5 py-3 font-medium">TZS ${Number(a.loan_amount).toLocaleString()}</td>
+          <td class="px-5 py-3"><span class="text-xs px-2 py-1 rounded-full border ${riskColor}">${risk.toFixed(1)}%</span><div class="text-xs text-[#64748b]">Afford ${parseFloat(a.affordability_score||0).toFixed(0)}%</div></td>
+          <td class="px-5 py-3"><span class="text-xs px-2 py-1 rounded-full border ${statusColor}">${a.status}</span></td>
+          <td class="px-5 py-3 text-right"><div class="flex gap-1 justify-end"><button onclick="openBankModal(${a.id})" class="shadcn-btn border bg-white hover:bg-[#f8fafc] text-xs">View</button>${a.status==='pending'?`<button onclick="bankDecision(${a.id},'approve')" class="shadcn-btn bg-[#16a34a] text-white hover:bg-[#15803d] text-xs">Approve</button><button onclick="bankDecision(${a.id},'reject')" class="shadcn-btn bg-white border text-[#dc2626] hover:bg-[#fef2f2] text-xs">Reject</button>`:''}</div></td>
+        </tr>`;
+      }).join('');
+    }
+    function filterApps(s){document.getElementById('bankStatusFilter').value=s; renderBankTable();}
+    async function openBankModal(id){
+      const modal=document.getElementById('bankDetailModal');
+      const body=document.getElementById('bankModalBody');
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+      body.innerHTML='<div class="text-center py-8"><div class="w-8 h-8 border-2 border-[#e2e8f0] border-t-[#0077B6] rounded-full animate-spin mx-auto"></div></div>';
+      try{
+        const res=await fetch(API+'mortgages/'+id+'/',{headers:authHJ()});
+        const a=await res.json();
+        document.getElementById('bankModalTitle').textContent='Application #'+a.id+' • '+a.status;
+        body.innerHTML=`
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div><span class="text-[#64748b]">Customer</span><div class="font-medium">${a.customer_name} ${a.customer_is_verified?'<span class="text-[#16a34a]">✓ Verified</span>':''}</div></div>
+            <div><span class="text-[#64748b]">Property</span><div class="font-medium">${a.property_details?.title||'-'}</div><div class="text-xs text-[#64748b]">${a.property_details?.location||''}</div></div>
+            <div><span class="text-[#64748b]">Loan</span><div class="font-medium">TZS ${Number(a.loan_amount).toLocaleString()}</div><div class="text-xs">Down ${Number(a.down_payment).toLocaleString()} • ${a.repayment_period} months</div></div>
+            <div><span class="text-[#64748b]">Income</span><div class="font-medium">TZS ${Number(a.monthly_income).toLocaleString()} / ${Number(a.monthly_expenses).toLocaleString()}</div><div class="text-xs">${a.employment_status}</div></div>
+            <div class="col-span-2 p-3 bg-[#f8fafc] rounded-lg border grid grid-cols-3 gap-4 text-center">
+              <div><div class="text-xs text-[#64748b]">Monthly</div><div class="font-bold">TZS ${Number(a.monthly_installment||0).toLocaleString()}</div></div>
+              <div><div class="text-xs text-[#64748b]">Afford</div><div class="font-bold">${parseFloat(a.affordability_score||0).toFixed(1)}%</div></div>
+              <div><div class="text-xs text-[#64748b]">Risk</div><div class="font-bold">${parseFloat(a.risk_score||0).toFixed(1)}%</div></div>
+            </div>
+          </div>
+          <div class="flex gap-2 mt-6 justify-end">
+            <button onclick="closeBankModal()" class="shadcn-btn border">Close</button>
+            ${a.status==='pending'?`<button onclick="bankDecision(${a.id},'approve');closeBankModal()" class="shadcn-btn bg-[#16a34a] text-white">Approve</button><button onclick="bankDecision(${a.id},'reject');closeBankModal()" class="shadcn-btn bg-[#dc2626] text-white">Reject</button>`:''}
+          </div>
+        `;
+      }catch(e){ body.innerHTML='<div class="text-[#dc2626] p-4">Failed to load</div>'; }
+    }
+    function closeBankModal(){document.getElementById('bankDetailModal').classList.add('hidden');}
+    async function bankDecision(id, action){
+      try{
+        const res=await fetch(API+'mortgages/'+id+'/'+action+'/',{method:'POST',headers:authHJ()});
+        const data=await res.json();
+        if(res.ok){ if(window.showToast) showToast('Application '+action+'d','success'); loadBankStats(); }
+        else { if(window.showToast) showToast(data.error||'Failed','error'); else alert(data.error); }
+      }catch(e){ alert(e.message); }
+    }
+    document.getElementById('bankSearch')?.addEventListener('input', renderBankTable);
+    document.getElementById('bankStatusFilter')?.addEventListener('change', renderBankTable);
+    document.getElementById('bankSort')?.addEventListener('change', renderBankTable);
+    document.getElementById('bankDetailModal')?.addEventListener('click', e=>{ if(e.target.id==='bankDetailModal') closeBankModal(); });
+    loadBankStats();
+  </script>
+</body>
+</html>

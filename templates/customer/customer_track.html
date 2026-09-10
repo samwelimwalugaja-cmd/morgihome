@@ -1,0 +1,216 @@
+{% extends 'customer/customer_base.html' %}
+{% load humanize %}
+{% block title %}Track {{ application.application_number|default:"Application" }} - MorgiHome{% endblock %}
+
+{% block extra_head %}
+<style>
+  .track-card { background:#191c24; border:1px solid #2c2e33; border-radius:12px; transition: all 0.3s; }
+  .track-card:hover { border-color: rgba(0,119,182,0.3); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+  .gradient-progress { background: linear-gradient(90deg, #0077B6 0%, #0A2B4E 100%); }
+  .step-circle { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; border:2px solid #2c2e33; background:#0f1419; color:#6c7293; transition: all 0.3s; }
+  .step-circle.active { background:#0077B6; border-color:#0077B6; color:#fff; box-shadow:0 0 0 6px rgba(0,119,182,0.2); transform: scale(1.05); }
+  .step-circle.done { background:#00d25b; border-color:#00d25b; color:#fff; }
+  .step-label { font-size:11px; font-weight:600; color:#6c7293; margin-top:8px; }
+  .step-label.active { color:#0077B6; }
+  .step-label.done { color:#00d25b; }
+  .score-ring { width:80px; height:80px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px; border:6px solid; }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if not application %}
+<div class="row">
+  <div class="col-12 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body text-center py-5">
+        <div style="width:72px; height:72px; border-radius:50%; background:#2c2e33; display:flex; align-items:center; justify-content:center; margin:0 auto;"><i class="mdi mdi-file-alert" style="font-size:32px; color:#6c7293;"></i></div>
+        <h4 class="mt-3">No application found</h4>
+        <p class="text-muted">We couldn't find this application. It may have been removed.</p>
+        <a href="/customer/applications/" class="btn btn-primary mt-3">Back to Applications</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% else %}
+<!-- Header -->
+<div class="row">
+  <div class="col-12">
+    <div class="card" style="background: linear-gradient(135deg, #0A2B4E 0%, #0077B6 100%); border:none; overflow:hidden;">
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+          <div class="d-flex align-items-center gap-3">
+            <a href="/customer/applications/" class="btn btn-outline-light" style="width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; border-color: rgba(255,255,255,0.3);"><i class="mdi mdi-arrow-left"></i></a>
+            <div>
+              <h4 class="mb-1 text-white" style="font-weight:800;">{{ application.application_number }} <span class="badge ms-2" style="background:rgba(255,255,255,0.2); color:#fff; border:1px solid rgba(255,255,255,0.3); backdrop-filter: blur(4px);">{{ application.get_status_display }}</span></h4>
+              <p class="mb-0 text-white" style="opacity:0.85; font-size:13px;"><i class="mdi mdi-home"></i> {{ application.property.title|default:"No Property" }} • <i class="mdi mdi-map-marker"></i> {{ application.property.location|default:"—" }} • TZS {{ application.loan_amount|intcomma }}</p>
+            </div>
+          </div>
+          <div class="text-end d-none d-md-block">
+            <p class="text-white mb-1" style="opacity:0.7; font-size:11px; letter-spacing:1px;">BANK</p>
+            <h6 class="text-white mb-0" style="font-weight:700;">{{ application.bank.get_full_name|default:"Not selected" }}</h6>
+            {% if application.bank.interest_rate %}<span class="badge" style="background:rgba(255,255,255,0.2); color:#fff;">{{ application.bank.interest_rate }}% p.a.</span>{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-3">
+  <!-- Left: Progress + Loan Details -->
+  <div class="col-12 col-lg-8">
+    <!-- Progress -->
+    <div class="card track-card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 style="font-weight:700;"><i class="mdi mdi-timeline" style="color:#0077B6;"></i> Application Progress</h5>
+          <span class="badge" style="background:rgba(0,119,182,0.12); color:#0077B6; border:1px solid rgba(0,119,182,0.2);">{{ application.get_status_display }}</span>
+        </div>
+        <div class="progress" style="height:6px; background:#2c2e33; border-radius:10px; overflow:hidden;">
+          <div class="progress-bar gradient-progress" style="width: {% if application.status == 'pending' %}16%{% elif application.status == 'document_verification' %}33%{% elif application.status == 'valuation' %}50%{% elif application.status == 'credit_assessment' %}66%{% elif application.status == 'approved' %}83%{% elif application.status == 'disbursed' %}100%{% else %}16%{% endif %}; border-radius:10px;"></div>
+        </div>
+        <div class="row text-center mt-4 g-2">
+          {% with s=application.status %}
+          <div class="col-4 col-md-2"><div class="step-circle done mx-auto"><i class="mdi mdi-check"></i></div><div class="step-label done">Submitted</div></div>
+          <div class="col-4 col-md-2"><div class="step-circle {% if s in 'document_verification,valuation,credit_assessment,approved,disbursed' %}done{% elif s == 'pending' %}active{% endif %} mx-auto"><i class="mdi mdi-file-document"></i></div><div class="step-label {% if s in 'document_verification,valuation,credit_assessment,approved,disbursed' %}done{% elif s == 'pending' %}active{% endif %}">Documents</div></div>
+          <div class="col-4 col-md-2"><div class="step-circle {% if s in 'valuation,credit_assessment,approved,disbursed' %}done{% elif s == 'document_verification' %}active{% endif %} mx-auto"><i class="mdi mdi-home-search"></i></div><div class="step-label {% if s in 'valuation,credit_assessment,approved,disbursed' %}done{% elif s == 'document_verification' %}active{% endif %}">Valuation</div></div>
+          <div class="col-4 col-md-2"><div class="step-circle {% if s in 'credit_assessment,approved,disbursed' %}done{% elif s == 'valuation' %}active{% endif %} mx-auto"><i class="mdi mdi-shield-check"></i></div><div class="step-label {% if s in 'credit_assessment,approved,disbursed' %}done{% elif s == 'valuation' %}active{% endif %}">Credit</div></div>
+          <div class="col-4 col-md-2"><div class="step-circle {% if s in 'approved,disbursed' %}done{% elif s == 'credit_assessment' %}active{% endif %} mx-auto"><i class="mdi mdi-check-decagram"></i></div><div class="step-label {% if s in 'approved,disbursed' %}done{% elif s == 'credit_assessment' %}active{% endif %}">Approval</div></div>
+          <div class="col-4 col-md-2"><div class="step-circle {% if s == 'disbursed' %}done{% elif s == 'approved' %}active{% endif %} mx-auto"><i class="mdi mdi-cash-multiple"></i></div><div class="step-label {% if s == 'disbursed' %}done{% elif s == 'approved' %}active{% endif %}">Disbursed</div></div>
+          {% endwith %}
+        </div>
+        <div class="mt-4 p-3 rounded" style="background:rgba(0,119,182,0.06); border:1px solid rgba(0,119,182,0.12); border-left:4px solid #0077B6;">
+          <div class="row">
+            <div class="col-md-6"><p class="text-muted mb-1" style="font-size:11px; letter-spacing:0.5px;">CURRENT STAGE</p><p style="font-weight:700; color:#0077B6;">{{ application.get_status_display }}{% if application.review_stage %} — {{ application.review_stage|title }}{% endif %}</p></div>
+            <div class="col-md-6"><p class="text-muted mb-1" style="font-size:11px; letter-spacing:0.5px;">PROPERTY & BANK</p><p style="font-weight:600; font-size:13px;">{{ application.property.title|default:"—" }} • {{ application.bank.get_full_name|default:"—" }}</p></div>
+          </div>
+        </div>
+        {% if review_message %}
+        <div class="mt-3 p-3 rounded d-flex gap-2 align-items-start" style="background:rgba(0,210,91,0.08); border:1px solid rgba(0,210,91,0.25); border-left:4px solid #00d25b;">
+          <i class="mdi mdi-bank" style="font-size:20px; color:#00d25b;"></i>
+          <div>
+            <p class="mb-1" style="font-size:11px; letter-spacing:0.5px; color:#6c7293; font-weight:700;">LIVE UPDATE FROM BANK</p>
+            <p class="mb-0" style="font-size:13px; font-weight:600;">{{ review_message }}</p>
+            {% if application.review_note %}<p class="text-muted mb-0 mt-1" style="font-size:12px;">Bank note: {{ application.review_note }}</p>{% endif %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Corrections requested by the bank -->
+    {% if pending_corrections %}
+    <div class="card track-card mt-3" style="border-top:4px solid #ffc107;">
+      <div class="card-body">
+        <h5 style="font-weight:700;"><i class="mdi mdi-alert-circle" style="color:#ffc107;"></i> Action Needed — Bank Requested Corrections ({{ pending_corrections|length }})</h5>
+        <p class="text-muted" style="font-size:13px;">The bank needs you to fix the following before review continues. Read the instructions and reply below each item.</p>
+        {% for co in pending_corrections %}
+        <div class="p-3 mt-3 rounded" style="background:#0f1419; border:1px solid #ffc107; border-radius:10px;">
+          <p style="font-weight:700; font-size:14px;"><span class="badge" style="background:#ffc107; color:#000;">{{ co.get_kind_display }}</span> {% if co.target %}{{ co.target }}{% endif %}</p>
+          <p style="font-size:13px;"><strong>Bank instructions:</strong> {{ co.instructions }}</p>
+          <form method="post" action="/customer/corrections/{{ co.id }}/respond/" enctype="multipart/form-data" class="mt-3">
+            {% csrf_token %}
+            <label class="form-label" style="font-size:12px; color:#6c7293;">{% if co.kind == 'nida' %}Andika NIDA / ID number yako{% elif co.kind == 'document' %}Maelezo + pakia faili upya (hiari ukiandika){% else %}Jibu lako{% endif %} *</label>
+            <textarea name="response_text" rows="2" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;" placeholder="{% if co.kind == 'nida' %}e.g. 1990-1234-5678-90{% else %}Andika jibu lako hapa...{% endif %}"></textarea>
+            {% if co.kind == 'document' %}
+            <label class="form-label mt-2" style="font-size:12px; color:#6c7293;">Pakia hati upya (PDF/JPG/PNG, max 5MB)</label>
+            <input type="file" name="response_file" accept=".pdf,.jpg,.jpeg,.png" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;">
+            {% endif %}
+            <button type="submit" class="btn btn-warning mt-3" style="font-weight:700; border-radius:8px;">Send to Bank</button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% if corrections %}
+    <div class="card track-card mt-3">
+      <div class="card-body">
+        <h5 style="font-weight:700;"><i class="mdi mdi-history" style="color:#0077B6;"></i> Correction History</h5>
+        {% for co in corrections %}
+        <div class="p-3 mt-2 rounded" style="background:#0f1419; border:1px solid {% if co.status == 'resolved' %}rgba(0,210,91,0.4){% else %}rgba(255,193,7,0.5){% endif %}; border-radius:8px;">
+          <p style="font-size:13px; font-weight:600;">{{ co.get_kind_display }}{% if co.target %} — {{ co.target }}{% endif %}
+            {% if co.status == 'resolved' %}<span class="badge bg-success ms-2">Resolved — you submitted</span>{% else %}<span class="badge bg-warning ms-2" style="color:#000;">Pending — waiting for your reply above</span>{% endif %}
+          </p>
+          <p class="text-muted mb-0" style="font-size:12px;"><strong>Bank asked:</strong> {{ co.instructions|truncatechars:160 }}</p>
+          {% if co.response_text %}<p class="mt-1 mb-0" style="font-size:12px;"><strong>Your reply:</strong> {{ co.response_text|truncatechars:160 }}</p>{% endif %}
+          {% if co.resolved_at %}<p class="text-muted mb-0" style="font-size:11px;">Answered on {{ co.resolved_at|date:"d M Y H:i" }}</p>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Loan Details -->
+    <div class="card track-card mt-3">
+      <div class="card-body">
+        <h5 style="font-weight:700;"><i class="mdi mdi-cash" style="color:#0077B6;"></i> Loan Details</h5>
+        <div class="row g-3 mt-1">
+          <div class="col-6"><div style="background:#0f1419; border:1px solid #2c2e33; border-radius:10px; padding:14px; text-align:center;"><p class="text-muted mb-1" style="font-size:11px;">LOAN AMOUNT</p><p style="font-weight:800; font-size:18px; color:#0077B6;">TZS {{ application.loan_amount|intcomma }}</p></div></div>
+          <div class="col-6"><div style="background:#0f1419; border:1px solid #2c2e33; border-radius:10px; padding:14px; text-align:center;"><p class="text-muted mb-1" style="font-size:11px;">DOWN PAYMENT</p><p style="font-weight:800; font-size:18px;">TZS {{ application.down_payment|intcomma }}</p></div></div>
+          <div class="col-6 col-md-3"><div style="background:#191c24; border:1px solid #2c2e33; border-radius:8px; padding:12px;"><p class="text-muted mb-1" style="font-size:11px;"><i class="mdi mdi-calendar"></i> TERM</p><p style="font-weight:700;">{{ application.repayment_period }} months</p></div></div>
+          <div class="col-6 col-md-3"><div style="background:#191c24; border:1px solid #2c2e33; border-radius:8px; padding:12px;"><p class="text-muted mb-1" style="font-size:11px;"><i class="mdi mdi-bank"></i> MONTHLY</p><p style="font-weight:700; color:#0077B6;">TZS {{ application.monthly_installment|default:"—"|intcomma }}</p></div></div>
+          <div class="col-6 col-md-3"><div style="background:#191c24; border:1px solid #2c2e33; border-radius:8px; padding:12px;"><p class="text-muted mb-1" style="font-size:11px;"><i class="mdi mdi-trending-up"></i> INCOME</p><p style="font-weight:700;">TZS {{ application.monthly_income|intcomma }}</p></div></div>
+          <div class="col-6 col-md-3"><div style="background:#191c24; border:1px solid #2c2e33; border-radius:8px; padding:12px;"><p class="text-muted mb-1" style="font-size:11px;"><i class="mdi mdi-chart-bell-curve"></i> DTI</p><p style="font-weight:700; {% if application.dti_ratio > 40 %}color:#fc424a{% else %}color:#00d25b{% endif %};">{{ application.dti_ratio|floatformat:1 }}%</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: AI + Docs + Timeline -->
+  <div class="col-12 col-lg-4">
+    <!-- AI Assessment -->
+    <div class="card track-card" style="border-top:4px solid #0077B6;">
+      <div class="card-body">
+        <h5 style="font-weight:700;"><i class="mdi mdi-brain" style="color:#0077B6;"></i> AI Assessment <span class="badge ms-2" style="background:rgba(0,119,182,0.12); color:#0077B6; font-size:10px;">LIVE</span></h5>
+        <div class="row g-3 mt-2 text-center">
+          <div class="col-6"><div style="background:#0f1419; border:1px solid #2c2e33; border-radius:10px; padding:14px;"><p class="text-muted mb-2" style="font-size:11px;">AFFORDABILITY</p><div class="score-ring mx-auto" style="border-color:{% if application.affordability_score > 70 %}#00d25b{% elif application.affordability_score > 40 %}#ffc107{% else %}#fc424a{% endif %}; color:{% if application.affordability_score > 70 %}#00d25b{% elif application.affordability_score > 40 %}#ffc107{% else %}#fc424a{% endif %};">{{ application.affordability_score|floatformat:0 }}</div><p class="mt-2" style="font-size:11px; font-weight:700;">/100</p></div></div>
+          <div class="col-6"><div style="background:#0f1419; border:1px solid #2c2e33; border-radius:10px; padding:14px;"><p class="text-muted mb-2" style="font-size:11px;">RISK SCORE</p><div class="score-ring mx-auto" style="border-color:{% if application.risk_score < 30 %}#00d25b{% elif application.risk_score < 60 %}#ffc107{% else %}#fc424a{% endif %}; color:{% if application.risk_score < 30 %}#00d25b{% elif application.risk_score < 60 %}#ffc107{% else %}#fc424a{% endif %};">{{ application.risk_score|floatformat:0 }}</div><p class="mt-2" style="font-size:11px; font-weight:700;">/100</p></div></div>
+        </div>
+        <div class="mt-3 p-3 rounded" style="background:rgba(0,119,182,0.06); border:1px solid rgba(0,119,182,0.1);">
+          <div class="d-flex justify-content-between" style="font-size:13px;"><span class="text-muted">DTI Ratio</span><span style="font-weight:700; color:{% if application.dti_ratio > 40 %}#fc424a{% else %}#00d25b{% endif %};">{{ application.dti_ratio|floatformat:1 }}%</span></div>
+          <div class="progress mt-2" style="height:6px; background:#2c2e33;"><div class="progress-bar" style="width:{{ application.dti_ratio|floatformat:0 }}%; background:{% if application.dti_ratio > 40 %}#fc424a{% else %}#00d25b{% endif %};"></div></div>
+        </div>
+        <div class="mt-3 p-3 rounded" style="background:{% if application.affordability_score < 60 %}rgba(252,66,74,0.08){% elif application.risk_score > 60 %}rgba(255,193,7,0.08){% else %}rgba(0,210,91,0.08){% endif %}; border:1px solid {% if application.affordability_score < 60 %}rgba(252,66,74,0.2){% elif application.risk_score > 60 %}rgba(255,193,7,0.2){% else %}rgba(0,210,91,0.2){% endif %};">
+          <p style="font-size:13px; font-weight:600; margin-bottom:4px;"><i class="mdi mdi-lightbulb-outline"></i> AI Advice</p>
+          <p class="text-muted mb-0" style="font-size:12px;">{% if application.affordability_score < 60 %}Reduce loan amount or extend repayment period to improve affordability.{% elif application.risk_score > 60 %}Risk is high — consider lower amount or longer tenure.{% else %}You meet the criteria — application looks good to proceed.{% endif %}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documents -->
+    <div class="card track-card mt-3">
+      <div class="card-body">
+        <h5 style="font-weight:700;"><i class="mdi mdi-file-document-multiple" style="color:#0077B6;"></i> Documents</h5>
+        <div class="mt-3">
+          {% for doc in application.document_files.all %}
+          <div class="d-flex align-items-center gap-3 p-3 mb-2 rounded" style="background:#0f1419; border:1px solid #2c2e33; transition:all 0.2s;" onmouseover="this.style.borderColor='#0077B6'" onmouseout="this.style.borderColor='#2c2e33'">
+            <div style="width:40px; height:40px; border-radius:8px; background:rgba(0,119,182,0.12); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="mdi mdi-file-document" style="color:#0077B6;"></i></div>
+            <div class="flex-grow-1" style="min-width:0;"><p class="mb-0" style="font-weight:600; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ doc.get_doc_type_display }}</p><p class="text-muted mb-0" style="font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ doc.file.name }}</p></div>
+            <a href="{{ doc.file.url }}" target="_blank" class="btn btn-sm btn-primary" style="border-radius:6px; padding:6px 12px; font-size:11px;"><i class="mdi mdi-eye"></i> View</a>
+          </div>
+          {% empty %}
+          <div class="text-center py-4"><i class="mdi mdi-file-alert" style="font-size:32px; color:#6c7293;"></i><p class="text-muted mt-2" style="font-size:13px;">No documents uploaded.</p></div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline: every bank confirmation step, live -->
+    <div class="card track-card mt-3">
+      <div class="card-body">
+        <h5 style="font-weight:700;"><i class="mdi mdi-clock-outline" style="color:#0077B6;"></i> Timeline — bank updates live</h5>
+        <div class="mt-3 position-relative">
+          <div style="position:absolute; left:7px; top:8px; bottom:8px; width:2px; background:#2c2e33;"></div>
+          <div class="d-flex gap-3 mb-3 position-relative"><div style="width:16px; height:16px; border-radius:50%; background:#00d25b; border:3px solid #191c24; flex-shrink:0;"></div><div><p style="font-weight:600; font-size:13px;">Application Submitted — sent directly to {{ application.bank.get_full_name|default:"bank" }}</p><p class="text-muted" style="font-size:11px;">{{ application.created_at|date:"d M Y H:i" }}</p></div></div>
+          {% for ev in timeline_events %}
+          <div class="d-flex gap-3 mb-3 position-relative"><div style="width:16px; height:16px; border-radius:50%; background:#0077B6; border:3px solid #191c24; flex-shrink:0;"></div><div><p style="font-weight:600; font-size:13px;">{{ ev.title }}</p><p class="text-muted" style="font-size:11px;">{{ ev.message }}</p><p class="text-muted" style="font-size:11px;">{{ ev.created_at|date:"d M Y H:i" }}</p></div></div>
+          {% endfor %}
+          <div class="d-flex gap-3 position-relative"><div style="width:16px; height:16px; border-radius:50%; background:#ffc107; border:3px solid #191c24; flex-shrink:0;"></div><div><p style="font-weight:600; font-size:13px;">Current: {{ application.get_status_display }}</p><p class="text-muted" style="font-size:11px;">{{ application.updated_at|date:"d M Y H:i" }} • {{ application.application_number }}</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

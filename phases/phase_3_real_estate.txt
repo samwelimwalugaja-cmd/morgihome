@@ -1,0 +1,201 @@
+================================================================================
+PHASE 3: REAL ESTATE (PROPERTIES) - CRUD
+================================================================================
+
+KABLA YA KUANZA: Hakikisha Phase 2 imekamilika na website inaonekana.
+
+================================================================================
+KAZI ZA PHASE HII (TEKELEZA MOJA KWA MOJA)
+================================================================================
+
+--- KAZI 3.1: Unda Model ya Property ---
+TEKELEZA:
+1. Nenda kwenye properties/models.py
+2. Weka code hii:
+
+from django.db import models
+from django.conf import settings
+
+class Property(models.Model):
+    PROPERTY_TYPES = (
+        ('house', 'Nyumba'),
+        ('apartment', 'Ghorofa'),
+        ('land', 'Ardhi'),
+        ('commercial', 'Biashara'),
+    )
+    
+    STATUS_CHOICES = (
+        ('available', 'Inapatikana'),
+        ('sold', 'Imeuzwa'),
+        ('rented', 'Imekodishwa'),
+        ('pending', 'Inasubiri'),
+    )
+    
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    price = models.DecimalField(max_digits=15, decimal_places=2)
+    location = models.CharField(max_length=255)
+    bedrooms = models.IntegerField(default=0)
+    bathrooms = models.IntegerField(default=0)
+    area = models.DecimalField(max_digits=10, decimal_places=2, help_text="Eneo katika mita za mraba")
+    property_type = models.CharField(max_length=20, choices=PROPERTY_TYPES, default='house')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
+    seller = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, limit_choices_to={'role__in': ['seller', 'realestate']})
+    image = models.ImageField(upload_to='properties/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.title} - {self.price} TZS"
+    
+    class Meta:
+        ordering = ['-created_at']
+
+--- KAZI 3.2: Unda Serializers ---
+TEKELEZA:
+1. Nenda kwenye properties/serializers.py
+2. Weka code hii:
+
+from rest_framework import serializers
+from .models import Property
+
+class PropertySerializer(serializers.ModelSerializer):
+    seller_name = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Property
+        fields = ['id', 'title', 'description', 'price', 'location', 'bedrooms', 
+                 'bathrooms', 'area', 'property_type', 'status', 'seller', 
+                 'seller_name', 'image', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']
+    
+    def get_seller_name(self, obj):
+        return obj.seller.username if obj.seller else None
+    
+    def validate_price(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Bei lazima iwe kubwa kuliko sifuri.")
+        return value
+
+--- KAZI 3.3: Unda Views (CRUD) ---
+TEKELEZA:
+1. Nenda kwenye properties/views.py
+2. Weka code hii:
+
+from rest_framework import viewsets, permissions, filters, status
+from rest_framework.response import Response
+from rest_framework.decorators import action
+from django.db.models import Q
+from .models import Property
+from .serializers import PropertySerializer
+from accounts.permissions import IsSeller, IsRealEstate
+
+class PropertyViewSet(viewsets.ModelViewSet):
+    queryset = Property.objects.all()
+    serializer_class = PropertySerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['title', 'location', 'description']
+    ordering_fields = ['price', 'created_at', 'area']
+    
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            permission_classes = [permissions.IsAuthenticated, (IsSeller | IsRealEstate)]
+        else:
+            permission_classes = [permissions.AllowAny]
+        return [permission() for permission in permission_classes]
+    
+    def perform_create(self, serializer):
+        serializer.save(seller=self.request.user)
+    
+    @action(detail=False, methods=['get'])
+    def search(self, request):
+        query = request.query_params.get('q', '')
+        min_price = request.query_params.get('min_price')
+        max_price = request.query_params.get('max_price')
+        property_type = request.query_params.get('property_type')
+        
+        properties = Property.objects.filter(status='available')
+        
+        if query:
+            properties = properties.filter(
+                Q(title__icontains=query) | 
+                Q(location__icontains=query) |
+                Q(description__icontains=query)
+            )
+        
+        if min_price:
+            properties = properties.filter(price__gte=min_price)
+        if max_price:
+            properties = properties.filter(price__lte=max_price)
+        if property_type:
+            properties = properties.filter(property_type=property_type)
+        
+        serializer = self.get_serializer(properties, many=True)
+        return Response(serializer.data)
+
+--- KAZI 3.4: Unda URLs ---
+TEKELEZA:
+1. Nenda kwenye properties/urls.py
+2. Weka code hii:
+
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import PropertyViewSet
+
+router = DefaultRouter()
+router.register(r'properties', PropertyViewSet, basename='property')
+
+urlpatterns = [
+    path('', include(router.urls)),
+]
+
+3. Nenda kwenye morgihome_backend/urls.py
+4. Ongeza path hii:
+   path('api/', include('properties.urls')),
+
+--- KAZI 3.5: Weka app kwenye INSTALLED_APPS ---
+TEKELEZA:
+1. Nenda kwenye morgihome_backend/settings.py
+2. Hakikisha 'properties' ipo kwenye INSTALLED_APPS
+
+--- KAZI 3.6: Endesha Migrations ---
+TEKELEZA:
+python manage.py makemigrations
+python manage.py migrate
+
+--- KAZI 3.7: Unda Media Folder ---
+TEKELEZA:
+1. Nenda kwenye morgihome_backend/settings.py
+2. Ongeza mwishoni mwa faili:
+   MEDIA_URL = '/media/'
+   MEDIA_ROOT = BASE_DIR / 'media'
+
+3. Nenda kwenye morgihome_backend/urls.py
+4. Weka:
+   from django.conf import settings
+   from django.conf.urls.static import static
+   
+   # Mwishoni mwa urlpatterns:
+   if settings.DEBUG:
+       urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+--- KAZI 3.8: Test ---
+TEKELEZA:
+1. Endesha server: python manage.py runserver
+2. Nenda kwenye: http://127.0.0.1:8000/api/properties/
+3. Hakikisha inarudi empty list
+4. Unda property kupitia admin au API
+
+================================================================================
+TATIZO: "KAMA KITU KIKIKWAMA, USIENDELEE"
+================================================================================
+Kama unapata error yoyote, SIMAMA na unipe error hiyo.
+Nitasoma error na kukupa suluhisho kabla ya kuendelea.
+
+================================================================================
+BAADA YA KUKAMILISHA PHASE 3
+================================================================================
+NITAKUAMBIA: "PHASE 3 IMESHA. TUNAENDELEA PHASE 4"
+USIENDELEE HADI NIKUAMBIE.
+
+================================================================================

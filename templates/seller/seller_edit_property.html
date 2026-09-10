@@ -1,0 +1,338 @@
+{% extends 'seller/seller_base.html' %}
+{% block title %}Edit Property - MorgiHome{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h3 class="page-title">
+    <a href="/seller/properties/" class="btn btn-outline-secondary btn-sm me-2" title="Back"><i class="mdi mdi-arrow-left"></i></a>
+    <span class="page-title-icon text-white me-2" style="background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%) !important;"><i class="mdi mdi-pencil"></i></span> Edit #{{ property.id }}
+  </h3>
+  <nav aria-label="breadcrumb">
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/seller/dashboard/">Dashboard</a></li>
+      <li class="breadcrumb-item"><a href="/seller/properties/">Properties</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Edit #{{ property.id }}</li>
+    </ul>
+  </nav>
+</div>
+<p class="text-muted mb-4" style="font-size:13px;">{{ property.title }} • {{ property.location }} • <span class="badge badge-outline-primary">{{ property.get_property_type_display|default:category }}</span></p>
+
+<div class="row">
+  <div class="col-12 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body py-3">
+        <div class="d-flex gap-2 flex-wrap align-items-center">
+          <span class="text-muted" style="font-size:13px;">Form type:</span>
+          <a href="?category=house" class="btn btn-sm {% if category == 'house' %}btn-primary{% else %}btn-outline-primary{% endif %}" {% if category == 'house' %}style="background:#0077B6; border-color:#0077B6;"{% endif %}><i class="mdi mdi-home"></i> House</a>
+          <a href="?category=apartment" class="btn btn-sm {% if category == 'apartment' %}btn-primary{% else %}btn-outline-primary{% endif %}" {% if category == 'apartment' %}style="background:#0077B6; border-color:#0077B6;"{% endif %}><i class="mdi mdi-city-variant"></i> Apartment</a>
+          <a href="?category=commercial" class="btn btn-sm {% if category == 'commercial' %}btn-primary{% else %}btn-outline-primary{% endif %}" {% if category == 'commercial' %}style="background:#0077B6; border-color:#0077B6;"{% endif %}><i class="mdi mdi-domain"></i> Commercial</a>
+          <a href="?category=plot" class="btn btn-sm {% if category == 'plot' %}btn-primary{% else %}btn-outline-primary{% endif %}" {% if category == 'plot' %}style="background:#0077B6; border-color:#0077B6;"{% endif %}><i class="mdi mdi-map"></i> Plot</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" class="forms-sample">
+  {% csrf_token %}
+  <input type="hidden" name="property_category" value="{% if category == 'plot' %}plot{% else %}house{% endif %}">
+
+  {% if category == 'plot' %}
+  <!-- ==================== PLOT (prefilled) ==================== -->
+  <div class="row">
+    <div class="col-12 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title d-flex align-items-center gap-2"><span class="d-inline-flex align-items-center justify-content-center text-white" style="width:28px; height:28px; border-radius:50%; background:#0077B6; font-size:13px; font-weight:800;">1</span> PLOT DETAILS</h4>
+          <div class="row">
+            <div class="col-md-6"><div class="form-group"><label>Plot Name (Title) <span class="text-danger">*</span></label><input type="text" name="title" value="{{ property.title }}" class="form-control" required></div></div>
+            <div class="col-md-6"><div class="form-group"><label>Price (TZS) <span class="text-danger">*</span></label><input type="number" name="price" value="{{ property.price }}" class="form-control" required></div></div>
+          </div>
+          <div class="form-group"><label>Description <span class="text-danger">*</span></label><textarea name="description" class="form-control" rows="3" required>{{ property.description }}</textarea></div>
+          <div class="row">
+            <div class="col-md-4"><div class="form-group"><label>Land Type</label>
+              <select name="land_type" class="form-control">
+                <option value="">-- Select --</option>
+                <option value="residential" {% if property.land_type == 'residential' %}selected{% endif %}>Residential</option>
+                <option value="commercial" {% if property.land_type == 'commercial' %}selected{% endif %}>Commercial</option>
+                <option value="agricultural" {% if property.land_type == 'agricultural' %}selected{% endif %}>Agricultural</option>
+                <option value="mixed" {% if property.land_type == 'mixed' %}selected{% endif %}>Mixed Use</option>
+              </select></div></div>
+            <div class="col-md-4"><div class="form-group"><label>Status</label>
+              <select name="status" class="form-control">
+                <option value="available" {% if property.status == 'available' %}selected{% endif %}>Available</option>
+                <option value="sold" {% if property.status == 'sold' %}selected{% endif %}>Sold</option>
+                <option value="pending" {% if property.status == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="rented" {% if property.status == 'rented' %}selected{% endif %}>Rented</option>
+                <option value="reserved" {% if property.status == 'reserved' %}selected{% endif %}>Reserved</option>
+              </select></div></div>
+            <div class="col-md-4"><div class="form-group"><label>Plot No. (NaPa)</label><input type="text" name="napa" value="{{ property.napa|default:'' }}" class="form-control"></div></div>
+          </div>
+          <div class="row">
+            <div class="col-md-6"><div class="form-group"><label>Location <span class="text-danger">*</span></label><input type="text" name="location" value="{{ property.location }}" class="form-control" required></div></div>
+            <div class="col-md-6"><div class="form-group"><label>Size (Area, sqm) <span class="text-danger">*</span></label><input type="number" name="area" value="{{ property.area }}" class="form-control" required></div></div>
+          </div>
+          <div class="row">
+            <div class="col-md-4"><div class="form-group"><label>Dimensions</label><input type="text" name="plot_dimensions" value="{{ property.plot_dimensions|default:'' }}" class="form-control"></div></div>
+            <div class="col-md-4"><div class="form-group"><label>Land Use</label>
+              <select name="land_use" class="form-control">
+                <option value="">-- Select --</option>
+                <option value="residential" {% if property.land_use == 'residential' %}selected{% endif %}>Residential</option>
+                <option value="commercial" {% if property.land_use == 'commercial' %}selected{% endif %}>Commercial</option>
+                <option value="agricultural" {% if property.land_use == 'agricultural' %}selected{% endif %}>Agricultural</option>
+                <option value="mixed" {% if property.land_use == 'mixed' %}selected{% endif %}>Mixed Use</option>
+              </select></div></div>
+            <div class="col-md-4"><div class="form-group"><label>Zoning</label>
+              <select name="zoning" class="form-control">
+                <option value="">-- Select --</option>
+                <option value="residential" {% if property.zoning == 'residential' %}selected{% endif %}>Residential</option>
+                <option value="commercial" {% if property.zoning == 'commercial' %}selected{% endif %}>Commercial</option>
+                <option value="industrial" {% if property.zoning == 'industrial' %}selected{% endif %}>Industrial</option>
+                <option value="agricultural" {% if property.zoning == 'agricultural' %}selected{% endif %}>Agricultural</option>
+              </select></div></div>
+          </div>
+          <div class="form-group">
+            <label>Infrastructure</label>
+            <div class="row">
+              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_road" class="form-check-input" {% if property.infrastructure_road %}checked{% endif %}> Road</label></div></div>
+              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_electricity" class="form-check-input" {% if property.infrastructure_electricity %}checked{% endif %}> Electricity</label></div></div>
+              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_water" class="form-check-input" {% if property.infrastructure_water %}checked{% endif %}> Water</label></div></div>
+              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_sewage" class="form-check-input" {% if property.infrastructure_sewage %}checked{% endif %}> Sewage</label></div></div>
+              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_internet" class="form-check-input" {% if property.infrastructure_internet %}checked{% endif %}> Internet</label></div></div>
+              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_fenced" class="form-check-input" {% if property.infrastructure_fenced %}checked{% endif %}> Fenced</label></div></div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6"><div class="form-group"><label>Title Deed Available?</label>
+              <div>
+                <div class="form-check"><label class="form-check-label"><input type="radio" name="title_deed_available" value="yes" class="form-check-input" {% if property.title_deed_available == 'yes' %}checked{% endif %}> Yes</label></div>
+                <div class="form-check"><label class="form-check-label"><input type="radio" name="title_deed_available" value="no" class="form-check-input" {% if property.title_deed_available == 'no' %}checked{% endif %}> No</label></div>
+                <div class="form-check"><label class="form-check-label"><input type="radio" name="title_deed_available" value="in_process" class="form-check-input" {% if property.title_deed_available == 'in_process' %}checked{% endif %}> In Process</label></div>
+              </div></div></div>
+            <div class="col-md-6"><div class="form-group"><label>Survey Plan Available?</label>
+              <div>
+                <div class="form-check"><label class="form-check-label"><input type="radio" name="survey_plan_available" value="yes" class="form-check-input" {% if property.survey_plan_available == 'yes' %}checked{% endif %}> Yes</label></div>
+                <div class="form-check"><label class="form-check-label"><input type="radio" name="survey_plan_available" value="no" class="form-check-input" {% if property.survey_plan_available == 'no' %}checked{% endif %}> No</label></div>
+              </div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <!-- ==================== BUILDING (prefilled) ==================== -->
+  <div class="row">
+    <div class="col-12 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title d-flex align-items-center gap-2"><span class="d-inline-flex align-items-center justify-content-center text-white" style="width:28px; height:28px; border-radius:50%; background:#0077B6; font-size:13px; font-weight:800;">1</span> {% if category == 'apartment' %}APARTMENT{% elif category == 'commercial' %}COMMERCIAL BUILDING{% else %}HOUSE{% endif %} DETAILS</h4>
+          <div class="form-group"><label>Name (Title) <span class="text-danger">*</span></label><input type="text" name="title" value="{{ property.title }}" class="form-control" required></div>
+          <div class="form-group"><label>Description <span class="text-danger">*</span></label><textarea name="description" class="form-control" rows="3" required>{{ property.description }}</textarea></div>
+          <div class="row">
+            <div class="col-md-4"><div class="form-group"><label>Property Type</label>
+              <select name="property_type" class="form-control">
+                {% if category == 'apartment' %}
+                <option value="apartment" {% if property.property_type == 'apartment' %}selected{% endif %}>Apartment</option>
+                {% elif category == 'commercial' %}
+                <option value="commercial" {% if property.property_type == 'commercial' %}selected{% endif %}>Commercial</option>
+                {% else %}
+                <option value="house" {% if property.property_type == 'house' %}selected{% endif %}>House</option>
+                <option value="townhouse" {% if property.property_type == 'townhouse' %}selected{% endif %}>Townhouse</option>
+                <option value="villa" {% if property.property_type == 'villa' %}selected{% endif %}>Villa (Premium)</option>
+                <option value="bungalow" {% if property.property_type == 'bungalow' %}selected{% endif %}>Bungalow</option>
+                <option value="duplex" {% if property.property_type == 'duplex' %}selected{% endif %}>Duplex</option>
+                <option value="commercial" {% if property.property_type == 'commercial' %}selected{% endif %}>Commercial</option>
+                {% endif %}
+              </select></div></div>
+            <div class="col-md-4"><div class="form-group"><label>Status</label>
+              <select name="status" class="form-control">
+                <option value="available" {% if property.status == 'available' %}selected{% endif %}>Available</option>
+                <option value="sold" {% if property.status == 'sold' %}selected{% endif %}>Sold</option>
+                <option value="pending" {% if property.status == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="rented" {% if property.status == 'rented' %}selected{% endif %}>Rented</option>
+                <option value="under_construction" {% if property.status == 'under_construction' %}selected{% endif %}>Under Construction</option>
+              </select></div></div>
+            <div class="col-md-4"><div class="form-group"><label>Plot No. (NaPa)</label><input type="text" name="napa" value="{{ property.napa|default:'' }}" class="form-control"></div></div>
+          </div>
+          <div class="row">
+            <div class="col-md-4"><div class="form-group"><label>Price (TZS) <span class="text-danger">*</span></label><input type="number" name="price" value="{{ property.price }}" class="form-control" required></div></div>
+            <div class="col-md-4"><div class="form-group"><label>Location <span class="text-danger">*</span></label><input type="text" name="location" value="{{ property.location }}" class="form-control" required></div></div>
+            <div class="col-md-4"><div class="form-group"><label>Size (Area, sqm) <span class="text-danger">*</span></label><input type="number" name="area" value="{{ property.area }}" class="form-control" required></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title d-flex align-items-center gap-2"><span class="d-inline-flex align-items-center justify-content-center text-white" style="width:28px; height:28px; border-radius:50%; background:#0077B6; font-size:13px; font-weight:800;">2</span> FEATURES</h4>
+          <div class="row">
+            <div class="col-md-4"><div class="form-group"><label>Bedrooms</label><input type="number" name="bedrooms" value="{{ property.bedrooms }}" class="form-control" min="0"></div></div>
+            <div class="col-md-4"><div class="form-group"><label>Bathrooms</label><input type="number" name="bathrooms" value="{{ property.bathrooms }}" class="form-control" min="0"></div></div>
+            <div class="col-md-4"><div class="form-group"><label>Parking</label><input type="number" name="parking" value="{{ property.parking }}" class="form-control" min="0"></div></div>
+          </div>
+          <div class="row">
+            <div class="col-md-4"><div class="form-group"><label>Floor Number</label><input type="number" name="floor_number" value="{{ property.floor_number|default:'' }}" class="form-control"></div></div>
+            <div class="col-md-4"><div class="form-group"><label>Total Floors</label><input type="number" name="total_floors" value="{{ property.total_floors|default:'' }}" class="form-control"></div></div>
+            <div class="col-md-4"><div class="form-group"><label>Furnished</label>
+              <select name="furnished" class="form-control">
+                <option value="">-- Select --</option>
+                <option value="yes" {% if property.furnished == 'yes' %}selected{% endif %}>Yes</option>
+                <option value="no" {% if property.furnished == 'no' %}selected{% endif %}>No</option>
+                <option value="partially" {% if property.furnished == 'partially' %}selected{% endif %}>Partially</option>
+              </select></div></div>
+          </div>
+          <div class="row">
+            <div class="col-md-4"><div class="form-group"><label>Year Built</label><input type="number" name="year_built" value="{{ property.year_built|default:'' }}" class="form-control"></div></div>
+            <div class="col-md-4"><div class="form-group"><label>Building Condition</label>
+              <select name="property_condition" class="form-control">
+                <option value="">-- Select --</option>
+                <option value="new" {% if property.property_condition == 'new' %}selected{% endif %}>New</option>
+                <option value="good" {% if property.property_condition == 'good' %}selected{% endif %}>Good</option>
+                <option value="needs_renovation" {% if property.property_condition == 'needs_renovation' %}selected{% endif %}>Needs Renovation</option>
+                <option value="under_construction" {% if property.property_condition == 'under_construction' %}selected{% endif %}>Under Construction</option>
+              </select></div></div>
+            <div class="col-md-4"><div class="form-group"><label>Building Size (sqm)</label><input type="number" name="property_size" value="{{ property.property_size|default:'' }}" class="form-control"></div></div>
+          </div>
+          <div class="form-group"><label>Land Size (sqm)</label><input type="number" name="land_size" value="{{ property.land_size|default:'' }}" class="form-control"></div>
+          <div class="form-group">
+            <label>Additional Features</label>
+            <div class="row">
+              <div class="col-md-3"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="security" class="form-check-input" {% if property.security %}checked{% endif %}> Security</label></div></div>
+              <div class="col-md-3"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="swimming_pool" class="form-check-input" {% if property.swimming_pool %}checked{% endif %}> Swimming Pool</label></div></div>
+              <div class="col-md-3"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="garden" class="form-check-input" {% if property.garden %}checked{% endif %}> Garden</label></div></div>
+              <div class="col-md-3"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="balcony" class="form-check-input" {% if property.balcony %}checked{% endif %}> Balcony</label></div></div>
+              <div class="col-md-3"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="elevator" class="form-check-input" {% if property.elevator %}checked{% endif %}> Elevator</label></div></div>
+              <div class="col-md-3"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="air_conditioning" class="form-check-input" {% if property.air_conditioning %}checked{% endif %}> Air Conditioning</label></div></div>
+              <div class="col-md-3"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="backup_generator" class="form-check-input" {% if property.backup_generator %}checked{% endif %}> Backup Generator</label></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Existing photos -->
+  <div class="row">
+    <div class="col-12 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title d-flex align-items-center gap-2"><span class="d-inline-flex align-items-center justify-content-center text-white" style="width:28px; height:28px; border-radius:50%; background:#0077B6; font-size:13px; font-weight:800;">3</span> PHOTOS</h4>
+          {% if property.gallery.all %}
+          <div class="row mb-3">
+            {% for img in property.gallery.all %}
+            <div class="col-4 col-md-2 mb-3">
+              <div class="position-relative" style="border-radius:8px; overflow:hidden; border:1px solid #2c2e33;">
+                <img data-existing-img src="{{ img.image.url }}" style="width:100%; height:110px; object-fit:cover;">
+                {% if img.is_cover %}<span class="badge badge-warning position-absolute" style="top:6px; left:6px;">Cover</span>{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          <div class="form-group mb-0"><label>Add New Photos (max 5)</label>
+            
+<div class="form-group mt-2"><label>Cover photo (visible everywhere)</label><div class="d-flex gap-2 flex-wrap">
+{% for img in property.gallery.all %}
+<label style="width:90px; font-size:11px; cursor:pointer;"><img src="{{ img.image.url }}" style="width:90px;height:70px;object-fit:cover;border-radius:8px;border:2px solid {% if img.is_cover %}#0077B6{% else %}#2c2e33{% endif %};"><br><input type="radio" name="cover_image_id" value="{{ img.id }}" {% if img.is_cover %}checked{% endif %}> Cover</label>
+{% endfor %}
+</div><small class="text-muted">Choose which photo is the cover. New uploads: pick cover below after selecting files.</small></div>
+
+<input type="file" name="images" multiple accept=".jpg,.jpeg,.png,.webp" class="form-control file-upload-default">
+            <div class="input-group"><input type="text" class="form-control file-upload-info" disabled placeholder="Select photos to add"><span class="input-group-append"><button class="file-upload-browse btn btn-primary" style="background:#0077B6; border-color:#0077B6;" type="button"><i class="mdi mdi-upload"></i> Choose File</button></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 d-flex justify-content-end gap-2 mb-4">
+      <a href="/seller/properties/" class="btn btn-dark">Cancel</a>
+      <button type="submit" class="btn btn-primary px-4" style="background:#0077B6; border-color:#0077B6;"><i class="mdi mdi-content-save"></i> Save Changes</button>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+(function(){
+  function shortAlert(msg){ if(window.Swal){ Swal.fire({icon:'error', title:msg, toast:true, position:'top-end', showConfirmButton:false, timer:4000}); } else { alert(msg); } }
+  document.querySelectorAll('input[name="images"]').forEach(function(inp){
+    var form = inp.closest('form');
+    // hidden cover index
+    if(form && !form.querySelector('input[name="cover_index"]')){
+      var h=document.createElement('input'); h.type='hidden'; h.name='cover_index'; h.value='0'; form.appendChild(h);
+    }
+    if(form && !form.querySelector('input[name="cover_new_index"]')){
+      var h2=document.createElement('input'); h2.type='hidden'; h2.name='cover_new_index'; h2.value='-1'; form.appendChild(h2);
+    }
+    var prev = document.createElement('div');
+    prev.className='mt-2 d-flex gap-2 flex-wrap';
+    inp.parentNode.appendChild(prev);
+    inp.addEventListener('change', function(){
+      prev.innerHTML='';
+      var files = Array.prototype.slice.call(inp.files||[]);
+      var existing = 0;
+      try{
+        existing = document.querySelectorAll('[data-existing-img]').length;
+      }catch(e){}
+      if(files.length + existing > 5){ shortAlert('Maximum 5 photos allowed.'); inp.value=''; return; }
+      for(var i=0;i<files.length;i++){
+        if(files[i].size > 2*1024*1024){ shortAlert('Photo "'+files[i].name+'" exceeds 2MB.'); inp.value=''; prev.innerHTML=''; return; }
+      }
+      files.forEach(function(f, idx){
+        var url = URL.createObjectURL(f);
+        var box = document.createElement('label');
+        box.style.cssText='width:90px; cursor:pointer; font-size:11px;';
+        box.innerHTML='<img src="'+url+'" style="width:90px;height:70px;object-fit:cover;border-radius:8px;border:2px solid #2c2e33;"><br><input type="radio" name="cover_pick" value="'+idx+'"'+(idx===0?' checked':'')+'> Cover';
+        prev.appendChild(box);
+      });
+      prev.querySelectorAll('input[name="cover_pick"]').forEach(function(r){
+        r.addEventListener('change', function(){
+          var h=form.querySelector('input[name="cover_index"]'); if(h) h.value=r.value;
+          var h2=form.querySelector('input[name="cover_new_index"]'); if(h2) h2.value=r.value;
+        });
+      });
+    });
+    if(form){
+      form.addEventListener('submit', function(e){
+        var files = inp.files||[];
+        var existing = 0;
+        try{ existing = document.querySelectorAll('[data-existing-img]').length; }catch(e2){}
+        if(files.length + existing > 5){ e.preventDefault(); shortAlert('Maximum 5 photos allowed.'); return false; }
+        for(var i=0;i<files.length;i++){ if(files[i].size > 2*1024*1024){ e.preventDefault(); shortAlert('Photo "'+files[i].name+'" exceeds 2MB.'); return false; } }
+      });
+    }
+  });
+  // existing cover select
+  document.querySelectorAll('input[name="cover_image_id"]').forEach(function(){});
+})();
+</script>
+
+<script>
+(function(){
+  document.querySelectorAll('.file-upload-browse').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var group = btn.closest('.form-group');
+      var real = group ? group.querySelector('.file-upload-default') : null;
+      if(real) real.click();
+    });
+  });
+  document.querySelectorAll('.file-upload-default').forEach(function(inp){
+    inp.addEventListener('change', function(){
+      var group = inp.closest('.form-group');
+      var info = group ? group.querySelector('.file-upload-info') : null;
+      if(info) info.value = inp.files.length > 1 ? (inp.files.length + ' files selected') : (inp.files[0] ? inp.files[0].name : '');
+    });
+  });
+})();
+</script>
+{% endblock %}

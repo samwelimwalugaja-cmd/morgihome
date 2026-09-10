@@ -1,0 +1,52 @@
+{% extends 'plainadmin/base.html' %}
+{% load static %}
+{% block title %}Repayment Schedule - MorgiHome{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/repayment_schedule.css' %}?v=1" rel="stylesheet">
+{% endblock %}
+{% block content %}
+<div class="pagetitle">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div>
+      <h1>Repayment Schedule</h1>
+      <nav><ol class="breadcrumb mb-0"><li class="breadcrumb-item"><a href="/dashboard/">Home</a></li><li class="breadcrumb-item active">Repayment</li></ol></nav>
+      <p class="text-muted small mb-0">View your loan repayment schedule</p>
+    </div>
+    <span class="badge bg-primary" id="repRef">#APP-2025-001</span>
+  </div>
+</div>
+
+<section class="section">
+  <div class="row g-4 mb-4">
+    <div class="col-md-4"><div class="card text-center"><div class="card-body"><small class="text-muted">Total Loan</small><h4 id="repTotalLoan" style="color:#0A2B4E">TZS 50,000,000</h4></div></div></div>
+    <div class="col-md-4"><div class="card text-center"><div class="card-body"><small class="text-muted">Monthly Installment</small><h4 id="repMonthly" style="color:#0077B6">TZS 550,000</h4></div></div></div>
+    <div class="col-md-4"><div class="card text-center"><div class="card-body"><small class="text-muted">Total Paid</small><h4 id="repPaid" style="color:#28A745">TZS 5,500,000</h4></div></div></div>
+    <div class="col-md-4"><div class="card text-center"><div class="card-body"><small class="text-muted">Remaining Balance</small><h4 id="repBalance" style="color:#DC3545">TZS 44,500,000</h4></div></div></div>
+    <div class="col-md-4"><div class="card text-center"><div class="card-body"><small class="text-muted">Interest Rate</small><h4>12% p.a.</h4></div></div></div>
+    <div class="col-md-4"><div class="card text-center"><div class="card-body"><small class="text-muted">Repayment Period</small><h4 id="repPeriod">120 months</h4></div></div></div>
+  </div>
+
+  <div class="alert alert-warning d-flex align-items-center justify-content-between flex-wrap gap-2" id="repNextAlert">
+    <div><strong>💳 Next Payment</strong> <span id="repNextInfo">Installment: #6 - Due Date: 2025-02-15 | Amount: TZS 550,000 | Status: ⏳ Pending</span></div>
+    <div class="d-flex gap-2"><button class="btn btn-sm btn-outline-primary"><i class="bi bi-bell me-1"></i> Remind Me</button><button class="btn btn-sm btn-primary" style="background:#0077B6;border-color:#0077B6">💳 Pay Now</button></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header d-flex align-items-center justify-content-between"><h5 class="card-title mb-0">📋 Repayment Schedule</h5><div class="d-flex gap-2"><input type="text" id="repSearch" class="form-control form-control-sm" placeholder="Search installment..." style="width:160px"><select id="repStatusFilter" class="form-select form-select-sm" style="width:130px"><option value="all">All</option><option value="paid">Paid</option><option value="pending">Pending</option><option value="overdue">Overdue</option></select></div></div>
+    <div class="card-body p-0">
+      <div class="table-responsive"><table class="table table-hover mb-0"><thead><tr><th>#</th><th>Due Date</th><th>Amount Due</th><th>Amount Paid</th><th>Balance</th><th>Status</th></tr></thead><tbody id="repTableBody"><tr><td colspan="6" class="text-center py-4"><div class="spinner-border text-primary"></div></td></tr></tbody></table></div>
+      <div class="p-3 d-flex align-items-center justify-content-between"><span class="text-muted small" id="repPaginationInfo">Showing 0 of 0</span><nav><ul class="pagination pagination-sm mb-0" id="repPagination"></ul></nav></div>
+    </div>
+  </div>
+
+  <div class="card mt-4">
+    <div class="card-header"><h5 class="card-title mb-0">📜 Recent Payments</h5></div>
+    <div class="card-body p-0"><div class="table-responsive"><table class="table table-hover mb-0"><thead><tr><th>Date</th><th>Amount</th><th>Reference</th><th>Status</th><th>Method</th></tr></thead><tbody id="repHistoryBody"><tr><td colspan="5" class="text-center text-muted py-3">No payments yet</td></tr></tbody></table></div></div>
+  </div>
+
+  <div class="card"><div class="card-body d-flex gap-2 flex-wrap"><button class="btn btn-primary" style="background:#0077B6;border-color:#0077B6"><i class="bi bi-credit-card me-1"></i> Make Payment</button><button class="btn btn-outline-secondary"><i class="bi bi-download me-1"></i> Download Schedule (PDF)</button><button class="btn btn-outline-secondary"><i class="bi bi-printer me-1"></i> Print</button><button class="btn btn-outline-secondary"><i class="bi bi-share me-1"></i> Share</button></div></div>
+</section>
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'js/repayment_schedule.js' %}?v=1"></script>
+{% endblock %}

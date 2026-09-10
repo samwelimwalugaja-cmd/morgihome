@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Profile - MorgiHome{% endblock %}
+{% block portal_name %}{{ user.get_role_display|default:"Portal" }}{% endblock %}
+{% block page_title %}Profile{% endblock %}
+{% block breadcrumb %}Home / Profile{% endblock %}
+
+{% block sidebar_nav %}
+<div>
+  <p class="px-3 mb-2 text-[11px] font-semibold uppercase tracking-widest text-[var(--morgi-muted)]">Main Menu</p>
+  <ul class="space-y-1">
+    <li><a href="/customer/dashboard/" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium"><i data-lucide="layout-dashboard" class="w-[18px] h-[18px]"></i> Dashboard</a></li>
+    <li><a href="/properties/" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium"><i data-lucide="home" class="w-[18px] h-[18px]"></i> Properties</a></li>
+    <li><a href="/profile/" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium active"><i data-lucide="user" class="w-[18px] h-[18px]"></i> Profile</a></li>
+  </ul>
+</div>
+{% endblock %}
+{% block mobile_nav %}
+<a href="/customer/dashboard/" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm"><i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard</a>
+<a href="/profile/" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm active"><i data-lucide="user" class="w-5 h-5"></i> Profile</a>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+  <div>
+    <h1 class="text-2xl font-bold">Profile</h1>
+    <p class="text-sm text-[var(--morgi-muted)]">Manage your account information</p>
+  </div>
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="morgi-card p-6 text-center">
+      {% if user.profile_image %}
+        <img src="{{ user.profile_image.url }}" alt="{{ user.get_full_name }}" class="w-24 h-24 rounded-full mx-auto object-cover border-4 border-[var(--morgi-border)]">
+      {% else %}
+        <div class="w-24 h-24 rounded-full mx-auto flex items-center justify-center text-white text-2xl font-bold" style="background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%);">{{ user.initials|default:"M" }}</div>
+      {% endif %}
+      <h3 class="font-bold text-lg mt-4">{% if user.is_authenticated %}{{ user.get_full_name|default:user.email }}{% else %}Guest{% endif %}</h3>
+      <p class="text-sm text-[var(--morgi-muted)]">{% if user.is_authenticated %}{{ user.email }}{% else %}guest@morgihome.co.tz{% endif %}</p>
+      <span class="inline-flex mt-3 px-3 py-1 rounded-full text-xs font-semibold {% if user.is_verified %}bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300{% else %}bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300{% endif %}">
+        {{ user.verification_level_display|default:"Not Verified" }}
+      </span>
+      <p class="text-xs text-[var(--morgi-muted)] mt-1">Role: {{ user.get_role_display }}</p>
+      <form method="post" enctype="multipart/form-data" class="mt-4 text-left" id="profileImageForm">
+        {% csrf_token %}
+        <label class="text-xs font-semibold uppercase tracking-wide text-[var(--morgi-muted)]">Change Photo</label>
+        <input type="file" name="profile_image" accept="image/*" class="morgi-input w-full rounded-lg px-3 py-2 mt-1 text-sm">
+        <button type="submit" class="mt-2 w-full btn-primary py-2 rounded-lg text-sm font-semibold">Upload Photo</button>
+      </form>
+    </div>
+    <div class="lg:col-span-2 space-y-6">
+      <div class="morgi-card p-6">
+        <h3 class="font-semibold mb-4 flex items-center gap-2"><i data-lucide="user" class="w-4 h-4" style="color:#0077B6"></i> Account Information</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+          <div><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">First Name</p><p class="font-semibold mt-1">{{ user.first_name|default:"—" }}</p></div>
+          <div><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">Last Name</p><p class="font-semibold mt-1">{{ user.last_name|default:"—" }}</p></div>
+          <div><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">Email</p><p class="font-semibold mt-1">{% if user.is_authenticated %}{{ user.email }}{% else %}—{% endif %}</p></div>
+          <div><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">Phone</p><p class="font-semibold mt-1">{{ user.phone_number|default:"—" }}</p></div>
+          <div><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">Role</p><p class="font-semibold mt-1">{{ user.get_role_display }}</p></div>
+          <div><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">Member Since</p><p class="font-semibold mt-1">{{ user.date_joined|date:"d M Y"|default:"—" }}</p></div>
+        </div>
+        <div class="mt-6 flex gap-2">
+          <a href="/profile/" class="btn-primary px-5 py-2.5 rounded-lg text-sm font-semibold">Edit Profile</a>
+          <a href="/login/" class="btn-secondary px-5 py-2.5 rounded-lg text-sm font-medium">Change Password</a>
+        </div>
+      </div>
+      {% if user.role == 'bank' or user.role == 'realestate' or user.role == 'lawyer' %}
+      <div class="morgi-card p-6">
+        <h3 class="font-semibold mb-4">Verification Status</h3>
+        <div class="space-y-3 text-sm">
+          <div class="flex justify-between p-3 rounded-lg border border-[var(--morgi-border)]"><span>Business License</span><span class="font-semibold {% if user.business_license_verified %}text-emerald-600{% else %}text-amber-600{% endif %}">{% if user.business_license_verified %}Verified{% else %}Pending{% endif %}</span></div>
+          <div class="flex justify-between p-3 rounded-lg border border-[var(--morgi-border)]"><span>Tax Clearance</span><span class="font-semibold {% if user.tax_clearance_verified %}text-emerald-600{% else %}text-amber-600{% endif %}">{% if user.tax_clearance_verified %}Verified{% else %}Pending{% endif %}</span></div>
+          {% if user.role != 'lawyer' %}
+          <div class="flex justify-between p-3 rounded-lg border border-[var(--morgi-border)]"><span>Company Registration</span><span class="font-semibold {% if user.company_registration_verified %}text-emerald-600{% else %}text-amber-600{% endif %}">{% if user.company_registration_verified %}Verified{% else %}Pending{% endif %}</span></div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

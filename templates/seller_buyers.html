@@ -1,0 +1,12 @@
+{% extends 'plainadmin/base.html' %}
+{% load static %}
+{% block title %}Interested Buyers - Seller{% endblock %}
+{% block content %}
+<div class="pagetitle"><h1>Interested Buyers</h1><nav><ol class="breadcrumb"><li class="breadcrumb-item"><a href="/dashboard/">Dashboard</a></li><li class="breadcrumb-item active">Buyers</li></ol></nav><p class="text-muted small">Buyers interested in your properties</p></div>
+<section class="section">
+  <div class="card"><div class="card-body">
+    <div class="table-responsive"><table class="table table-hover"><thead><tr><th>Buyer</th><th>Email</th><th>Phone</th><th>Property</th><th>Date</th><th>Status</th></tr></thead><tbody id="buyersBody"><tr><td colspan="6" class="text-center text-muted py-4">Loading buyers...</td></tr></tbody></table></div>
+  </div></div>
+</section>
+{% endblock %}
+{% block extra_js %}<script src="{% static 'js/seller_buyers.js' %}?v=2"></script>{% endblock %}

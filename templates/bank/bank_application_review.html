@@ -1,0 +1,369 @@
+{% extends 'bank/bank_base.html' %}
+{% load humanize %}
+{% block title %}Review {{ application.ref|default:application.id }} - MorgiHome{% endblock %}
+{% block page_title %}Review & Decision{% endblock %}
+{% block breadcrumb %}Bank / Applications / {{ application.ref|default:application.id }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto w-full">
+  <!-- Header full width -->
+  <div class="flex flex-wrap items-center gap-3 mb-6">
+    <a href="{% url 'bank_application_detail' application.id|default:1024 %}" class="w-9 h-9 flex items-center justify-center rounded-lg border border-[var(--morgi-border)] bg-[var(--morgi-card)] shrink-0"><i data-lucide="arrow-left" class="w-4 h-4"></i></a>
+    <h1 class="text-lg font-bold">Review {{ application.ref|default:application.id }}</h1>
+    <span class="text-xs px-3 py-1 rounded-full border {% if application.status == 'approved' %}bg-emerald-100 text-emerald-700 border-emerald-200{% elif application.status == 'rejected' %}bg-red-100 text-red-700 border-red-200{% else %}bg-amber-100 text-amber-700 border-amber-200{% endif %}">{{ application.status|default:"pending"|title }}</span>
+    <div class="ml-auto flex gap-2">
+      <a href="{% url 'bank_application_pdf' application.id|default:1024 %}" target="_blank" class="px-4 py-2 rounded-lg text-xs font-semibold border border-[var(--morgi-border)] hover:bg-[var(--morgi-border)]/30 flex items-center gap-2"><i data-lucide="file-text" class="w-4 h-4"></i> Download PDF</a>
+      <a href="{% url 'bank_application_detail' application.id|default:1024 %}" class="px-4 py-2 rounded-lg text-xs font-semibold text-white" style="background:#0077B6">Back to Details</a>
+    </div>
+  </div>
+
+  {% if application.is_real %}
+  <!-- Stepper full width -->
+  <div class="morgi-card p-5 mb-6">
+    <div class="flex items-center gap-2 overflow-x-auto pb-1">
+      {% for st in application.steps %}
+      <a href="#segment-{{ st.key }}" class="flex items-center gap-2 shrink-0 px-3 py-2 rounded-lg border text-xs font-semibold {% if st.state == 'done' %}border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700{% elif st.state == 'active' %}text-white border-transparent{% else %}border-[var(--morgi-border)] text-[var(--morgi-muted)]{% endif %}" {% if st.state == 'active' %}style="background:#0077B6"{% endif %}>
+        <span class="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold {% if st.state == 'done' %}bg-emerald-500 text-white{% elif st.state == 'active' %}bg-white/30 text-white{% else %}bg-[var(--morgi-border)]{% endif %}">{% if st.state == 'done' %}✓{% else %}{{ forloop.counter }}{% endif %}</span>
+        {{ st.short }}
+      </a>
+      {% if not forloop.last %}<span class="text-[var(--morgi-muted)]">→</span>{% endif %}
+      {% endfor %}
+    </div>
+    <p class="text-xs text-[var(--morgi-muted)] mt-2">Now at: <strong>{{ application.review_stage|default:"received"|title }}</strong> • Each segment below is full-screen — view, check, press Confirm, alert appears and you move to next segment.</p>
+  </div>
+
+  {% if application.answered_corrections %}
+  <div class="morgi-card p-6 mb-6" style="border:2px solid #00c853;">
+    <h3 class="font-semibold mb-1 flex items-center gap-2"><i data-lucide="circle-check" class="w-4 h-4 text-emerald-500"></i> Customer Responded — Continue Review</h3>
+    {% for co in application.answered_corrections %}
+    <div class="mt-2 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800">
+      <p class="text-xs font-bold">{{ co.get_kind_display }}{% if co.target %} — {{ co.target }}{% endif %}</p>
+      {% if co.response_text %}<p class="text-xs mt-1">{{ co.response_text|truncatechars:200 }}</p>{% endif %}
+      {% if co.response_file_url %}<a href="{{ co.response_file_url }}" target="_blank" class="text-xs font-semibold" style="color:#0077B6">View re-uploaded file</a>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- SEGMENTS: one full-width section per stage -->
+  <div class="space-y-6" style="padding-bottom:0; margin-bottom:0;">
+    {% for st in application.steps %}
+    <section id="segment-{{ st.key }}" class="morgi-card overflow-hidden scroll-mt-24" style="{% if st.state == 'active' %}border:2px solid #0077B6;{% endif %}">
+      <div class="p-6 border-b border-[var(--morgi-border)] flex flex-wrap items-center gap-3" style="{% if st.state == 'active' %}background:rgba(0,119,182,0.08);{% endif %}">
+        <span class="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 {% if st.state == 'done' %}bg-emerald-500 text-white{% elif st.state == 'active' %}text-white{% else %}bg-[var(--morgi-border)]{% endif %}" {% if st.state == 'active' %}style="background:#0077B6"{% endif %}>{% if st.state == 'done' %}✓{% elif st.state == 'active' %}●{% else %}{{ forloop.counter }}{% endif %}</span>
+        <div class="min-w-0">
+          <h2 class="font-bold text-base">Step {{ forloop.counter }}: {{ st.label }}</h2>
+          <p class="text-xs text-[var(--morgi-muted)]">{% if st.state == 'done' %}Confirmed{% if st.confirmed_at %} • {{ st.confirmed_at|date:"d M H:i" }}{% endif %}{% elif st.state == 'active' %}Current stage — review below then Confirm{% else %}Waiting{% endif %}</p>
+        </div>
+        <span class="ml-auto text-xs px-3 py-1 rounded-full border {% if st.state == 'done' %}bg-emerald-100 text-emerald-700 border-emerald-200{% elif st.state == 'active' %}bg-blue-100 text-blue-700 border-blue-200{% else %}border-[var(--morgi-border)] text-[var(--morgi-muted)]{% endif %}">{{ st.state|title }}</span>
+      </div>
+      <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- LEFT: stage-specific evidence (full) -->
+        <div class="space-y-4">
+          {% if st.key == 'document_verification' %}
+          <h3 class="font-semibold text-sm">Customer Documents ({{ application.documents|length }}) — view & check</h3>
+          <div class="space-y-2">
+            {% for doc in application.documents %}
+            <div class="flex items-center gap-3 p-3 rounded-lg border border-[var(--morgi-border)]">
+              <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 shrink-0"><i data-lucide="file-text" class="w-5 h-5"></i></div>
+              <div class="flex-1 min-w-0"><p class="text-sm font-medium truncate">{{ doc.name }}</p><p class="text-xs text-[var(--morgi-muted)]">{{ doc.type|default:"Document" }}</p></div>
+              <button type="button" onclick="openDocModal('{{ doc.url|escapejs }}', '{{ doc.name|escapejs }}', '{% if doc.is_pdf %}pdf{% elif doc.is_image %}image{% else %}file{% endif %}')" class="btn-primary px-4 py-2 rounded-lg text-xs font-semibold shrink-0">View</button>
+            </div>
+            {% empty %}<p class="text-sm text-[var(--morgi-muted)]">No documents attached.</p>{% endfor %}
+          </div>
+          <div class="p-4 rounded-lg border border-[var(--morgi-border)]">
+            <p class="text-xs font-semibold mb-2">Customer</p>
+            <div class="flex items-center gap-3">
+              {% if application.customer_photo %}<img src="{{ application.customer_photo }}" class="w-12 h-12 rounded-full object-cover" style="border:2px solid #0077B6;">{% else %}<div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold" style="background: linear-gradient(135deg, #0077B6, #0A2B4E);">{{ application.customer_initials|default:"-" }}</div>{% endif %}
+              <div><p class="font-semibold text-sm">{{ application.full_name }}</p><p class="text-xs text-[var(--morgi-muted)]">{{ application.email }}{% if application.phone %} • {{ application.phone }}{% endif %}</p></div>
+            </div>
+          </div>
+          {% elif st.key == 'crb_check' %}
+          <h3 class="font-semibold text-sm">CRB / Credit History — check customer details</h3>
+          <div class="p-4 rounded-lg border border-[var(--morgi-border)] space-y-2 text-sm">
+            <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">Full Name</span><span class="font-semibold">{{ application.full_name }}</span></div>
+            <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">Employment</span><span class="font-semibold">{{ application.employer|default:"-" }}</span></div>
+            <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">Monthly Income</span><span class="font-semibold">TZS {{ application.income|floatformat:0|intcomma }}</span></div>
+            <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">Loan Asked</span><span class="font-semibold">TZS {{ application.amount|floatformat:0|intcomma }}</span></div>
+            <p class="text-xs text-[var(--morgi-muted)] pt-2">Verify with Credit Reference Bureau, then press Confirm below. Alert will say “CRB info approved successfully.”</p>
+          </div>
+          {% elif st.key == 'valuation' %}
+          <h3 class="font-semibold text-sm">Property Valuation — collateral</h3>
+          {% if application.property_info %}
+          {% if application.property_info.gallery %}
+          <div class="grid grid-cols-3 gap-2">
+            {% for img in application.property_info.gallery|slice:":6" %}
+            <img src="{{ img }}" class="w-full h-28 rounded-lg object-cover cursor-pointer" onclick='openGallery([{% for g in application.property_info.gallery %}"{{ g|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %}], {{ forloop.counter0 }}, "{{ application.property_info.title|escapejs }}")'>
+            {% endfor %}
+          </div>
+          {% elif application.property_info.photo %}
+          <img src="{{ application.property_info.photo }}" class="w-full h-56 rounded-lg object-cover cursor-pointer" onclick="openDocModal('{{ application.property_info.photo|escapejs }}', '{{ application.property_info.title|escapejs }}', 'image')">
+          {% endif %}
+          <div class="p-4 rounded-lg border border-[var(--morgi-border)] space-y-2 text-sm mt-3">
+            <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">Property</span><span class="font-semibold text-right">{{ application.property_info.title }}</span></div>
+            <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">Value</span><span class="font-bold" style="color:#0077B6">TZS {{ application.property_info.price|floatformat:0|intcomma }}</span></div>
+            <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">Location</span><span class="font-semibold">{{ application.property_info.location|default:"-" }}</span></div>
+            {% if application.property_info.seller %}<div class="flex justify-between"><span class="text-[var(--morgi-muted)]">Seller</span><span class="font-semibold">{{ application.property_info.seller }}</span></div>{% endif %}
+          </div>
+          {% else %}<p class="text-sm text-[var(--morgi-muted)]">No property linked.</p>{% endif %}
+          {% elif st.key == 'credit_assessment' %}
+          <h3 class="font-semibold text-sm">Credit Assessment — affordability</h3>
+          <div class="p-4 rounded-lg border border-[var(--morgi-border)] space-y-2 text-sm">
+            <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">AI Score</span><span class="font-bold text-emerald-600">{{ application.ai_score }} / 100 • {{ application.ai_risk }}</span></div>
+            <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">DTI</span><span class="font-semibold">{{ application.dti }}</span></div>
+            <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">Income</span><span class="font-semibold">TZS {{ application.income|floatformat:0|intcomma }}/mo</span></div>
+            <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">Amount</span><span class="font-semibold">TZS {{ application.amount|floatformat:0|intcomma }} • {{ application.term }} mo</span></div>
+          </div>
+          {% elif st.key == 'approval_decision' %}
+          <h3 class="font-semibold text-sm">Final Decision — summary</h3>
+          <div class="p-4 rounded-lg border border-[var(--morgi-border)] space-y-2 text-sm">
+            <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">Customer</span><span class="font-semibold">{{ application.full_name }}</span></div>
+            <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">Amount</span><span class="font-semibold">TZS {{ application.amount|floatformat:0|intcomma }}</span></div>
+            <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">AI</span><span class="font-semibold">{{ application.ai_score }}/100 • {{ application.ai_risk }}</span></div>
+            <p class="text-xs text-[var(--morgi-muted)]">Make the decision in the Decision segment below. After approval you can download the PDF.</p>
+          </div>
+          {% else %}
+          <h3 class="font-semibold text-sm">Received</h3>
+          <p class="text-sm text-[var(--morgi-muted)]">Application {{ application.ref }} received. Customer: {{ application.full_name }} • TZS {{ application.amount|floatformat:0|intcomma }}.</p>
+          {% endif %}
+        </div>
+        <!-- RIGHT: action -->
+        <div class="flex flex-col justify-start gap-3">
+          <div class="p-5 rounded-xl border border-[var(--morgi-border)] bg-[var(--morgi-border)]/10">
+            {% if application.status == 'approved' or application.status == 'rejected' %}
+              {% if st.state == 'done' %}<p class="text-sm font-semibold text-emerald-600">✓ Confirmed</p>{% else %}<p class="text-sm text-[var(--morgi-muted)]">Decision already made ({{ application.status|title }}).</p>{% endif %}
+              <a href="{% url 'bank_application_pdf' application.id %}" target="_blank" class="mt-3 block text-center w-full py-2.5 rounded-lg text-xs font-bold text-white" style="background:#00a344">Download Approval PDF</a>
+            {% elif st.state == 'done' %}
+              <p class="text-sm font-semibold text-emerald-600">✓ Confirmed{% if st.confirmed_at %} • {{ st.confirmed_at|date:"d M H:i" }}{% endif %}</p>
+              <p class="text-xs text-[var(--morgi-muted)] mt-1">Move to the next segment below.</p>
+              {% if application.next_stage %}<a href="#segment-{{ application.next_stage }}" class="mt-3 inline-block px-4 py-2 rounded-lg text-xs font-semibold text-white" style="background:#0077B6">Go to next stage →</a>{% endif %}
+            {% elif st.state == 'active' %}
+              <p class="text-sm font-semibold mb-1">Confirm this stage</p>
+              <p class="text-xs text-[var(--morgi-muted)] mb-3">Officer has viewed & checked details above. Press Confirm — short alert appears and you go to next segment.</p>
+              <form method="post" action="{% url 'bank_application_stage' application.id %}" onsubmit="this.querySelector('button[type=submit]').disabled=true;">
+                {% csrf_token %}
+                <input type="hidden" name="stage" value="{{ st.key }}">
+                <button type="submit" class="w-full py-3 rounded-lg text-sm font-bold text-white" style="background:#0077B6">Confirm {{ st.short }} →</button>
+              </form>
+              <div class="mt-3 pt-3 border-t border-[var(--morgi-border)]">
+                <button type="button" onclick="document.getElementById('corr-{{ st.key }}').classList.toggle('hidden')" class="w-full py-2 rounded-lg text-xs font-semibold border border-amber-300 text-amber-700 hover:bg-amber-50">Need correction in this stage?</button>
+                <div id="corr-{{ st.key }}" class="hidden mt-3">
+                  <form method="post" action="{% url 'bank_application_correction' application.id %}" onsubmit="var b=this.querySelector('button[type=submit]'); if(b){b.disabled=true; b.textContent='Sending...';}">
+                    {% csrf_token %}
+                    <input type="hidden" name="kind" value="{% if st.key == 'document_verification' %}document{% elif st.key == 'crb_check' %}nida{% else %}info{% endif %}">
+                    <input type="hidden" name="target" value="{{ st.key }}">
+                    <label class="text-xs font-semibold">Correction for {{ st.short }} <span class="text-red-500">*</span></label>
+                    <textarea name="instructions" required placeholder="Eleza marekebisho ya {{ st.short }}..." class="morgi-input w-full rounded-lg p-2.5 mt-1 text-xs min-h-[64px]"></textarea>
+                    <button type="submit" class="mt-2 w-full py-2 rounded-lg text-xs font-bold text-white" style="background:#f59e0b">Send to customer</button>
+                  </form>
+                </div>
+              </div>
+            {% else %}
+              <p class="text-sm text-[var(--morgi-muted)] mb-3">Waiting — confirm previous stages first, or confirm this one directly.</p>
+              <form method="post" action="{% url 'bank_application_stage' application.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="stage" value="{{ st.key }}">
+                <button type="submit" class="w-full py-2.5 rounded-lg text-sm font-semibold text-white" style="background:#0077B6">Confirm {{ st.short }}</button>
+              </form>
+            {% endif %}
+          </div>
+          <!-- Corrections for THIS stage -->
+          {% if application.corrections %}
+          <div class="space-y-2">
+            {% for co in application.corrections %}
+            {% if co.target == st.key %}
+            <div class="p-3 rounded-lg border text-xs" style="{% if co.status == 'pending' %}border-color:#f59e0b; background:rgba(245,158,11,0.06);{% else %}border-color:#00c853; background:rgba(0,200,83,0.06);{% endif %}">
+              <div class="flex items-center gap-2"><p class="font-bold flex-1">{{ co.kind_display }} — {{ st.short }}</p><span class="px-2 py-0.5 rounded-full font-semibold {% if co.status == 'pending' %}bg-amber-100 text-amber-700{% else %}bg-emerald-100 text-emerald-700{% endif %}">{{ co.status|title }}</span></div>
+              <p class="text-[var(--morgi-muted)] mt-1">Marekebisho: {{ co.instructions|truncatechars:160 }}</p>
+              {% if co.response_text %}<p class="mt-1"><strong>Customer:</strong> {{ co.response_text|truncatechars:160 }}</p>{% endif %}
+              {% if co.response_file_url %}<a href="{{ co.response_file_url }}" target="_blank" class="font-semibold" style="color:#0077B6">View new document</a> <span class="text-[var(--morgi-muted)]">— check, then Confirm {{ st.short }} above.</span>{% endif %}
+            </div>
+            {% endif %}
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% if application.review_note %}<p class="text-xs mt-1 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200">Latest note: {{ application.review_note }}</p>{% endif %}
+        </div>
+      </div>
+    </section>
+    {% endfor %}
+
+    <!-- Correction segment -->
+    <section id="segment-correction" class="morgi-card p-6 scroll-mt-24">
+      <h2 class="font-bold text-base mb-1">Request Correction</h2>
+      <p class="text-xs text-[var(--morgi-muted)] mb-4">Customer answers on their page and gets notified.</p>
+      {% if application.status == 'approved' or application.status == 'rejected' %}
+      <p class="text-sm text-[var(--morgi-muted)]">Decision already made — correction disabled.</p>
+      {% else %}
+      <form method="post" action="{% url 'bank_application_correction' application.id %}" class="space-y-3" onsubmit="var b=this.querySelector('button[type=submit]'); if(b){b.disabled=true; b.textContent='Sending...';}">
+        {% csrf_token %}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div><label class="text-xs font-semibold">Type</label>
+            <select name="kind" class="morgi-input w-full rounded-lg px-3 py-2 mt-1 text-sm"><option value="document">Document re-upload</option><option value="nida">NIDA / ID number</option><option value="info">Information / text</option><option value="other">Other</option></select></div>
+          <div><label class="text-xs font-semibold">Which document / field</label><input name="target" type="text" placeholder="e.g. hati, NIDA" class="morgi-input w-full rounded-lg px-3 py-2 mt-1 text-sm"></div>
+        </div>
+        <div><label class="text-xs font-semibold">Instructions <span class="text-red-500">*</span></label><textarea name="instructions" required placeholder="e.g. Hati haijaonekana vizuri — ipakie upya..." class="morgi-input w-full rounded-lg p-3 mt-1 text-sm min-h-[70px]"></textarea></div>
+        <button type="submit" class="w-full py-2.5 rounded-lg text-sm font-semibold text-white" style="background:#0077B6">Send correction request</button>
+      </form>
+      {% endif %}
+      {% if application.corrections %}
+      <div class="mt-4 space-y-2">
+        {% for co in application.corrections %}
+        <div class="p-3 rounded-lg border" style="{% if co.status == 'pending' %}border-color:#f59e0b;{% else %}border-color:#00c853;{% endif %}">
+          <div class="flex items-center gap-2"><p class="text-xs font-bold flex-1">{{ co.kind_display }}{% if co.target %} — {{ co.target }}{% endif %}</p><span class="text-[11px] px-2 py-0.5 rounded-full font-semibold {% if co.status == 'pending' %}bg-amber-100 text-amber-700{% else %}bg-emerald-100 text-emerald-700{% endif %}">{{ co.status|title }}</span></div>
+          <p class="text-xs text-[var(--morgi-muted)] mt-1">{{ co.instructions|truncatechars:140 }}</p>
+          {% if co.response_text %}<p class="text-xs mt-1"><strong>Customer:</strong> {{ co.response_text|truncatechars:140 }}</p>{% endif %}
+          {% if co.response_file_url %}<a href="{{ co.response_file_url }}" target="_blank" class="text-xs font-semibold" style="color:#0077B6">View new document</a>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </section>
+
+    <!-- Decision segment -->
+    <section id="segment-decision" class="morgi-card p-6 scroll-mt-24">
+      <h2 class="font-bold text-base mb-3">Make Decision</h2>
+      <div class="mb-4 p-3 rounded-lg bg-[var(--morgi-border)]/30 text-sm space-y-1.5">
+        <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">Customer</span><span class="font-semibold">{{ application.full_name }}</span></div>
+        <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">Amount</span><span class="font-semibold">TZS {{ application.amount|floatformat:0|intcomma }}</span></div>
+        <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">AI Score</span><span class="font-bold text-emerald-600">{{ application.ai_score }} / 100 • {{ application.ai_risk }}</span></div>
+        <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">DTI</span><span class="font-semibold">{{ application.dti }}</span></div>
+      </div>
+      {% if application.status == 'approved' or application.status == 'rejected' %}
+      <p class="text-sm px-3 py-2 rounded-lg font-semibold {% if application.status == 'approved' %}bg-emerald-100 text-emerald-700{% else %}bg-red-100 text-red-700{% endif %}">{% if application.status == 'approved' %}✅ Approved — actions disabled{% else %}❌ Rejected — actions disabled{% endif %}</p>
+      <fieldset disabled class="opacity-60 pointer-events-none space-y-4 mt-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 rounded-xl border-2 border-[var(--morgi-border)] text-center">Approve loan</div>
+          <div class="p-4 rounded-xl border-2 border-[var(--morgi-border)] text-center">Reject loan</div>
+        </div>
+        <div class="flex gap-2"><span class="flex-1 btn-secondary py-2.5 rounded-lg text-sm text-center">Cancel</span><span class="flex-1 btn-primary py-2.5 rounded-lg text-sm text-center">Confirm Note</span></div>
+      </fieldset>
+      {% else %}
+      <form method="post" action="" class="space-y-4" onsubmit="return confirmDecision(event)">
+        {% csrf_token %}
+        <div>
+          <label class="text-sm font-medium">Decision <span class="text-red-500">*</span></label>
+          <div class="grid grid-cols-2 gap-3 mt-2">
+            <label class="cursor-pointer"><input type="radio" name="decision" value="approve" class="peer sr-only" required>
+              <div class="p-4 rounded-xl border-2 border-[var(--morgi-border)] peer-checked:border-emerald-500 peer-checked:bg-emerald-50 dark:peer-checked:bg-emerald-950/30 text-center transition"><i data-lucide="circle-check" class="w-8 h-8 mx-auto text-emerald-500"></i><p class="font-semibold text-sm mt-2">Approve</p><p class="text-xs text-[var(--morgi-muted)]">Approve loan</p></div></label>
+            <label class="cursor-pointer"><input type="radio" name="decision" value="reject" class="peer sr-only">
+              <div class="p-4 rounded-xl border-2 border-[var(--morgi-border)] peer-checked:border-red-500 peer-checked:bg-red-50 dark:peer-checked:bg-red-950/30 text-center transition"><i data-lucide="circle-x" class="w-8 h-8 mx-auto text-red-500"></i><p class="font-semibold text-sm mt-2">Reject</p><p class="text-xs text-[var(--morgi-muted)]">Reject</p></div></label>
+          </div>
+        </div>
+        <div id="approveFields" class="space-y-3 hidden"><div><label class="text-sm font-medium">Amount to be Disbursed (TZS)</label><input type="number" name="approved_amount" value="{{ application.amount|floatformat:0 }}" class="morgi-input w-full rounded-lg px-3 py-2.5 mt-1 text-sm"></div></div>
+        <div><label class="text-sm font-medium">Comments / Reason <span class="text-red-500">*</span></label><textarea name="reason" required placeholder="Enter decision reason..." class="morgi-input w-full rounded-lg p-3 mt-1 text-sm min-h-[90px]"></textarea></div>
+        <label class="flex items-start gap-2 text-sm"><input type="checkbox" required class="mt-1 rounded"><span>I confirm I have reviewed all documents and this decision is in accordance with bank policies.</span></label>
+        <div class="flex gap-2 pt-2">
+          <a href="{% url 'bank_application_detail' application.id|default:1024 %}" class="flex-1 btn-secondary py-2.5 rounded-lg text-sm font-medium text-center">Cancel</a>
+          <button type="submit" class="flex-1 btn-primary py-2.5 rounded-lg text-sm font-semibold">Confirm Decision</button>
+        </div>
+      </form>
+      {% endif %}
+      {% if application.status == 'approved' %}
+      <a href="{% url 'bank_application_pdf' application.id %}" target="_blank" class="mt-4 block text-center w-full py-3 rounded-lg text-sm font-bold text-white" style="background:#00a344">Download Approval PDF</a>
+      {% endif %}
+    </section>
+  </div>
+  {% else %}
+  <div class="morgi-card p-10 text-center"><p class="font-semibold">Application not found.</p><a href="{% url 'bank_applications' %}" class="text-sm font-semibold" style="color:#0077B6">Back to applications</a></div>
+  {% endif %}
+</div>
+
+<!-- Document / gallery viewer modal -->
+<div id="docModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+  <div class="morgi-card w-full max-w-4xl overflow-hidden" style="max-height:92vh; display:flex; flex-direction:column;">
+    <div class="flex items-center gap-3 p-4 border-b border-[var(--morgi-border)]">
+      <i data-lucide="file-text" class="w-5 h-5" style="color:#0077B6"></i>
+      <p id="docModalTitle" class="font-semibold text-sm truncate flex-1">Document</p>
+      <span id="docModalCount" class="text-xs text-[var(--morgi-muted)] shrink-0"></span>
+      <a id="docModalDownload" href="#" download class="btn-secondary px-3 py-1.5 rounded-lg text-xs font-medium shrink-0">Download</a>
+      <button type="button" onclick="closeDocModal()" class="w-8 h-8 rounded-lg hover:bg-[var(--morgi-border)] flex items-center justify-center shrink-0"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div id="docModalBody" class="flex-1 overflow-auto relative" style="min-height:400px; max-height:74vh; background:var(--morgi-border);"></div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+  const radios = document.querySelectorAll('input[name="decision"]');
+  const approveFields = document.getElementById('approveFields');
+  radios.forEach(r => r.addEventListener('change', () => {
+    if (r.value === 'approve' && r.checked) approveFields.classList.remove('hidden');
+    if (r.value === 'reject' && r.checked) approveFields.classList.add('hidden');
+  }));
+  function confirmDecision(e) {
+    const d = document.querySelector('input[name="decision"]:checked');
+    if (!d) return false;
+    const label = d.value === 'approve' ? 'APPROVE' : 'REJECT';
+    return confirm('Are you sure you want to ' + label + ' this application?');
+  }
+  var galleryImgs = [], galleryIdx = 0, galleryTitle = '';
+  function openDocModal(url, name, kind) {
+    galleryImgs = []; galleryIdx = 0;
+    showDoc(url, name, kind, '');
+    document.getElementById('docModalCount').textContent = '';
+    document.getElementById('docModal').classList.remove('hidden');
+    if (window.morgiRenderIcons) morgiRenderIcons();
+  }
+  function openGallery(imgs, idx, title) {
+    galleryImgs = imgs || []; galleryIdx = idx || 0; galleryTitle = title || 'Photo';
+    showDoc(galleryImgs[galleryIdx], galleryTitle + ' (' + (galleryIdx + 1) + '/' + galleryImgs.length + ')', 'image', 'gallery');
+    document.getElementById('docModal').classList.remove('hidden');
+    if (window.morgiRenderIcons) morgiRenderIcons();
+  }
+  function galleryNav(d) {
+    if (!galleryImgs.length) return;
+    galleryIdx = (galleryIdx + d + galleryImgs.length) % galleryImgs.length;
+    showDoc(galleryImgs[galleryIdx], galleryTitle + ' (' + (galleryIdx + 1) + '/' + galleryImgs.length + ')', 'image', 'gallery');
+  }
+  function showDoc(url, name, kind, mode) {
+    const body = document.getElementById('docModalBody');
+    document.getElementById('docModalTitle').textContent = name || 'Document';
+    const dl = document.getElementById('docModalDownload');
+    if (dl) { dl.href = url || '#'; dl.style.display = (url && url !== '#') ? '' : 'none'; }
+    const nav = (mode === 'gallery' && galleryImgs.length > 1)
+      ? '<button onclick="galleryNav(-1)" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,0.6);color:#fff;font-size:20px;">‹</button>'
+        + '<button onclick="galleryNav(1)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,0.6);color:#fff;font-size:20px;">›</button>'
+      : '';
+    if (!url || url === '#') { body.innerHTML = '<div class="p-10 text-center text-sm">File not available.</div>'; }
+    else if (kind === 'pdf') { body.innerHTML = '<iframe src="' + url + '" class="w-full" style="height:74vh; border:0;" title="Document preview"></iframe>'; }
+    else if (kind === 'image') {
+      body.innerHTML = '<div class="p-4 flex items-center justify-center" style="min-height:400px;"><img src="' + url + '" alt="preview" style="max-width:100%; max-height:70vh; border-radius:8px;"></div>' + nav;
+      document.getElementById('docModalCount').textContent = (mode === 'gallery') ? ((galleryIdx + 1) + ' / ' + galleryImgs.length) : '';
+    } else { body.innerHTML = '<div class="p-10 text-center"><p class="text-sm mb-4">Preview not available for this file type.</p><a href="' + url + '" download class="btn-primary px-5 py-2.5 rounded-lg text-sm font-semibold">Download file</a></div>'; }
+  }
+  function closeDocModal() {
+    const m = document.getElementById('docModal');
+    if (m) m.classList.add('hidden');
+    const body = document.getElementById('docModalBody');
+    if (body) body.innerHTML = '';
+    galleryImgs = [];
+  }
+  document.addEventListener('keydown', function(e){
+    if (document.getElementById('docModal').classList.contains('hidden')) return;
+    if (e.key === 'Escape') closeDocModal();
+    if (e.key === 'ArrowLeft') galleryNav(-1);
+    if (e.key === 'ArrowRight') galleryNav(1);
+  });
+  (function(){
+    const m = document.getElementById('docModal');
+    if (m) m.addEventListener('click', function(e){ if (e.target === m) closeDocModal(); });
+    // Auto-scroll to next pending segment after confirm (toast already shown by backend)
+    try {
+      var nextKey = "{{ application.next_stage|default:''|escapejs }}";
+      if (nextKey && performance && performance.navigation && performance.navigation.type === 0) {
+        // only scroll if hash present or after POST redirect anchor handling
+      }
+      if (window.location.hash) {
+        var el = document.querySelector(window.location.hash);
+        if (el) el.scrollIntoView({behavior:'smooth'});
+      } else if (nextKey) {
+        var t = document.getElementById('segment-' + nextKey);
+        // do not auto-jump on first load, only hint current
+        var cur = document.querySelector('section[style*="0077B6"]');
+        if (cur) cur.scrollIntoView({behavior:'smooth', block:'start'});
+      }
+    } catch(e){}
+  })();
+</script>
+{% endblock %}

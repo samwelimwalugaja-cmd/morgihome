@@ -1,0 +1,194 @@
+{% extends 'customer/customer_base.html' %}
+{% block title %}Mortgage Applicant Profile - MorgiHome{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h3 class="page-title">
+    <span class="page-title-icon bg-gradient-primary text-white me-2"><i class="mdi mdi-account"></i></span> Mortgage Applicant Profile
+  </h3>
+  <nav aria-label="breadcrumb">
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item active" aria-current="page">Mortgage Applicant / Profile</li>
+    </ul>
+  </nav>
+</div>
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-warning{% endif %}" style="background:#191c24; border:1px solid #2c2e33; color:#fff;">{{ message }}</div>
+  {% endfor %}
+{% endif %}
+
+<div class="row">
+  <div class="col-md-4 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body text-center">
+        {% if user.profile_image %}
+          <img src="{{ user.profile_image.url }}" alt="{{ user.get_full_name }}" class="rounded-circle mb-3" style="width: 100px; height: 100px; object-fit: cover; border: 3px solid #0077B6;">
+        {% else %}
+          <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center text-white" style="width: 100px; height: 100px; background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%); font-size: 36px; font-weight: bold;">{{ user.initials|default:"M" }}</div>
+        {% endif %}
+        <h4>{% if user.is_authenticated %}{{ user.get_full_name|default:user.email }}{% else %}Guest{% endif %}</h4>
+        <p class="text-muted">{% if user.is_authenticated %}{{ user.email }}{% else %}guest@morgihome.co.tz{% endif %}</p>
+        <span class="badge {% if user.is_verified %}badge-outline-success{% else %}badge-outline-warning{% endif %}">{{ user.verification_level_display|default:"Not Verified" }}</span>
+        <p class="text-muted mt-2"><small>Role: Mortgage Applicant</small></p>
+        <form method="post" enctype="multipart/form-data" class="mt-4 text-left" id="photoForm">
+          {% csrf_token %}
+          <div class="form-group">
+            <label>Change Photo</label>
+            <input type="file" name="profile_image" accept="image/*" class="form-control" id="photoInput" required>
+          </div>
+          <button type="submit" class="btn btn-primary w-100" style="background:#0077B6;">Upload Photo</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-8 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="card-title">Account Information</h4>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label>First Name</label>
+              <p class="form-control" style="background: #2c2e33; border: 1px solid #444; color: #fff;">{{ user.first_name|default:"—" }}</p>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label>Last Name</label>
+              <p class="form-control" style="background: #2c2e33; border: 1px solid #444; color: #fff;">{{ user.last_name|default:"—" }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label>Email</label>
+              <p class="form-control" style="background: #2c2e33; border: 1px solid #444; color: #fff;">{% if user.is_authenticated %}{{ user.email }}{% else %}—{% endif %}</p>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label>Phone</label>
+              <p class="form-control" style="background: #2c2e33; border: 1px solid #444; color: #fff;">{{ user.phone_number|default:"—" }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label>Role</label>
+              <p class="form-control" style="background: #2c2e33; border: 1px solid #444; color: #fff;">Mortgage Applicant</p>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label>Member Since</label>
+              <p class="form-control" style="background: #2c2e33; border: 1px solid #444; color: #fff;">{{ user.date_joined|date:"d M Y"|default:"—" }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="mt-3 d-flex gap-2">
+          <button class="btn btn-primary" style="background:#0077B6;" data-bs-toggle="modal" data-bs-target="#editProfileModal"><i class="mdi mdi-pencil"></i> Edit Profile</button>
+          <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#changePasswordModal"><i class="mdi mdi-lock-reset"></i> Change Password</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background:#191c24; border:1px solid #2c2e33; border-radius:12px;">
+      <div class="modal-header" style="border-bottom:1px solid #2c2e33; background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%);">
+        <h5 class="modal-title" style="color:#fff; font-weight:700;"><i class="mdi mdi-pencil"></i> Edit Profile</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="editProfileForm">
+        <div class="modal-body">
+          <div class="mb-3"><label class="form-label" style="color:#6c7293;">First Name</label><input type="text" name="first_name" value="{{ user.first_name }}" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;" required></div>
+          <div class="mb-3"><label class="form-label" style="color:#6c7293;">Last Name</label><input type="text" name="last_name" value="{{ user.last_name }}" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;" required></div>
+          <div class="mb-3"><label class="form-label" style="color:#6c7293;">Phone Number</label><input type="text" name="phone_number" value="{{ user.phone_number }}" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+        </div>
+        <div class="modal-footer" style="border-top:1px solid #2c2e33;">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="background:#0077B6;">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background:#191c24; border:1px solid #2c2e33; border-radius:12px;">
+      <div class="modal-header" style="border-bottom:1px solid #2c2e33; background: linear-gradient(135deg, #0A2B4E 0%, #0077B6 100%);">
+        <h5 class="modal-title" style="color:#fff; font-weight:700;"><i class="mdi mdi-lock-reset"></i> Change Password</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="changePasswordForm">
+        <div class="modal-body">
+          <div class="mb-3"><label class="form-label" style="color:#6c7293;">Current Password</label><input type="password" name="old_password" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;" required></div>
+          <div class="mb-3"><label class="form-label" style="color:#6c7293;">New Password</label><input type="password" name="new_password" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;" required minlength="8"><small class="text-muted">Minimum 8 characters</small></div>
+          <div class="mb-3"><label class="form-label" style="color:#6c7293;">Confirm New Password</label><input type="password" name="confirm_password" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;" required></div>
+        </div>
+        <div class="modal-footer" style="border-top:1px solid #2c2e33;">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="background:#0077B6;">Update Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Edit Profile via API
+document.getElementById('editProfileForm')?.addEventListener('submit', async function(e){
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const data = { first_name: fd.get('first_name'), last_name: fd.get('last_name'), phone_number: fd.get('phone_number') };
+  try{
+    const token = localStorage.getItem('access');
+    const res = await fetch('/api/auth/profile/', { method:'PATCH', headers:{'Content-Type':'application/json', ...(token?{'Authorization':'Bearer '+token}:{}) , 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''}, body: JSON.stringify(data), credentials:'same-origin' });
+    const txt = await res.text(); let j={}; try{j=JSON.parse(txt)}catch{}
+    if(res.ok){
+      Swal.fire({icon:'success', title:'Profile updated!', timer:1300, showConfirmButton:false}).then(()=> location.reload());
+    } else {
+      Swal.fire({icon:'error', title:'Failed', text: j.detail || j.error || txt.slice(0,200)});
+    }
+  }catch(err){ Swal.fire({icon:'error', title:'Network error', text: err.message}); }
+});
+
+// Change Password via API
+document.getElementById('changePasswordForm')?.addEventListener('submit', async function(e){
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  if(fd.get('new_password') !== fd.get('confirm_password')){ Swal.fire({icon:'warning', title:'Passwords do not match'}); return; }
+  try{
+    const token = localStorage.getItem('access');
+    const res = await fetch('/api/auth/change-password/', { method:'POST', headers:{'Content-Type':'application/json', ...(token?{'Authorization':'Bearer '+token}:{}), 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''}, body: JSON.stringify({old_password: fd.get('old_password'), new_password: fd.get('new_password'), confirm_password: fd.get('confirm_password')}), credentials:'same-origin' });
+    const txt = await res.text(); let j={}; try{j=JSON.parse(txt)}catch{}
+    if(res.ok){
+      Swal.fire({icon:'success', title:'Password changed!'}).then(()=> { var m=bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')); if(m) m.hide(); e.target.reset(); });
+    } else {
+      Swal.fire({icon:'error', title:'Failed', text: j.error || txt.slice(0,200)});
+    }
+  }catch(err){ Swal.fire({icon:'error', title:'Network error', text: err.message}); }
+});
+
+// Photo upload feedback
+document.getElementById('photoForm')?.addEventListener('submit', function(){
+  // allow normal POST, but show loading
+  Swal.fire({title:'Uploading...', didOpen:()=>Swal.showLoading(), allowOutsideClick:false, showConfirmButton:false, timer:2000});
+});
+</script>
+{% endblock %}

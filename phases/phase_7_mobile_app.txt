@@ -1,0 +1,694 @@
+================================================================================
+PHASE 7: MOBILE APP (FLUTTER) - TEMPLATE YA DOCTOR
+================================================================================
+
+KABLA YA KUANZA: Hakikisha Phase 6 imekamilika (API inafanya kazi).
+
+LINK YA TEMPLATE: https://doctor-nu-two.vercel.app/
+
+================================================================================
+KAZI ZA PHASE HII (TELEKEZA MOJA KWA MOJA)
+================================================================================
+
+--- KAZI 7.1: Unda Mradi wa Flutter ---
+TEKELEZA:
+1. Nenda kwenye folder ya mradi: C:\morgihome
+2. Unda folder ya frontend: mkdir frontend
+3. Nenda kwenye frontend: cd frontend
+4. Unda mradi wa Flutter: flutter create morgihome_mobile
+5. Nenda kwenye mradi: cd morgihome_mobile
+
+--- KAZI 7.2: Weka Dependencies ---
+TEKELEZA:
+1. Fungua pubspec.yaml
+2. Weka dependencies hizi:
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.1.0
+  provider: ^6.0.5
+  shared_preferences: ^2.2.2
+  jwt_decoder: ^2.0.1
+  flutter_secure_storage: ^9.0.0
+  image_picker: ^1.0.4
+  intl: ^0.18.1
+  url_launcher: ^6.2.1
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+
+3. Endesha: flutter pub get
+
+--- KAZI 7.3: Unda Folder Structure ---
+TEKELEZA:
+1. Nenda kwenye lib/
+2. Unda folders hizi:
+   - models/
+   - services/
+   - screens/
+   - widgets/
+   - utils/
+
+--- KAZI 7.4: Unda Models ---
+TEKELEZA:
+1. Nenda kwenye lib/models/
+2. Unda user.dart:
+
+class User {
+  final int id;
+  final String username;
+  final String email;
+  final String role;
+  final String? phoneNumber;
+  final bool isVerified;
+
+  User({
+    required this.id,
+    required this.username,
+    required this.email,
+    required this.role,
+    this.phoneNumber,
+    required this.isVerified,
+  });
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['id'],
+      username: json['username'],
+      email: json['email'],
+      role: json['role'],
+      phoneNumber: json['phone_number'],
+      isVerified: json['is_verified'] ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'username': username,
+      'email': email,
+      'role': role,
+      'phone_number': phoneNumber,
+      'is_verified': isVerified,
+    };
+  }
+}
+
+3. Unda property.dart:
+
+class Property {
+  final int id;
+  final String title;
+  final String description;
+  final double price;
+  final String location;
+  final int bedrooms;
+  final int bathrooms;
+  final double area;
+  final String propertyType;
+  final String status;
+  final String? image;
+  final String? sellerName;
+  final DateTime createdAt;
+
+  Property({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.price,
+    required this.location,
+    required this.bedrooms,
+    required this.bathrooms,
+    required this.area,
+    required this.propertyType,
+    required this.status,
+    this.image,
+    this.sellerName,
+    required this.createdAt,
+  });
+
+  factory Property.fromJson(Map<String, dynamic> json) {
+    return Property(
+      id: json['id'],
+      title: json['title'],
+      description: json['description'] ?? '',
+      price: (json['price'] ?? 0).toDouble(),
+      location: json['location'] ?? '',
+      bedrooms: json['bedrooms'] ?? 0,
+      bathrooms: json['bathrooms'] ?? 0,
+      area: (json['area'] ?? 0).toDouble(),
+      propertyType: json['property_type'] ?? 'house',
+      status: json['status'] ?? 'available',
+      image: json['image'],
+      sellerName: json['seller_name'],
+      createdAt: DateTime.parse(json['created_at']),
+    );
+  }
+}
+
+4. Unda mortgage.dart:
+
+class MortgageApplication {
+  final int id;
+  final int propertyId;
+  final String propertyTitle;
+  final double loanAmount;
+  final double downPayment;
+  final int repaymentPeriod;
+  final double monthlyIncome;
+  final double monthlyExpenses;
+  final String status;
+  final double? affordabilityScore;
+  final double? riskScore;
+  final double? monthlyInstallment;
+  final double? dtiRatio;
+  final DateTime createdAt;
+
+  MortgageApplication({
+    required this.id,
+    required this.propertyId,
+    required this.propertyTitle,
+    required this.loanAmount,
+    required this.downPayment,
+    required this.repaymentPeriod,
+    required this.monthlyIncome,
+    required this.monthlyExpenses,
+    required this.status,
+    this.affordabilityScore,
+    this.riskScore,
+    this.monthlyInstallment,
+    this.dtiRatio,
+    required this.createdAt,
+  });
+
+  factory MortgageApplication.fromJson(Map<String, dynamic> json) {
+    return MortgageApplication(
+      id: json['id'],
+      propertyId: json['property'] ?? 0,
+      propertyTitle: json['property_details']?['title'] ?? '',
+      loanAmount: (json['loan_amount'] ?? 0).toDouble(),
+      downPayment: (json['down_payment'] ?? 0).toDouble(),
+      repaymentPeriod: json['repayment_period'] ?? 0,
+      monthlyIncome: (json['monthly_income'] ?? 0).toDouble(),
+      monthlyExpenses: (json['monthly_expenses'] ?? 0).toDouble(),
+      status: json['status'] ?? 'pending',
+      affordabilityScore: json['affordability_score']?.toDouble(),
+      riskScore: json['risk_score']?.toDouble(),
+      monthlyInstallment: json['monthly_installment']?.toDouble(),
+      dtiRatio: json['dti_ratio']?.toDouble(),
+      createdAt: DateTime.parse(json['created_at']),
+    );
+  }
+}
+
+--- KAZI 7.5: Unda Services (API Calls) ---
+TEKELEZA:
+1. Nenda kwenye lib/services/
+2. Unda api_service.dart:
+
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import '../models/user.dart';
+import '../models/property.dart';
+import '../models/mortgage.dart';
+
+class ApiService {
+  static const String baseUrl = 'http://localhost:8000/api/';
+  
+  Future<Map<String, String>> _getHeaders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+  }
+
+  // ----- AUTH -----
+  Future<Map<String, dynamic>> login(String username, String password) async {
+    final response = await http.post(
+      Uri.parse('${baseUrl}auth/login/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'username': username, 'password': password}),
+    );
+    
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('access_token', data['access']);
+      await prefs.setString('refresh_token', data['refresh']);
+      return data;
+    } else {
+      throw Exception('Login failed');
+    }
+  }
+
+  Future<User> register(String username, String email, String password, String role) async {
+    final response = await http.post(
+      Uri.parse('${baseUrl}auth/signup/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'username': username,
+        'email': email,
+        'password': password,
+        'role': role,
+      }),
+    );
+    
+    if (response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      return User.fromJson(data);
+    } else {
+      throw Exception('Registration failed');
+    }
+  }
+
+  Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('access_token');
+    await prefs.remove('refresh_token');
+  }
+
+  // ----- PROPERTIES -----
+  Future<List<Property>> getProperties() async {
+    final response = await http.get(
+      Uri.parse('${baseUrl}properties/'),
+    );
+    
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((json) => Property.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load properties');
+    }
+  }
+
+  Future<Property> getProperty(int id) async {
+    final response = await http.get(
+      Uri.parse('${baseUrl}properties/$id/'),
+    );
+    
+    if (response.statusCode == 200) {
+      return Property.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to load property');
+    }
+  }
+
+  // ----- MORTGAGES -----
+  Future<Map<String, dynamic>> applyMortgage(Map<String, dynamic> data) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('${baseUrl}mortgages/'),
+      headers: headers,
+      body: jsonEncode(data),
+    );
+    
+    if (response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to apply for mortgage');
+    }
+  }
+
+  Future<List<MortgageApplication>> getMyMortgages() async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('${baseUrl}mortgages/'),
+      headers: headers,
+    );
+    
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((json) => MortgageApplication.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load mortgages');
+    }
+  }
+
+  Future<Map<String, dynamic>> getAffordability(int mortgageId) async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('${baseUrl}mortgages/$mortgageId/affordability/'),
+      headers: headers,
+    );
+    
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to get affordability');
+    }
+  }
+
+  Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('access_token');
+    await prefs.remove('refresh_token');
+  }
+}
+
+--- KAZI 7.6: Unda Screens ---
+TEKELEZA:
+1. Nenda kwenye lib/screens/
+2. Unda login_screen.dart (kuingia)
+3. Unda register_screen.dart (kujiandikisha)
+4. Unda home_screen.dart (nyumbani - properties)
+5. Unda property_detail_screen.dart (maelezo ya nyumba)
+6. Unda mortgage_application_screen.dart (kuomba mkopo)
+7. Unda mortgage_tracking_screen.dart (kufuatilia maombi)
+8. Unda profile_screen.dart (profile yako)
+
+--- KAZI 7.7: Unda main.dart ---
+TEKELEZA:
+1. Nenda kwenye lib/main.dart
+2. Weka code hii:
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'screens/login_screen.dart';
+import 'screens/home_screen.dart';
+import 'services/api_service.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'MorgiHome',
+      theme: ThemeData(
+        primaryColor: const Color(0xFF0077B6),
+        colorScheme: const ColorScheme.light(
+          primary: Color(0xFF0077B6),
+          secondary: Color(0xFF0A2B4E),
+          background: Colors.white,
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF0A2B4E),
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          selectedItemColor: Color(0xFF0077B6),
+          unselectedItemColor: Colors.grey,
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: const BorderSide(color: Color(0xFF0077B6)),
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF0077B6),
+            foregroundColor: Colors.white,
+            minimumSize: const Size(double.infinity, 50),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+      ),
+      home: const LoginScreen(),
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/home': (context) => const HomeScreen(),
+      },
+    );
+  }
+}
+
+--- KAZI 7.8: Unda Home Screen ---
+TEKELEZA:
+1. Nenda kwenye lib/screens/home_screen.dart
+2. Weka code hii (template rahisi):
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../services/api_service.dart';
+import '../models/property.dart';
+import 'property_detail_screen.dart';
+import 'mortgage_application_screen.dart';
+import 'profile_screen.dart';
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _selectedIndex = 0;
+  List<Property> _properties = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProperties();
+  }
+
+  Future<void> _loadProperties() async {
+    try {
+      final properties = await ApiService().getProperties();
+      setState(() {
+        _properties = properties;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to load properties')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('MorgiHome'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () {},
+          ),
+        ],
+      ),
+      body: _buildBody(),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Nyumbani',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.search),
+            label: 'Tafuta',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_properties.isEmpty) {
+      return const Center(child: Text('Hakuna nyumba zilizopo'));
+    }
+
+    if (_selectedIndex == 0) {
+      return _buildHomeContent();
+    } else if (_selectedIndex == 1) {
+      return const Center(child: Text('Search Screen - Coming Soon'));
+    } else {
+      return const ProfileScreen();
+    }
+  }
+
+  Widget _buildHomeContent() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Nyumba Zinazopatikana',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF0A2B4E),
+            ),
+          ),
+          const SizedBox(height: 16),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.75,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
+            itemCount: _properties.length,
+            itemBuilder: (context, index) {
+              final property = _properties[index];
+              return _buildPropertyCard(property);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPropertyCard(Property property) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PropertyDetailScreen(property: property),
+          ),
+        );
+      },
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 120,
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                color: Colors.grey[300],
+                image: property.image != null
+                    ? DecorationImage(
+                        image: NetworkImage(property.image!),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
+              ),
+              child: property.image == null
+                  ? const Icon(Icons.home, size: 50, color: Colors.grey)
+                  : null,
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    property.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${property.price.toStringAsFixed(0)} TZS',
+                    style: const TextStyle(
+                      color: Color(0xFF0077B6),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on, size: 12, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          property.location,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 10, color: Colors.grey),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      const Icon(Icons.bed, size: 12, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text('${property.bedrooms}', style: const TextStyle(fontSize: 10)),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.bathtub, size: 12, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text('${property.bathrooms}', style: const TextStyle(fontSize: 10)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+--- KAZI 7.9: Unda Mortgage Application Screen ---
+TEKELEZA:
+1. Nenda kwenye lib/screens/mortgage_application_screen.dart
+2. Unda form ya kuomba mkopo:
+   - Loan amount
+   - Down payment
+   - Repayment period
+   - Monthly income
+   - Monthly expenses
+   - Employment status
+3. Onyesha AI affordability na risk score baada ya submit.
+
+--- KAZI 7.10: Badilisha Rangi kuwa MorgiHome ---
+TEKELEZA:
+1. Katika theme ya MaterialApp, weka:
+   primaryColor: Color(0xFF0077B6)  # Blue Bahari
+   secondaryColor: Color(0xFF0A2B4E)  # Dark Blue
+   background: Colors.white
+
+2. Katika widgets zote, hakikisha rangi zinalingana.
+
+================================================================================
+TATIZO: "KAMA KITU KIKIKWAMA, USIENDELEE"
+================================================================================
+Kama unapata error yoyote, SIMAMA na unipe error hiyo.
+Nitasoma error na kukupa suluhisho kabla ya kuendelea.
+
+================================================================================
+BAADA YA KUKAMILISHA PHASE 7
+================================================================================
+NITAKUAMBIA: "MRADI WOTE UMESHAKAMILIKA! MORGIHOME IKO TAYARI."
+================================================================================

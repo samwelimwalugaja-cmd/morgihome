@@ -1,0 +1,132 @@
+{% extends 'seller/seller_base.html' %}
+{% load humanize %}
+{% block title %}My Properties - MorgiHome{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h3 class="page-title">
+    <span class="page-title-icon text-white me-2" style="background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%) !important;"><i class="mdi mdi-home-city"></i></span> My Properties
+  </h3>
+  <nav aria-label="breadcrumb">
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/seller/dashboard/">Dashboard</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Properties <span class="badge badge-outline-primary ms-2">{{ properties|length }} listings</span> <span class="badge badge-outline-success ms-1">Yours only</span></li>
+    </ul>
+  </nav>
+</div>
+
+<!-- Stat chips -->
+<div class="row">
+  <div class="col-md-3 grid-margin stretch-card">
+    <div class="card" style="border-top:3px solid #0077B6;">
+      <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div><p class="text-muted mb-0" style="font-size:11px; letter-spacing:1px;">TOTAL</p><h3 class="mb-0" style="font-weight:800;">{{ stats.total|default:properties|length }}</h3></div>
+          <div style="width:44px; height:44px; border-radius:12px; background:rgba(0,119,182,0.12); display:flex; align-items:center; justify-content:center;"><i class="mdi mdi-home-group" style="color:#0077B6; font-size:22px;"></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 grid-margin stretch-card">
+    <div class="card" style="border-top:3px solid #00d25b;">
+      <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div><p class="text-muted mb-0" style="font-size:11px; letter-spacing:1px;">AVAILABLE</p><h3 class="mb-0" style="font-weight:800;">{{ stats.available|default:"0" }}</h3></div>
+          <div style="width:44px; height:44px; border-radius:12px; background:rgba(0,210,91,0.12); display:flex; align-items:center; justify-content:center;"><i class="mdi mdi-check-circle" style="color:#00d25b; font-size:22px;"></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 grid-margin stretch-card">
+    <div class="card" style="border-top:3px solid #6c7293;">
+      <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div><p class="text-muted mb-0" style="font-size:11px; letter-spacing:1px;">SOLD</p><h3 class="mb-0" style="font-weight:800;">{{ stats.sold|default:"0" }}</h3></div>
+          <div style="width:44px; height:44px; border-radius:12px; background:rgba(108,114,147,0.15); display:flex; align-items:center; justify-content:center;"><i class="mdi mdi-cash-check" style="color:#8f94b0; font-size:22px;"></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 grid-margin stretch-card">
+    <div class="card" style="border-top:3px solid #ffc107;">
+      <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div><p class="text-muted mb-0" style="font-size:11px; letter-spacing:1px;">PENDING</p><h3 class="mb-0" style="font-weight:800;">{{ stats.pending|default:"0" }}</h3></div>
+          <div style="width:44px; height:44px; border-radius:12px; background:rgba(255,193,7,0.12); display:flex; align-items:center; justify-content:center;"><i class="mdi mdi-clock-outline" style="color:#ffc107; font-size:22px;"></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Search + Add -->
+<div class="row">
+  <div class="col-12 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body py-3">
+        <form method="get" class="forms-sample">
+          <div class="row align-items-end">
+            <div class="col-md-7">
+              <div class="form-group mb-0">
+                <label>Search your listings</label>
+                <input type="text" name="q" value="{{ request.GET.q|default:'' }}" class="form-control" placeholder="Search by title, location...">
+              </div>
+            </div>
+            <div class="col-md-5 d-flex gap-2 justify-content-md-end mt-3 mt-md-0">
+              <button type="submit" class="btn btn-primary" style="background:#0077B6; border-color:#0077B6;"><i class="mdi mdi-magnify"></i> Search</button>
+              <a href="/seller/properties/add/" class="btn btn-success"><i class="mdi mdi-plus"></i> Add Property</a>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Property cards -->
+<div class="row">
+  {% for prop in properties %}
+  <div class="col-md-4 grid-margin stretch-card">
+    <div class="card">
+      {% if prop.cover_image_url %}
+        <img src="{{ prop.cover_image_url }}" alt="{{ prop.title }}" class="card-img-top" style="height: 200px; object-fit: cover;">
+      {% else %}
+        <div class="card-img-top d-flex align-items-center justify-content-center" style="height: 200px; background: linear-gradient(135deg, rgba(0,119,182,0.25) 0%, rgba(10,43,78,0.35) 100%);"><i class="mdi mdi-home-city" style="font-size: 64px; color: rgba(255,255,255,0.5);"></i></div>
+      {% endif %}
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <span class="badge badge-outline-primary">{{ prop.get_property_type_display }}</span>
+          <span class="badge {% if prop.status == 'available' %}badge-outline-success{% elif prop.status == 'sold' %}badge-outline-danger{% elif prop.status == 'applied' %}badge-outline-warning{% elif prop.status == 'verifying' %}badge-outline-info{% elif prop.status == 'rented' %}badge-outline-info{% else %}badge-outline-warning{% endif %}">{% if prop.status == 'verifying' %}Bank Verifying{% elif prop.status == 'applied' %}Applied{% else %}{{ prop.get_status_display }}{% endif %}</span>
+        </div>
+        <h4 class="card-title">{{ prop.title|truncatechars:35 }}</h4>
+        <p class="text-muted"><i class="mdi mdi-map-marker"></i> {{ prop.location|truncatechars:32 }}</p>
+        <p class="text-muted" style="min-height: 40px;">{{ prop.description|truncatechars:80 }}</p>
+        <div class="d-flex text-muted small mb-3">
+          <span class="me-3"><i class="mdi mdi-bed"></i> {{ prop.bedrooms }} bd</span>
+          <span class="me-3"><i class="mdi mdi-hot-tub"></i> {{ prop.bathrooms }} ba</span>
+          <span><i class="mdi mdi-ruler-square"></i> {{ prop.area }} m²</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+          <h4 class="text-primary mb-0">TZS {{ prop.price|intcomma }}</h4>
+          <div class="d-flex gap-1">
+            <a href="/seller/properties/{{ prop.id }}/" class="btn btn-outline-secondary btn-sm" title="View"><i class="mdi mdi-eye"></i></a>
+            <a href="/seller/properties/edit/{{ prop.id }}/" class="btn btn-primary btn-sm" style="background:#0077B6; border-color:#0077B6;" title="Edit"><i class="mdi mdi-pencil"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body text-center py-5">
+        <div class="mx-auto mb-3 d-flex align-items-center justify-content-center" style="width:80px; height:80px; border-radius:50%; background:rgba(0,119,182,0.1);"><i class="mdi mdi-home-plus" style="font-size:40px; color:#0077B6;"></i></div>
+        <h4>No properties yet</h4>
+        <p class="text-muted">You haven't listed any property yet. Add your first listing now.</p>
+        <a href="/seller/properties/add/" class="btn btn-primary mt-2" style="background:#0077B6; border-color:#0077B6;"><i class="mdi mdi-plus"></i> Add Your First Property</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

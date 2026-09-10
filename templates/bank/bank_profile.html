@@ -1,0 +1,58 @@
+{% extends 'bank/bank_base.html' %}
+{% load humanize %}
+{% block title %}Profile - MorgiHome Bank{% endblock %}
+{% block page_title %}Bank Profile{% endblock %}
+{% block breadcrumb %}Bank / Profile{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+  <!-- Header card -->
+  <div class="morgi-card p-5 lg:p-6 mb-6 flex flex-col sm:flex-row sm:items-center gap-5" style="background: linear-gradient(135deg, #0A2B4E 0%, #0077B6 100%); color: white; border: none;">
+    {% if request.user.is_authenticated and request.user.profile_image %}<img src="{{ request.user.profile_image.url }}" alt="{{ bank_name }}" class="w-20 h-20 rounded-2xl object-cover flex-shrink-0" style="border:3px solid rgba(255,255,255,0.5);">{% else %}<div class="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-3xl font-bold flex-shrink-0">{{ bank_name|slice:":1"|default:"B" }}</div>{% endif %}
+    <div class="flex-1 min-w-0">
+      <h1 class="text-xl font-bold truncate">{{ bank_name }}</h1>
+      <p class="text-sm text-white/80 mt-0.5 truncate">{{ email }} • Role: {{ role }}</p>
+      <p class="mt-2 inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full {% if verified %}bg-emerald-500/20 text-emerald-100 border border-emerald-300/40{% else %}bg-amber-500/20 text-amber-100 border border-amber-300/40{% endif %}">
+        {% if verified %}✅ Verified{% else %}⏳ Pending{% endif %}
+      </p>
+    </div>
+    <a href="{% url 'bank_settings' %}" class="px-4 py-2 bg-white text-[#0A2B4E] rounded-lg text-sm font-semibold hover:bg-white/90 flex-shrink-0">Edit Settings</a>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <div class="morgi-card p-5">
+      <p class="text-xs font-semibold uppercase tracking-widest text-[var(--morgi-muted)]">Total Applications</p>
+      <p class="text-2xl font-bold mt-2">{{ stats.total|intcomma }}</p>
+    </div>
+    <div class="morgi-card p-5">
+      <p class="text-xs font-semibold uppercase tracking-widest text-[var(--morgi-muted)]">Approved</p>
+      <p class="text-2xl font-bold mt-2">{{ stats.approved|intcomma }}</p>
+    </div>
+    <div class="morgi-card p-5">
+      <p class="text-xs font-semibold uppercase tracking-widest text-[var(--morgi-muted)]">Total Disbursed (TZS)</p>
+      <p class="text-2xl font-bold mt-2">{{ stats.disbursed_amount|floatformat:0|intcomma }}</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="morgi-card p-5 lg:p-6">
+      <h3 class="font-semibold mb-4">Bank Information</h3>
+      <div class="divide-y divide-[var(--morgi-border)] text-sm">
+        <div class="flex justify-between gap-4 py-3"><span class="text-[var(--morgi-muted)]">Bank Name</span><span class="font-semibold text-right">{{ bank_name }}</span></div>
+        <div class="flex justify-between gap-4 py-3"><span class="text-[var(--morgi-muted)]">Email</span><span class="font-semibold text-right truncate">{{ email }}</span></div>
+        <div class="flex justify-between gap-4 py-3"><span class="text-[var(--morgi-muted)]">Role</span><span class="font-semibold">{{ role }}</span></div>
+        <div class="flex justify-between gap-4 py-3"><span class="text-[var(--morgi-muted)]">Status</span><span class="font-semibold">{% if verified %}✅ Verified{% else %}⏳ Pending{% endif %}</span></div>
+      </div>
+    </div>
+    <div class="morgi-card p-5 lg:p-6">
+      <h3 class="font-semibold mb-4">Quick Actions</h3>
+      <div class="grid grid-cols-1 gap-2">
+        <a href="{% url 'bank_applications' %}" class="btn-primary px-4 py-2.5 rounded-lg text-sm font-medium text-center">View All Applications</a>
+        <a href="{% url 'bank_applications_pending' %}" class="btn-secondary px-4 py-2.5 rounded-lg text-sm font-medium text-center">Pending Approvals</a>
+        <a href="{% url 'bank_reports' %}" class="btn-secondary px-4 py-2.5 rounded-lg text-sm font-medium text-center">View Reports</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

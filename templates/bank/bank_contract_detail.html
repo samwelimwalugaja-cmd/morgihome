@@ -1,0 +1,52 @@
+{% extends 'bank/bank_base.html' %}
+{% block title %}Contract {{ contract.ref }} - MorgiHome Bank{% endblock %}
+{% block page_title %}Contract Details{% endblock %}
+{% block breadcrumb %}Bank / Contracts / {{ contract.ref }}{% endblock %}
+
+{% block content %}
+<div class="flex items-center gap-3 mb-6">
+  <a href="{% url 'bank_contracts' %}" class="w-9 h-9 flex items-center justify-center rounded-lg border border-[var(--morgi-border)] bg-[var(--morgi-card)]"><i data-lucide="arrow-left" class="w-4 h-4"></i></a>
+  <div>
+    <h1 class="text-lg font-bold">#{{ contract.ref }} <span class="ml-2 text-xs px-3 py-1 rounded-full bg-[var(--morgi-border)]/50">{{ contract.status }}</span></h1>
+    <p class="text-sm text-[var(--morgi-muted)]">{{ contract.customer }} • {{ contract.property_name }}</p>
+  </div>
+  <div class="ml-auto flex gap-2">
+    {% if contract.file_url %}<a href="{{ contract.file_url }}" download class="btn-secondary px-4 py-2 rounded-lg text-sm font-medium">Download PDF</a>{% endif %}
+    {% if not contract.bank_signed %}
+    <form method="post">{% csrf_token %}<input type="hidden" name="action" value="sign"><button type="submit" class="btn-primary px-4 py-2 rounded-lg text-sm font-semibold">Sign Contract</button></form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-2 space-y-6">
+    <div class="morgi-card p-5 lg:p-6">
+      <h3 class="font-semibold mb-4">Loan Summary</h3>
+      <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+        <div class="p-3 rounded-lg bg-[var(--morgi-border)]/30"><p class="text-xs text-[var(--morgi-muted)]">Loan Amount</p><p class="font-bold text-lg mt-1">TZS {{ contract.amount }}</p></div>
+        <div class="p-3 rounded-lg bg-[var(--morgi-border)]/30"><p class="text-xs text-[var(--morgi-muted)]">Status</p><p class="font-bold text-lg mt-1">{{ contract.status }}</p></div>
+        <div class="p-3 rounded-lg bg-[var(--morgi-border)]/30"><p class="text-xs text-[var(--morgi-muted)]">Customer</p><p class="font-bold text-lg mt-1">{{ contract.customer }}</p></div>
+      </div>
+      {% if contract.notes %}<p class="text-sm mt-4">{{ contract.notes }}</p>{% endif %}
+    </div>
+    <div class="morgi-card p-5 lg:p-6">
+      <h3 class="font-semibold mb-3">Contract Document (PDF)</h3>
+      {% if contract.file_url %}
+        <iframe src="{{ contract.file_url }}" class="w-full h-[480px] rounded-lg border border-[var(--morgi-border)]"></iframe>
+      {% else %}
+        <div class="h-[200px] flex flex-col items-center justify-center border border-dashed border-[var(--morgi-border)] rounded-lg text-sm text-[var(--morgi-muted)]">PDF not attached yet</div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="space-y-6">
+    <div class="morgi-card p-5">
+      <h3 class="font-semibold mb-4">Signature Status</h3>
+      <div class="space-y-2 text-sm">
+        <div class="flex justify-between"><span>Customer</span><span class="font-semibold">{% if contract.customer_signed %}✅ Signed{% else %}⏳ Pending{% endif %}</span></div>
+        <div class="flex justify-between"><span>Bank</span><span class="font-semibold">{% if contract.bank_signed %}✅ Signed{% else %}⏳ Pending{% endif %}</span></div>
+        <div class="flex justify-between"><span>Seller</span><span class="font-semibold">{% if contract.seller_signed %}✅ Signed{% else %}⏳ Pending{% endif %}</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

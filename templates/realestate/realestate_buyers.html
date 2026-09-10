@@ -1,0 +1,113 @@
+{% extends 'realestate/realestate_base.html' %}
+{% load humanize %}
+{% block title %}Buyers - Real Estate - MorgiHome{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Dark scrollbars so the table scroller never shows a white bar */
+  .table-responsive::-webkit-scrollbar { height: 8px; width: 8px; }
+  .table-responsive::-webkit-scrollbar-track { background: #191c24; border-radius: 4px; }
+  .table-responsive::-webkit-scrollbar-thumb { background: #2c2e33; border-radius: 4px; }
+  .table-responsive::-webkit-scrollbar-thumb:hover { background: #0077B6; }
+  .table-responsive { scrollbar-width: thin; scrollbar-color: #2c2e33 #191c24; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h3 class="page-title">
+    <span class="page-title-icon bg-gradient-primary text-white me-2" style="background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%) !important;"><i class="mdi mdi-account-group"></i></span> Buyers
+  </h3>
+  <nav aria-label="breadcrumb">
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/realestate/dashboard/">Dashboard</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Buyers</li>
+    </ul>
+  </nav>
+</div>
+
+<div class="row">
+  <div class="col-md-4 grid-margin stretch-card">
+    <div class="card" style="border-top:3px solid #0077B6;">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <div><p class="text-muted" style="font-size:11px; letter-spacing:1px;">ALL BUYERS</p><h3 style="font-weight:800;">{{ all_count|default:"0" }}</h3><p class="text-success mb-0" style="font-size:11px;"><i class="mdi mdi-trending-up"></i> Total interested</p></div>
+          <div style="width:48px; height:48px; border-radius:12px; background:rgba(0,119,182,0.12); display:flex; align-items:center; justify-content:center;"><i class="mdi mdi-account-multiple" style="color:#0077B6; font-size:24px;"></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 grid-margin stretch-card">
+    <div class="card" style="border-top:3px solid #ffc107;">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <div><p class="text-muted" style="font-size:11px; letter-spacing:1px;">INTERESTED</p><h3 style="font-weight:800;">{{ interested_count|default:"0" }}</h3><p class="text-warning mb-0" style="font-size:11px;">Pending review</p></div>
+          <div style="width:48px; height:48px; border-radius:12px; background:rgba(255,193,7,0.12); display:flex; align-items:center; justify-content:center;"><i class="mdi mdi-account-clock" style="color:#ffc107; font-size:24px;"></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 grid-margin stretch-card">
+    <div class="card" style="border-top:3px solid #00d25b;">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <div><p class="text-muted" style="font-size:11px; letter-spacing:1px;">FILTER</p><h5 style="font-weight:700;">{{ filter|title }}</h5><p class="text-success mb-0" style="font-size:11px;">Current view</p></div>
+          <div style="width:48px; height:48px; border-radius:12px; background:rgba(0,210,91,0.12); display:flex; align-items:center; justify-content:center;"><i class="mdi mdi-filter" style="color:#00d25b; font-size:24px;"></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <h4 class="card-title mb-0" style="font-weight:700;">Buyer Applications</h4>
+          <div class="d-flex gap-2">
+            <a href="/realestate/buyers/?filter=all" class="btn btn-sm {% if filter == 'all' %}btn-primary{% else %}btn-outline-secondary{% endif %}" style="border-radius:20px;">All Buyers</a>
+            <a href="/realestate/buyers/?filter=interested" class="btn btn-sm {% if filter == 'interested' %}btn-warning{% else %}btn-outline-secondary{% endif %}" style="border-radius:20px;">Interested</a>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Buyer</th>
+                <th>Property</th>
+                <th>Loan Amount</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for b in buyers %}
+              <tr>
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    {% if b.customer.profile_image %}<img src="{{ b.customer.profile_image.url }}" alt="{{ b.customer.get_full_name }}" style="width:36px; height:36px; border-radius:50%; object-fit:cover; border:2px solid #0077B6; flex-shrink:0;">{% else %}<div style="width:36px; height:36px; border-radius:50%; background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:12px; flex-shrink:0;">{{ b.customer.initials|default:"B" }}</div>{% endif %}
+                    <div>
+                      <p class="mb-0" style="font-weight:600; font-size:13px;">{{ b.customer.get_full_name|default:"Buyer" }}</p>
+                      <p class="text-muted mb-0" style="font-size:11px;">Interested buyer • {{ b.created_at|date:"d M Y" }}</p>
+                    </div>
+                  </div>
+                </td>
+                <td><p class="mb-0" style="font-weight:600; font-size:13px;">{{ b.property.title }}</p><p class="text-muted mb-0" style="font-size:11px;">{{ b.property.location }}</p></td>
+                <td style="font-weight:700; color:#0077B6;">TZS {{ b.loan_amount|intcomma }}</td>
+                <td><span class="badge" style="padding:6px 10px; border-radius:20px; font-size:11px; {% if b.status == 'pending' %}background:rgba(255,193,7,0.15); color:#ffc107; border:1px solid rgba(255,193,7,0.3);{% elif b.status == 'approved' %}background:rgba(0,210,91,0.15); color:#00d25b; border:1px solid rgba(0,210,91,0.3);{% else %}background:#2c2e33; color:#6c7293;{% endif %}">{{ b.get_status_display }}</span></td>
+                <td style="font-size:12px;">{{ b.created_at|date:"d M Y" }}</td>
+                <td><a href="/realestate/buyers/{{ b.id }}/" class="btn btn-sm btn-outline-primary" style="border-radius:6px;"><i class="mdi mdi-eye"></i> View</a></td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="6" class="text-center py-4 text-muted">No buyers yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

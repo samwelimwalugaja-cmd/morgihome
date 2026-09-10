@@ -1,0 +1,392 @@
+================================================================================
+PROJECT: MorgiHome - MAELEKEZO KWA OPECODE
+================================================================================
+
+WEKA KWA MAKINI: HAYA SI MAOMBI YA KUSAIDIWA. HAYA NI MAELEKEZO YA KAZI.
+TEKELEZA KILA KITU KAMA ILIVYOANDIKWA. USINISUBIRI NIKUULIZE MASWALI.
+
+================================================================================
+JSON SETUP - MFUMO WA PHASES
+================================================================================
+
+{
+  "mode": "agent",
+  "autonomy": "high",
+  "autoTest": true,
+  "autoFix": true,
+  "continuousLoop": true,
+  "approvalRequired": false,
+  "phases": {
+    "phase1": {
+      "name": "Mazingira na Authentication",
+      "approvalBeforeNext": true,
+      "tests": ["python manage.py test", "flake8"]
+    },
+    "phase2": {
+      "name": "Website Frontend (Landing Page)",
+      "approvalBeforeNext": true,
+      "tests": ["python manage.py test", "flake8"]
+    },
+    "phase3": {
+      "name": "Real Estate (Properties)",
+      "approvalBeforeNext": true,
+      "tests": ["python manage.py test", "flake8"]
+    },
+    "phase4": {
+      "name": "Mortgage Management + AI",
+      "approvalBeforeNext": true,
+      "tests": ["python manage.py test", "flake8"]
+    },
+    "phase5": {
+      "name": "Lawyer & Contract Management",
+      "approvalBeforeNext": true,
+      "tests": ["python manage.py test", "flake8"]
+    },
+    "phase6": {
+      "name": "API Development (Django REST)",
+      "approvalBeforeNext": true,
+      "tests": ["python manage.py test", "flake8"]
+    },
+    "phase7": {
+      "name": "Mobile App (Flutter)",
+      "approvalBeforeNext": true,
+      "tests": ["flutter test"]
+    }
+  }
+}
+
+================================================================================
+TEMPLATES ZA KUREFERESHA
+================================================================================
+
+A. TEMPLATE YA WEBSITE (LANDING PAGE + DASHBOARD)
+---------------------------------------------------
+Link: https://bootstrapmade.com/demo/Resi/
+
+B. TEMPLATE YA MOBILE APP (FLUTTER)
+-------------------------------------
+Link: https://doctor-nu-two.vercel.app/
+
+================================================================================
+RANGI ZA KAMPUNI (ZITUMIKE PANDETE ZOTE)
+================================================================================
+
+- Blue Bahari (Primary): #0077B6
+- Dark Blue (Secondary): #0A2B4E
+- White (Background): #FFFFFF
+
+================================================================================
+WATUMIAJI (ROLES) - WATU 5
+================================================================================
+
+1. Customer (Mteja/Mkopaji)
+2. Seller (Muuza nyumba)
+3. Bank (Benki)
+4. Real Estate Company (Kampuni ya Mali Isiyohamishika)
+5. Lawyer (Wakili)
+
+================================================================================
+PHASE 1: MAZINGIRA (SETUP) NA AUTHENTICATION
+================================================================================
+
+KABLA YA KUANZA: Hakikisha uko kwenye folder C:\morgihome
+
+KATIKA PHASE HII, TEKELEZA KAZI ZIFUATAZO MOJA KWA MOJA.
+USIENDELEE HADI KILA KAZI IMEKAMILIKA NA HAKUNA MAKOSA.
+
+--- KAZI 1.1: Virtual Environment ---
+TEKELEZA:
+python -m venv venv
+source venv/Scripts/activate
+
+--- KAZI 1.2: Dependencies ---
+TEKELEZA:
+pip install django djangorestframework djangorestframework-simplejwt django-cors-headers psycopg2-binary python-dotenv
+
+--- KAZI 1.3: Mradi wa Django ---
+TEKELEZA:
+django-admin startproject morgihome_backend .
+python manage.py startapp accounts
+python manage.py startapp properties
+python manage.py startapp mortgages
+python manage.py startapp transactions
+python manage.py startapp api
+
+--- KAZI 1.4: Settings ---
+TEKELEZA:
+1. Fungua morgihome_backend/settings.py
+2. Weka apps zote kwenye INSTALLED_APPS:
+   [
+       'django.contrib.admin',
+       'django.contrib.auth',
+       'django.contrib.contenttypes',
+       'django.contrib.sessions',
+       'django.contrib.messages',
+       'django.contrib.staticfiles',
+       'rest_framework',
+       'rest_framework_simplejwt',
+       'corsheaders',
+       'accounts',
+       'properties',
+       'mortgages',
+       'transactions',
+       'api',
+   ]
+3. Weka MIDDLEWARE:
+   [
+       'django.middleware.security.SecurityMiddleware',
+       'corsheaders.middleware.CorsMiddleware',
+       'django.contrib.sessions.middleware.SessionMiddleware',
+       'django.middleware.common.CommonMiddleware',
+       'django.middleware.csrf.CsrfViewMiddleware',
+       'django.contrib.auth.middleware.AuthenticationMiddleware',
+       'django.contrib.messages.middleware.MessageMiddleware',
+       'django.middleware.clickjacking.XFrameOptionsMiddleware',
+   ]
+4. Weka CORS settings:
+   CORS_ALLOW_ALL_ORIGINS = True  # (Badilisha baadae)
+5. Weka REST_FRAMEWORK settings:
+   REST_FRAMEWORK = {
+       'DEFAULT_AUTHENTICATION_CLASSES': (
+           'rest_framework_simplejwt.authentication.JWTAuthentication',
+       ),
+       'DEFAULT_PERMISSION_CLASSES': (
+           'rest_framework.permissions.IsAuthenticated',
+       ),
+   }
+6. Weka JWT settings:
+   from datetime import timedelta
+   SIMPLE_JWT = {
+       'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+       'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+   }
+
+--- KAZI 1.5: Faili ya .env ---
+TEKELEZA:
+1. Unda faili .env kwenye mzizi wa mradi
+2. Weka:
+   SECRET_KEY=your-secret-key-here
+   DEBUG=True
+3. Badilisha settings.py kusoma .env:
+   import os
+   from dotenv import load_dotenv
+   load_dotenv()
+   SECRET_KEY = os.getenv('SECRET_KEY')
+   DEBUG = os.getenv('DEBUG') == 'True'
+
+--- KAZI 1.6: Custom User Model ---
+TEKELEZA:
+1. Nenda kwenye accounts/models.py
+2. Unda Custom User Model:
+   from django.contrib.auth.models import AbstractUser
+   from django.db import models
+
+   class User(AbstractUser):
+       ROLE_CHOICES = (
+           ('customer', 'Customer'),
+           ('seller', 'Seller'),
+           ('bank', 'Bank'),
+           ('realestate', 'Real Estate Company'),
+           ('lawyer', 'Lawyer'),
+       )
+       role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='customer')
+       phone_number = models.CharField(max_length=15, blank=True, null=True)
+       is_verified = models.BooleanField(default=False)
+
+       def __str__(self):
+           return f"{self.username} ({self.get_role_display()})"
+
+3. Nenda kwenye morgihome_backend/settings.py
+4. Badilisha AUTH_USER_MODEL = 'accounts.User'
+
+--- KAZI 1.7: Serializers ---
+TEKELEZA:
+1. Unda accounts/serializers.py
+2. Weka:
+   from rest_framework import serializers
+   from .models import User
+
+   class UserSerializer(serializers.ModelSerializer):
+       class Meta:
+           model = User
+           fields = ['id', 'username', 'email', 'role', 'phone_number', 'is_verified']
+
+   class RegisterSerializer(serializers.ModelSerializer):
+       password = serializers.CharField(write_only=True, min_length=8)
+
+       class Meta:
+           model = User
+           fields = ['username', 'email', 'password', 'role', 'phone_number']
+
+       def create(self, validated_data):
+           user = User.objects.create_user(**validated_data)
+           return user
+
+--- KAZI 1.8: Views ---
+TEKELEZA:
+1. Unda accounts/views.py
+2. Weka:
+   from rest_framework import generics, status
+   from rest_framework.response import Response
+   from rest_framework.permissions import AllowAny, IsAuthenticated
+   from rest_framework_simplejwt.tokens import RefreshToken
+   from .serializers import RegisterSerializer, UserSerializer
+   from .models import User
+
+   class RegisterView(generics.CreateAPIView):
+       queryset = User.objects.all()
+       permission_classes = [AllowAny]
+       serializer_class = RegisterSerializer
+
+   class LoginView(generics.GenericAPIView):
+       permission_classes = [AllowAny]
+
+       def post(self, request):
+           username = request.data.get('username')
+           password = request.data.get('password')
+           user = User.objects.filter(username=username).first()
+           if user and user.check_password(password):
+               refresh = RefreshToken.for_user(user)
+               return Response({
+                   'refresh': str(refresh),
+                   'access': str(refresh.access_token),
+                   'user': UserSerializer(user).data
+               })
+           return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+
+   class ProfileView(generics.RetrieveUpdateAPIView):
+       permission_classes = [IsAuthenticated]
+       serializer_class = UserSerializer
+
+       def get_object(self):
+           return self.request.user
+
+--- KAZI 1.9: URLs ---
+TEKELEZA:
+1. Unda accounts/urls.py
+2. Weka:
+   from django.urls import path
+   from .views import RegisterView, LoginView, ProfileView
+
+   urlpatterns = [
+       path('signup/', RegisterView.as_view(), name='signup'),
+       path('login/', LoginView.as_view(), name='login'),
+       path('profile/', ProfileView.as_view(), name='profile'),
+   ]
+
+3. Nenda kwenye morgihome_backend/urls.py
+4. Weka:
+   from django.contrib import admin
+   from django.urls import path, include
+
+   urlpatterns = [
+       path('admin/', admin.site.urls),
+       path('api/auth/', include('accounts.urls')),
+   ]
+
+--- KAZI 1.10: Migrations ---
+TEKELEZA:
+python manage.py makemigrations
+python manage.py migrate
+python manage.py createsuperuser
+
+================================================================================
+TATIZO: "KAMA KITU KIKIKWAMA, USIENDELEE"
+================================================================================
+
+Kama unapata error yoyote, SIMAMA na uandika error hiyo hapa.
+Nitasoma error na kukupa suluhisho kabla ya kuendelea.
+
+================================================================================
+BAADA YA KUKAMILISHA PHASE 1 (Hakuna makosa)
+================================================================================
+
+NITAKUAMBIA: "PHASE 1 IMESHA. TUNAENDELEA PHASE 2"
+Ndio utakaponiambia kuandika Phase 2 (Website Frontend).
+
+USIENDELEE HADI NIKUAMBIE. NITAANDIKA PHASE 2 BAADA YA PHASE 1 KUKAMILIKA.
+================================================================================
+
+================================================================================
+KUCHUKULIWA: DASHBOARD YA USERS WA SYSTEM (baadaye)
+================================================================================
+Link ya dashboard template (Adminator) tutaitumia kama dashboard kwa users wa system:
+https://preview.colorlib.com/theme/adminator/index.html
+Maelezo: 2026 Redesign Preview - design system ya Adminator (light/dark theme).
+Login page yao: signin.html | Registration: signup.html (zimeshafanywa kuendana na huu mtindo).
+================================================================================
+USALAMA - MABADILIKO YA UKANISHO (SECURITY HARDENING)
+================================================================================
+
+LAKI ZOTE ZIMABADILISHWA KUTOKANA NA UKAGULI WA UKANISHO:
+
+1. SECRET_KEY - Imebadilisha kuja kwenye .env si kwenye code. Key mpya imetengenezwa.
+2. DEBUG - Imebadilishwa kuwa False default (True tu katika development).
+3. ALLOWED_HOSTS - Imefikiria kuwa na majina ya host maalum, si ['*'].
+4. CORS_ALLOW_ALL_ORIGINS - Imeibwa (False). Imetumia CORS_ALLOWED_ORIGINS badala yake.
+5. DATABASE - SQLite imaaminiwa PostgreSQL (SSL mode: require).
+6. PASSWORD VALIDATION - Minimum length 12, Argon2 hasher, Byte validator amaendeshwa.
+7. SESSION SECURITY - Secure cookies, HTTPOnly, SameSite=Lax, expire at browser close.
+8. HSTS - Imetumia Strict Transport Security (max-age=31536000).
+9. X-FRAME-OPTIONS - DENY (hakuna clickjacking).
+10. RATE LIMITING - django-ratelimit imeungwishwa kwenye endpoints zote muhimu.
+11. BRUTE FORCE PROTECTION - django-axes imefungwa (5 attempts, cooloff 1 minute).
+12. STATIC FILES - Whitenoise imefungwa (CompressedManifestStaticFiles).
+13. EMAIL - Token halikusabIHI kwenye body ya barua (toka tu URL).
+14. OTP - Hakuna print/log ya OTP kabisa. Tumia secrets.randbelow() si random.
+15. SERIALIZERS - PII fields (nin_number, email, phone_number) zimeFIRIWA kwenye API.
+16. SWAGGER/API DOCS - Public=False, inahitaji Bearer token yaweze kuangalia.
+17. FILE UPLOAD - Limit 5MB, validation ya content type imefikiriwa.
+18. .gitignore - Imetengwa kuzuia .env, db.sqlite3, media, logs.
+19. requirements.txt - Imeandikwa version zote zimepigwa pwani (pinned).
+20. ADMIN URL - Imebadilishwa kuwa 'admin-secure/' si '/admin/'.
+21. CSRF - Cookie HTTPOnly, SameSite=Lax, Secure.
+22. LOGGING - File ya security.log inarekodi security events.
+23. PASSWORD RESET - Confirm password field imeongWIWA.
+24. HTTPS - SECURE_SSL_REDIRECT, CSRF_COOKIE_SECURE, SESSION_COOKIE_SECURE.
+
+FILES YALIBOBADILISHWA:
+- .env (SECRET_KEY mpya, DEBUG=False, configuration)
+- requirements.txt (version zote zimepigwa pwani)
+- .gitignore (imetengwa)
+- morgihome_backend/settings.py (full security hardening)
+- accounts/models.py (OTP imetumia secrets module)
+- accounts/serializers.py (PII fields zimeFIRIWA, password min_length=12)
+- accounts/views.py (OTP halikusabIHI, rate limiting, email safe)
+- api/urls.py (Swagger public=False)
+- morgihome_backend/urls.py (admin URL secure, rate limit view)
+
+FILES ZA ZIADA:
+- templates/accounts/lockout.html (lockout page)
+
+MABADILIKO YA USALAMA YA ZIADA:
+25. CSP (Content Security Policy) - django-csp imeunganishwa. Headers zimefungwa.
+26. CSP_EXCLUDE_URLS - Admin, Swagger, Redoc zimefungwa CSP.
+27. DRF THROTTLING - Throttle rates zimeongezwa (mortgage, contract, transaction, property, search).
+28. FILE VALIDATION - mortgages/views.py na transactions/views.py na identity upload zimekuwa na file size validation (5MB).
+29. THROTTLE CLASSES - Zote ViewSets zina throttle_classes = [UserRateThrottle].
+30. API SERIALIZERS - api/serializers.py PII fields zimeFIRIWA (email, phone_number, nin_number).
+31. REGISTER SERIALIZER - confirm_password field imeONGWAA. Password min_length=12.
+32. LOGIN THROTTLING - AnonRateThrottle imefungwa.
+33. AXES - CacheHandler imetUMIWA kwa performance bora.
+
+FILES YALIBOBADILISHWA (ZIADA):
+- api/serializers.py (PII fields zimeFIRIWA)
+- mortgages/views.py (file size validation, throttle_classes)
+- transactions/views.py (throttle_classes)
+- api/views.py (throttle_classes zote ViewSets)
+- accounts/views.py (throttle_classes RegisterView, LoginView)
+- morgihome_backend/settings.py (CSP, throttle rates, CSP_EXCLUDE_URLS)
+
+NIDHAMU ZA UKANISHO KWA PRODUCTION:
+- Weke DB_NAME, DB_USER, DB_PASSWORD kwenye .env
+- Weke EMAIL_HOST_USER na EMAIL_HOST_PASSWORD kwenye .env
+- Weke CSRF_TRUSTED_ORIGINS kama ni lazima
+- Weke ALLOWED_HOSTS kwa domain yako
+- Weke ADMIN_URL kwa jina lisilorejeshwa
+- Hakikisha PostgreSQL ina SSL imefanikiwa
+- Hakikisha SECURE_SSL_REDIRECT=True kwa production
+- Hakikisha django-csp version ya 4.0+ iko installed
+
+
+template for customer/seller/realestate company is https://dashboardpack.com/live-demo-preview/?livedemo=391333

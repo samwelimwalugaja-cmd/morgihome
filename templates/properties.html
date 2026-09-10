@@ -1,0 +1,267 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Properties - MorgiHome</title>
+  <link href="{% static 'images/favicon.ico' %}?v=4" rel="icon">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="{% static 'vendors/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+<link href="{% static 'vendors/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+<link href="{% static 'vendors/aos/aos.css' %}" rel="stylesheet">
+<link href="{% static 'css/main.css' %}?v=15" rel="stylesheet">
+<link href="{% static 'css/toast.css' %}" rel="stylesheet">
+<style>
+  /* Properties website overrides - dark theme consistent with index */
+  .properties-filter-card { background: var(--surface-color); border:1px solid rgba(255,255,255,0.08); border-radius:16px; }
+  .properties-filter-card .form-control, .properties-filter-card .form-select { background:#1e2133; border-color:rgba(255,255,255,0.12); color:#fff; border-radius:8px; }
+  .properties-filter-card .form-control::placeholder { color:#6c7293; }
+  .properties-filter-card .form-label { color:#e5e6ea; font-weight:600; font-size:13px; }
+  .properties-filter-card .input-group-text { background:#1e2133; border-color:rgba(255,255,255,0.12); color:#8f95ab; }
+  .stat-card-dark { border-radius:12px; padding:16px; text-align:center; }
+  .property-card-web { background: var(--surface-color); border:1px solid rgba(255,255,255,0.08); border-radius:16px; overflow:hidden; transition: all .25s; height:100%; display:flex; flex-direction:column; }
+  .property-card-web:hover { transform: translateY(-4px); box-shadow:0 12px 30px rgba(0,0,0,0.35); border-color:rgba(0,119,182,0.35); }
+  .property-card-web .pc-img-wrap { position:relative; overflow:hidden; }
+  .property-card-web .pc-img-wrap img { width:100%; height:190px; object-fit:cover; transition: transform .4s; }
+  .property-card-web:hover .pc-img-wrap img { transform: scale(1.05); }
+  .property-card-web .pc-body { padding:16px; flex:1; display:flex; flex-direction:column; }
+  .property-card-web .price { color:#2dd4bf; font-weight:800; font-size:16px; }
+  .properties-list .property-card-web { flex-direction:row; }
+  .properties-list .property-card-web .pc-img-wrap { width:260px; flex-shrink:0; }
+  .properties-list .property-card-web .pc-img-wrap img { height:100%; min-height:160px; }
+  @media(max-width:768px){ .properties-list .property-card-web{flex-direction:column} .properties-list .property-card-web .pc-img-wrap{width:100%} }
+  .modal-web .modal-content { background: var(--surface-color); border:1px solid rgba(255,255,255,0.1); border-radius:16px; color: #e5e6ea; }
+  .modal-web .modal-header { background: linear-gradient(135deg,#0077B6 0%,#0A2B4E 100%); border:none; }
+</style>
+</head>
+<body>
+<header id="header" class="header d-flex align-items-center fixed-top" style="background: #181b28;">
+  <div class="container position-relative d-flex align-items-center justify-content-between">
+    <a href="{% url 'home' %}" class="logo d-flex align-items-center"><img src="{% static 'images/morgihome-official-logo.png' %}" alt="MorgiHome" style="max-height:44px; width:auto;"></a>
+    <nav id="navmenu" class="navmenu">
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/#about">About</a></li>
+        <li><a href="/#services">Services</a></li>
+        <li class="dropdown"><a href="#" class="active"><span>Properties</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
+          <ul>
+            <li><a href="/properties/?property_type=house">Residential Properties</a></li>
+            <li><a href="/properties/?property_type=commercial">Commercial Properties</a></li>
+            <li><a href="/properties/?property_type=land">Land &amp; Plots</a></li>
+            <li><a href="/properties/">Featured Properties</a></li>
+            <li><a href="/properties/?property_type=apartment">Apartments</a></li>
+          </ul>
+        </li>
+        <li class="dropdown"><a href="#"><span>More</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
+          <ul>
+            <li><a href="/#how-it-works">How It Works</a></li>
+            <li><a href="{% url 'faq_page' %}">FAQ</a></li>
+            <li><a href="/#contact">Contact</a></li>
+          </ul>
+        </li>
+        <li><a href="/#contact">Contact</a></li>
+      </ul>
+      <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+    </nav>
+    <div class="header-auth d-flex align-items-center gap-2">
+      <a href="{% url 'login_page' %}" class="btn-login">Login</a>
+      <a href="{% url 'signup_page' %}" class="btn-signup">Sign Up</a>
+    </div>
+  </div>
+</header>
+
+<main class="main" style="padding-top:90px;">
+  <!-- Page Title -->
+  <section class="page-title" style="padding:50px 0 30px; background: var(--background-color);">
+    <div class="container text-center" data-aos="fade-up">
+      <h1 style="font-weight:800; color:#eeeff7;"><i class="bi bi-houses me-2" style="color:var(--accent-color)"></i> Browse Properties</h1>
+      <p style="color:#8f95ab; max-width:640px; margin:10px auto 0;">Discover your dream home • Browse verified listings • No dashboard here, this is the public website</p>
+      <div class="mt-3 d-flex justify-content-center gap-2">
+        <a href="/" class="btn btn-outline-light" style="border-radius:50px; padding:8px 20px; border-color:rgba(255,255,255,0.2); color:#e5e6ea;"><i class="bi bi-house me-1"></i> Home</a>
+        <a href="{% url 'signup_page' %}" class="btn btn-primary" style="background:var(--accent-color); border:none; border-radius:50px; padding:8px 20px; font-weight:600;">Apply for Mortgage</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:20px;">
+    <div class="container" data-aos="fade-up">
+      <!-- Filters -->
+      <div class="properties-filter-card p-4 mb-4">
+        <h6 class="mb-3" style="font-weight:700; color:#eeeff7;"><i class="bi bi-funnel me-2" style="color:var(--accent-color)"></i> Filters & Search</h6>
+        <div class="row g-3">
+          <div class="col-md-4"><label class="form-label">Search</label><div class="input-group"><span class="input-group-text"><i class="bi bi-search"></i></span><input type="text" id="propSearchInput" class="form-control" placeholder="Search title, location..."></div></div>
+          <div class="col-md-2"><label class="form-label">Type</label><select id="propTypeFilter" class="form-select"><option value="all">All Types</option><option value="house">House</option><option value="apartment">Apartment</option><option value="land">Land</option><option value="commercial">Commercial</option></select></div>
+          <div class="col-md-2"><label class="form-label">Bedrooms</label><select id="propBedFilter" class="form-select"><option value="any">Any</option><option value="1">1+ Beds</option><option value="2">2+ Beds</option><option value="3">3+ Beds</option><option value="4">4+ Beds</option></select></div>
+          <div class="col-md-2"><label class="form-label">Location</label><select id="propLocationFilter" class="form-select"><option value="all">All Locations</option></select></div>
+          <div class="col-md-2"><label class="form-label">Sort By</label><select id="propSort" class="form-select"><option value="newest">Newest</option><option value="price_low">Price Low→High</option><option value="price_high">Price High→Low</option><option value="popular">Popular</option></select></div>
+          <div class="col-md-3"><label class="form-label">Min Price (TZS)</label><input type="number" id="propMinPrice" class="form-control" placeholder="0"></div>
+          <div class="col-md-3"><label class="form-label">Max Price (TZS)</label><input type="number" id="propMaxPrice" class="form-control" placeholder="500M"></div>
+          <div class="col-md-6 d-flex align-items-end gap-2"><button id="propApplyFilters" class="btn btn-primary" style="background:var(--accent-color); border-color:var(--accent-color); border-radius:10px; padding:8px 20px; font-weight:600;"><i class="bi bi-check-lg me-1"></i> Apply</button><button id="propClearFilters" class="btn btn-outline-light" style="border-radius:10px; padding:8px 20px; border-color:rgba(255,255,255,0.2);">Clear</button>
+            <div class="ms-auto d-flex gap-2">
+              <button class="btn btn-sm" id="gridViewBtn" style="background:var(--accent-color); color:#fff; border-radius:8px;"><i class="bi bi-grid"></i> Grid</button>
+              <button class="btn btn-sm btn-outline-light" id="listViewBtn" style="border-radius:8px;"><i class="bi bi-list"></i> List</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="row g-3 mb-4 text-center">
+        <div class="col-6 col-md-3"><div class="p-3 stat-card-dark" style="background:linear-gradient(135deg,#0077B6 0%,#00a8e8 100%); color:#fff;"><div class="small" style="opacity:.9">Total Properties</div><h3 id="statTotal" class="mb-0" style="font-weight:800; color:#fff;">—</h3></div></div>
+        <div class="col-6 col-md-3"><div class="p-3 stat-card-dark" style="background:var(--surface-color); border:1px solid rgba(255,255,255,0.08);"><div class="small" style="color:#8f95ab;">Available</div><h3 id="statAvailable" style="color:#10b981; font-weight:800;">—</h3></div></div>
+        <div class="col-6 col-md-3"><div class="p-3 stat-card-dark" style="background:var(--surface-color); border:1px solid rgba(255,255,255,0.08);"><div class="small" style="color:#8f95ab;">Sold</div><h3 id="statSold" style="color:#ef4444; font-weight:800;">—</h3></div></div>
+        <div class="col-6 col-md-3"><div class="p-3 stat-card-dark" style="background:var(--surface-color); border:1px solid rgba(255,255,255,0.08);"><div class="small" style="color:#8f95ab;">Under Review</div><h3 id="statReview" style="color:#f59e0b; font-weight:800;">—</h3></div></div>
+      </div>
+
+      <!-- Properties Grid -->
+      <div id="propertiesContainer" class="row g-4">
+        <div class="col-12 text-center py-5"><div class="spinner-border" style="color:var(--accent-color);"></div><p class="mt-2" style="color:#8f95ab;">Loading properties...</p></div>
+      </div>
+
+      <!-- Pagination -->
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-4 p-3" style="background:var(--surface-color); border:1px solid rgba(255,255,255,0.08); border-radius:12px;">
+        <span style="color:#8f95ab; font-size:13px;" id="propPaginationInfo">Showing 0 of 0 properties</span>
+        <nav><ul class="pagination pagination-sm mb-0" id="propPagination" style="--bs-pagination-bg: var(--surface-color); --bs-pagination-color:#e5e6ea; --bs-pagination-border-color: rgba(255,255,255,0.1);"></ul></nav>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="footer" class="footer dark-background">
+  <div class="footer-top">
+    <div class="container">
+      <div class="row gy-4">
+        <div class="col-lg-4 col-md-6 footer-about">
+          <a href="{% url 'home' %}" class="logo d-flex align-items-center"><img src="{% static 'images/morgihome-official-logo.png' %}" alt="MorgiHome" class="footer-logo-img"></a>
+          <div class="footer-contact pt-3">
+            <p>Mikocheni B</p>
+            <p>Dar es Salaam, Tanzania</p>
+            <p class="mt-3"><strong>Phone:</strong> <span>+255 700 000 000</span></p>
+            <p><strong>Email:</strong> <span>info@morgihome.co.tz</span></p>
+          </div>
+        </div>
+        <div class="col-lg-2 col-md-3 footer-links">
+          <h4>Useful Links</h4>
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/#about">About us</a></li>
+            <li><a href="/#services">Services</a></li>
+            <li><a href="/properties/">Properties</a></li>
+            <li><a href="/#how-it-works">How It Works</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-2 col-md-3 footer-links">
+          <h4>Our Services</h4>
+          <ul>
+            <li><a href="{% url 'signup_page' %}">Home Mortgages</a></li>
+            <li><a href="/properties/">Property Search</a></li>
+            <li><a href="/#contact">Legal Services</a></li>
+            <li><a href="/#banks">Bank Partners</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-2 col-md-3 footer-links">
+          <h4>For Partners</h4>
+          <ul>
+            <li><a href="{% url 'signup_page' %}">Banks</a></li>
+            <li><a href="{% url 'signup_page' %}">Real Estate Companies</a></li>
+            <li><a href="{% url 'signup_page' %}">Lawyers</a></li>
+            <li><a href="{% url 'signup_page' %}">Sellers</a></li>
+            <li><a href="{% url 'signup_page' %}">Buyers</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-2 col-md-3 footer-links">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="{% url 'faq_page' %}">FAQ</a></li>
+            <li><a href="#">Terms of Service</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="copyright text-center">
+    <div class="container d-flex flex-column flex-lg-row justify-content-center justify-content-lg-between align-items-center">
+      <div class="d-flex flex-column align-items-center align-items-lg-start">
+        <div>&copy; Copyright <strong><span>MorgiHome</span></strong>. All Rights Reserved</div>
+        <div class="credits">Designed by <a href="#">Brain-Wave Group</a></div>
+      </div>
+      <div class="social-links order-first order-lg-last mb-3 mb-lg-0">
+        <a href="#"><i class="bi bi-twitter-x"></i></a>
+        <a href="#"><i class="bi bi-facebook"></i></a>
+        <a href="#"><i class="bi bi-instagram"></i></a>
+        <a href="#"><i class="bi bi-linkedin"></i></a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+<div id="preloader"></div>
+
+<!-- Property Detail Modal -->
+<div class="modal fade modal-web" id="propDetailModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content" style="border-radius:16px; overflow:hidden;">
+  <div class="modal-header"><h5 class="modal-title" id="propModalTitle" style="font-weight:800; color:#fff;">Property Details</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body p-0" style="background: var(--surface-color);">
+    <div id="propModalLoading" class="text-center py-5"><div class="spinner-border" style="color:var(--accent-color);"></div><p class="mt-2" style="color:#8f95ab;">Loading...</p></div>
+    <div id="propModalContent" class="d-none">
+      <div style="position:relative"><img id="propModalCover" src="" style="width:100%;height:320px;object-fit:cover" alt="Property"><div id="propModalThumbs" class="d-flex gap-2 p-2" style="overflow-x:auto;background:#0e1022;"></div></div>
+      <div class="p-4">
+        <div class="d-flex justify-content-between flex-wrap gap-2 mb-3">
+          <div><h4 id="propModalName" style="font-weight:800; color:#eeeff7;"></h4><p id="propModalLocation" style="color:#8f95ab;" class="small mb-0"><i class="bi bi-geo-alt me-1"></i> Location</p></div>
+          <div class="text-end"><div id="propModalPrice" style="font-weight:800; color:#2dd4bf; font-size:22px;">TZS 0</div><span id="propModalType" class="badge" style="background:rgba(255,255,255,0.1); color:#e5e6ea; border:1px solid rgba(255,255,255,0.15);">House</span> <span id="propModalStatus" class="badge bg-success">Available</span></div>
+        </div>
+        <div class="row g-2 mb-3" style="font-size:13px">
+          <div class="col-6 col-md-3"><div class="border rounded p-2 text-center" style="border-color:rgba(255,255,255,0.12)!important; background:#1e2133;"><i class="bi bi-door-open" style="color:var(--accent-color)"></i><br><strong id="propModalBeds" style="color:#fff;">3</strong><br><small style="color:#8f95ab;">Beds</small></div></div>
+          <div class="col-6 col-md-3"><div class="border rounded p-2 text-center" style="border-color:rgba(255,255,255,0.12)!important; background:#1e2133;"><i class="bi bi-droplet" style="color:var(--accent-color)"></i><br><strong id="propModalBaths" style="color:#fff;">2</strong><br><small style="color:#8f95ab;">Baths</small></div></div>
+          <div class="col-6 col-md-3"><div class="border rounded p-2 text-center" style="border-color:rgba(255,255,255,0.12)!important; background:#1e2133;"><i class="bi bi-bounding-box" style="color:var(--accent-color)"></i><br><strong id="propModalArea" style="color:#fff;">250 sqm</strong><br><small style="color:#8f95ab;">Area</small></div></div>
+          <div class="col-6 col-md-3"><div class="border rounded p-2 text-center" style="border-color:rgba(255,255,255,0.12)!important; background:#1e2133;"><i class="bi bi-hash" style="color:var(--accent-color)"></i><br><strong id="propModalNapa" style="color:#fff;">-</strong><br><small style="color:#8f95ab;">Code</small></div></div>
+        </div>
+        <p id="propModalDesc" style="color:#8f95ab; line-height:1.6;" class="small"></p>
+        <div class="card mt-3" style="border:1px solid rgba(255,255,255,0.08); background:#1e2133; border-radius:12px;"><div class="card-body p-3">
+          <div class="d-flex align-items-center gap-3">
+            <div id="propModalSellerAvatar" style="width:48px;height:48px;border-radius:50%;background:var(--accent-color);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;">S</div>
+            <div><div id="propModalSellerName" style="font-weight:700; color:#eeeff7;">Seller</div><small id="propModalSellerVerified" class="badge" style="font-size:10px; background:rgba(255,255,255,0.1); color:#e5e6ea; border:1px solid rgba(255,255,255,0.15);">Not Verified</small><br><small style="color:#8f95ab;" id="propModalSellerEmail">email</small> • <small style="color:#8f95ab;" id="propModalSellerPhone">phone</small></div>
+          </div>
+          <div class="d-grid gap-2 mt-3">
+            <button class="btn btn-outline-light" id="propModalContactBtn" style="border-radius:10px;"><i class="bi bi-chat-dots me-2"></i> Contact Seller</button>
+            <a id="propModalApplyBtn" href="#" class="btn btn-primary" style="background:var(--accent-color); border-color:var(--accent-color); border-radius:10px; font-weight:600;"><i class="bi bi-bank me-2"></i> Apply Mortgage</a>
+          </div>
+        </div></div>
+      </div>
+    </div>
+    <div id="propModalError" class="d-none p-4"><div class="alert alert-danger">Property not found</div></div>
+  </div>
+</div></div></div>
+
+<!-- Contact Choice Modal -->
+<div class="modal fade modal-web" id="propContactModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:16px"><div class="modal-header border-0"><h5 class="modal-title" style="font-weight:800; color:#fff;">Contact Seller</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body text-center" style="background: var(--surface-color); border-radius:0 0 16px 16px;">
+  <p style="color:#8f95ab;" class="small">Choose contact method</p>
+  <div class="d-grid gap-3">
+    <a id="propContactEmail" href="#" class="btn btn-lg btn-outline-light d-flex align-items-center justify-content-center gap-2" style="border-radius:12px;"><i class="bi bi-envelope" style="font-size:20px"></i> <span><strong>Email</strong><br><small id="propContactEmailText" style="color:#8f95ab;">email</small></span></a>
+    <a id="propContactPhone" href="#" class="btn btn-lg btn-primary d-flex align-items-center justify-content-center gap-2" style="background:var(--accent-color); border-color:var(--accent-color); border-radius:12px;"><i class="bi bi-telephone" style="font-size:20px"></i> <span><strong>Phone Call</strong><br><small id="propContactPhoneText">phone</small></span></a>
+  </div>
+</div></div></div></div>
+
+<script src="{% static 'vendors/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'vendors/aos/aos.js' %}"></script>
+<script src="{% static 'js/main.js' %}?v=11"></script>
+<script src="{% static 'js/toast.js' %}"></script>
+<script src="{% static 'js/properties.js' %}?v=3"></script>
+<script>
+  // Fix old properties.js that expects different IDs - patch for website theme
+  (function(){
+    // Override render to use website card style if old template class missing
+    const origRender = window.renderProperties;
+    // properties.js already handles rendering, we just ensure dark card style injection
+    // Patch openPropModal to handle website modal IDs
+    const check = setInterval(()=>{
+      const cards = document.querySelectorAll('#propertiesContainer .card');
+      // no action needed, properties.js already creates cards
+    }, 1000);
+    setTimeout(()=>clearInterval(check), 5000);
+  })();
+</script>
+</body>
+</html>

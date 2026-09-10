@@ -1,0 +1,17 @@
+Django==6.1.*
+djangorestframework==3.18.*
+djangorestframework-simplejwt==5.5.*
+django-cors-headers==4.9.*
+django-csp==4.*
+drf-yasg==1.21.*
+psycopg2-binary==2.9.*
+python-dotenv==1.2.*
+django-ratelimit==4.1.*
+django-axes==8.3.*
+django-ipware==7.0.*
+gunicorn==23.*
+whitenoise==6.11.*
+Pillow==10.*
+reportlab==4.*
+dj-database-url==2.*
+argon2-cffi==23.*

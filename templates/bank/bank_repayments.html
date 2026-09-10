@@ -1,0 +1,91 @@
+{% extends 'bank/bank_base.html' %}
+{% load humanize %}
+{% block title %}Repayments - MorgiHome Bank{% endblock %}
+{% block page_title %}Loan Repayments{% endblock %}
+{% block breadcrumb %}Bank / Repayments{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+  <div class="morgi-card p-5"><p class="text-xs font-semibold uppercase tracking-widest text-[var(--morgi-muted)]">Total Paid</p><p class="text-2xl font-bold mt-2">TZS {{ stats.total_paid|floatformat:0|intcomma }}</p><p class="text-xs text-emerald-600 dark:text-emerald-400 mt-1">of TZS {{ stats.total_due|floatformat:0|intcomma }} due</p></div>
+  <div class="morgi-card p-5"><p class="text-xs font-semibold uppercase tracking-widest text-[var(--morgi-muted)]">Paid Rate</p><p class="text-2xl font-bold mt-2">{{ stats.on_time }}%</p><div class="w-full h-1.5 bg-[var(--morgi-border)] rounded-full mt-3"><div class="h-1.5 bg-emerald-500 rounded-full" style="width:{{ stats.on_time }}%"></div></div></div>
+  <div class="morgi-card p-5"><p class="text-xs font-semibold uppercase tracking-widest text-[var(--morgi-muted)]">Overdue</p><p class="text-2xl font-bold mt-2 text-amber-600">{{ stats.overdue_count|intcomma }}</p><p class="text-xs text-[var(--morgi-muted)] mt-1">TZS {{ stats.overdue_amount|floatformat:0|intcomma }} overdue</p></div>
+  <div class="morgi-card p-5"><p class="text-xs font-semibold uppercase tracking-widest text-[var(--morgi-muted)]">Non-Performing (90+ days)</p><p class="text-2xl font-bold mt-2 text-red-600">{{ stats.npl|intcomma }}</p><p class="text-xs text-[var(--morgi-muted)] mt-1">{{ stats.schedule_count|intcomma }} schedules tracked</p></div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+  <div class="lg:col-span-2 morgi-card p-5">
+    <h3 class="font-semibold mb-4">Paid per Month (TZS)</h3>
+    <div class="h-[240px]"><canvas id="repayChart"></canvas></div>
+  </div>
+  <div class="morgi-card p-5">
+    <h3 class="font-semibold mb-4">Top Defaulters</h3>
+    <div class="space-y-3">
+      {% for d in defaulters %}
+      <div class="flex items-center gap-3 p-3 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30">
+        <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold" style="background: linear-gradient(135deg, #dc2626, #7f1d1d);">{{ d.initials|default:"-" }}</div>
+        <div class="flex-1 min-w-0"><p class="text-sm font-semibold truncate">{{ d.customer }}</p><p class="text-xs text-[var(--morgi-muted)]">{{ d.contract_ref }} • {{ d.days }} days</p></div>
+        <span class="text-sm font-bold text-red-600">TZS {{ d.amount|floatformat:0|intcomma }}</span>
+      </div>
+      {% empty %}
+      <p class="text-sm text-[var(--morgi-muted)] text-center py-6">No overdue payments. All clear! 🎉</p>
+      {% endfor %}
+    </div>
+    <p class="mt-4 text-center text-sm text-[var(--morgi-muted)]">{{ stats.overdue_count|intcomma }} overdue total</p>
+  </div>
+</div>
+
+<div class="morgi-card overflow-hidden">
+  <div class="p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-[var(--morgi-border)]">
+    <h3 class="font-semibold">Repayment Schedule - Sept 2026</h3>
+    <div class="flex gap-2">
+      <select class="morgi-input rounded-lg px-3 py-2 text-sm"><option>Sept 2026</option><option>Aug 2026</option></select>
+      <select class="morgi-input rounded-lg px-3 py-2 text-sm"><option>All Statuses</option><option>Paid</option><option>Overdue</option><option>Upcoming</option></select>
+    </div>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full morgi-table">
+      <thead>
+        <tr>
+          <th class="px-5 py-3 text-left">Customer / Contract</th>
+          <th class="px-5 py-3 text-left">Due Date</th>
+          <th class="px-5 py-3 text-left">Amount</th>
+          <th class="px-5 py-3 text-left">Paid Amount</th>
+          <th class="px-5 py-3 text-left">Status</th>
+          <th class="px-5 py-3 text-right">Action</th>
+        </tr>
+      </thead>
+      <tbody class="text-sm">
+        {% for r in repayments %}
+        <tr>
+          <td class="px-5 py-4"><p class="font-medium">{{ r.customer }}</p><p class="text-xs text-[var(--morgi-muted)]">#{{ r.contract_ref }}</p></td>
+          <td class="px-5 py-4">{{ r.due }}</td>
+          <td class="px-5 py-4 font-semibold">TZS {{ r.amount|floatformat:0|intcomma }}</td>
+          <td class="px-5 py-4 {% if r.status == 'Paid' %}text-emerald-600 dark:text-emerald-400 font-medium{% elif r.status == 'Overdue' %}text-red-600 font-medium{% else %}text-[var(--morgi-muted)]{% endif %}">{% if r.paid %}TZS {{ r.paid|floatformat:0|intcomma }}{% if r.status == 'Paid' %} ✓{% endif %}{% else %}—{% endif %}</td>
+          <td class="px-5 py-4"><span class="px-2.5 py-1 rounded-full text-xs font-semibold {% if r.status == 'Paid' %}bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300{% elif r.status == 'Overdue' %}bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300{% else %}bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300{% endif %}">{{ r.status }}{% if r.status == 'Overdue' %} • {{ r.days }}d{% endif %}</span></td>
+          <td class="px-5 py-4 text-right"><a href="{{ r.link }}" class="text-xs font-medium" style="color:#0077B6">View →</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="px-5 py-12 text-center text-[var(--morgi-muted)]">No repayment schedules yet. They appear once loans are approved.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const ctx = document.getElementById('repayChart');
+  if (ctx) {
+    const isDark = document.documentElement.classList.contains('dark');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: {{ chart_labels|safe }},
+        datasets: [{ label: 'Repayments', data: {{ chart_paid|safe }}, borderColor: '#0077B6', backgroundColor: 'rgba(0,119,182,0.1)', tension: 0.4, fill: true, pointBackgroundColor: '#0077B6' }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: isDark ? '#94a3b8' : '#64748b' } }, y: { grid: { color: isDark ? '#1e3a5f' : '#e2e8f0' }, ticks: { color: isDark ? '#94a3b8' : '#64748b' } } } }
+    });
+  }
+</script>
+{% endblock %}

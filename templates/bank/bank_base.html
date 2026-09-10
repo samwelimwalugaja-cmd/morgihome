@@ -1,0 +1,403 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}MorgiHome - Bank Dashboard{% endblock %}</title>
+
+  <!-- Theme: apply before paint to avoid FOUC - saves class 'dark' on html -->
+  <script>
+    (function() {
+      try {
+        const t = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = (t === 'dark' || t === 'light') ? t : (prefersDark ? 'dark' : 'light');
+        if (theme === 'dark') document.documentElement.classList.add('dark');
+        else document.documentElement.classList.remove('dark');
+      } catch(e) {}
+    })();
+  </script>
+
+  <!-- Tailwind Production Build - no CDN warning anymore | cache-bust v=3 -->
+  <link rel="stylesheet" href="{% static 'bank/css/tailwind.css' %}?v=20260903-3">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Favicon - prevent 404 -->
+  <link href="{% static 'images/favicon.ico' %}?v=4" rel="icon" sizes="48x48">
+  <link href="{% static 'images/favicon-32x32.png' %}?v=4" rel="icon" type="image/png" sizes="32x32">
+  <link href="{% static 'images/favicon-16x16.png' %}?v=4" rel="icon" type="image/png" sizes="16x16">
+  <link href="{% static 'images/apple-touch-icon.png' %}?v=4" rel="apple-touch-icon" type="image/png">
+
+  <!-- MorgiHome Custom CSS + Special Bank Template (spec: #0077B6/#0A2B4E, not corona) -->
+  <link rel="stylesheet" href="{% static 'bank/css/morgihome.css' %}?v=20260903-3">
+  <link rel="stylesheet" href="{% static 'bank/css/bank.css' %}?v=20260909-6">
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    /* Fallback if static not loaded */
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="h-full antialiased bg-[var(--morgi-bg)] text-[var(--morgi-text)]">
+  <div class="flex h-screen overflow-hidden">
+    <!-- Sidebar - Desktop -->
+    <aside id="sidebar" class="hidden lg:flex w-[260px] flex-col morgi-sidebar shrink-0 overflow-y-auto">
+      <!-- Logo -->
+      <div class="h-[64px] flex items-center gap-3 px-6 border-b border-[var(--morgi-border)] shrink-0">
+        <div class="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-lg shrink-0" style="background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%);">M</div>
+        <div>
+          <h1 class="font-bold text-[15px] leading-none tracking-tight">MorgiHome</h1>
+          <p class="text-xs text-[var(--morgi-muted)]">Bank Portal</p>
+        </div>
+      </div>
+
+      <!-- Navigation - Shadcn Admin style -->
+      <nav class="flex-1 px-3 py-4 space-y-6 overflow-y-auto">
+        <div>
+          <p class="px-3 mb-2 text-[11px] font-semibold uppercase tracking-widest text-[var(--morgi-muted)]">Main Menu</p>
+          <ul class="space-y-1">
+            <li>
+              <a href="{% url 'bank_dashboard' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium {% if request.resolver_match.url_name == 'bank_dashboard' %}active{% endif %}">
+                <i data-lucide="layout-dashboard" class="w-[18px] h-[18px]"></i>
+                Dashboard
+              </a>
+            </li>
+            <li>
+              <button onclick="document.getElementById('apps-submenu').classList.toggle('hidden'); document.getElementById('apps-chevron').classList.toggle('rotate-180');" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium {% if 'application' in request.resolver_match.url_name %}active{% endif %}">
+                <i data-lucide="file-text" class="w-[18px] h-[18px]"></i>
+                Applications
+                <span class="ml-auto text-xs bg-[var(--morgi-border)] px-2 py-0.5 rounded-full">{{ bank_pending_count|default:0 }}</span>
+                <i id="apps-chevron" data-lucide="chevron-down" class="w-4 h-4 transition-transform {% if 'application' in request.resolver_match.url_name %}rotate-180{% endif %}"></i>
+              </button>
+              <ul id="apps-submenu" class="ml-9 mt-1 space-y-1 border-l-2 border-[var(--morgi-border)] pl-3 {% if 'application' not in request.resolver_match.url_name %}hidden{% endif %}">
+                <li><a href="{% url 'bank_applications_all' %}" class="block px-2 py-1.5 text-[13px] rounded-md hover:bg-[var(--morgi-border)]/50 {% if request.resolver_match.url_name == 'bank_applications_all' %}font-semibold{% endif %}" style="{% if request.resolver_match.url_name == 'bank_applications_all' %}color:#0077B6{% endif %}">All Applications</a></li>
+                <li><a href="{% url 'bank_applications_pending' %}" class="block px-2 py-1.5 text-[13px] rounded-md hover:bg-[var(--morgi-border)]/50 {% if request.resolver_match.url_name == 'bank_applications_pending' %}font-semibold{% endif %}" style="{% if request.resolver_match.url_name == 'bank_applications_pending' %}color:#0077B6{% endif %}">Pending Applications</a></li>
+                <li><a href="{% url 'bank_applications_approved' %}" class="block px-2 py-1.5 text-[13px] rounded-md hover:bg-[var(--morgi-border)]/50 {% if request.resolver_match.url_name == 'bank_applications_approved' %}font-semibold{% endif %}" style="{% if request.resolver_match.url_name == 'bank_applications_approved' %}color:#0077B6{% endif %}">Approved Applications</a></li>
+                <li><a href="{% url 'bank_applications_rejected' %}" class="block px-2 py-1.5 text-[13px] rounded-md hover:bg-[var(--morgi-border)]/50 {% if request.resolver_match.url_name == 'bank_applications_rejected' %}font-semibold{% endif %}" style="{% if request.resolver_match.url_name == 'bank_applications_rejected' %}color:#0077B6{% endif %}">Rejected Applications</a></li>
+              </ul>
+            </li>
+            <li>
+              <a href="{% url 'bank_contracts' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium {% if request.resolver_match.url_name == 'bank_contracts' %}active{% endif %}">
+                <i data-lucide="scroll-text" class="w-[18px] h-[18px]"></i>
+                Contracts
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'bank_repayments' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium {% if request.resolver_match.url_name == 'bank_repayments' %}active{% endif %}">
+                <i data-lucide="wallet" class="w-[18px] h-[18px]"></i>
+                Repayments
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'bank_reports' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium {% if request.resolver_match.url_name == 'bank_reports' %}active{% endif %}">
+                <i data-lucide="chart-column" class="w-[18px] h-[18px]"></i>
+                Reports
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'bank_profile' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium {% if request.resolver_match.url_name == 'bank_profile' %}active{% endif %}">
+                <i data-lucide="user-round" class="w-[18px] h-[18px]"></i>
+                Profile
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="px-3 mb-2 text-[11px] font-semibold uppercase tracking-widest text-[var(--morgi-muted)]">System</p>
+          <ul class="space-y-1">
+            <li>
+              <a href="{% url 'bank_notifications' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm {% if request.resolver_match.url_name == 'bank_notifications' %}active{% endif %}">
+                <i data-lucide="bell" class="w-[18px] h-[18px]"></i>
+                Notifications
+                <span id="sidebarNotifBadge" class="ml-auto text-xs bg-red-500 text-white px-2 py-0.5 rounded-full" style="display:none">0</span>
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'bank_settings' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm {% if request.resolver_match.url_name == 'bank_settings' %}active{% endif %}">
+                <i data-lucide="settings" class="w-[18px] h-[18px]"></i>
+                Settings
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'bank_help' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm {% if request.resolver_match.url_name == 'bank_help' %}active{% endif %}">
+                <i data-lucide="life-buoy" class="w-[18px] h-[18px]"></i>
+                Help
+              </a>
+            </li>
+            <li>
+              <a href="#" onclick="bankLogout(); return false;" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm text-red-600 dark:text-red-400">
+                <i data-lucide="log-out" class="w-[18px] h-[18px]"></i>
+                Logout
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <!-- User Card (bank logo photo if uploaded by admin, else initials) -->
+      <div class="p-4 border-t border-[var(--morgi-border)]">
+        <div class="flex items-center gap-3 p-3 rounded-lg bg-[var(--morgi-card)] border border-[var(--morgi-border)]">
+          {% if request.user.is_authenticated and request.user.profile_image %}<img src="{{ request.user.profile_image.url }}" alt="bank logo" class="w-9 h-9 rounded-full object-cover flex-shrink-0" style="border:2px solid #0077B6;">{% else %}<div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0" style="background: linear-gradient(135deg, #0077B6, #0A2B4E);">{% if request.user.is_authenticated %}{{ request.user.initials|default:"B" }}{% else %}B{% endif %}</div>{% endif %}
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold truncate">{% if request.user.is_authenticated %}{{ request.user.get_full_name|default:request.user.email }}{% else %}Bank{% endif %}</p>
+            <p class="text-xs text-[var(--morgi-muted)] truncate">{% if request.user.is_authenticated %}{{ request.user.email }}{% else %}Not logged in{% endif %}</p>
+          </div>
+          <i data-lucide="chevrons-up-down" class="w-4 h-4 text-[var(--morgi-muted)]"></i>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div id="mobile-overlay" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden"></div>
+    <aside id="mobile-sidebar" class="fixed inset-y-0 left-0 w-[280px] morgi-sidebar z-50 transform -translate-x-full transition-transform duration-200 lg:hidden flex flex-col">
+      <div class="h-[64px] flex items-center justify-between px-6 border-b border-[var(--morgi-border)]">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold" style="background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%);">M</div>
+          <span class="font-bold">MorgiHome</span>
+        </div>
+        <button id="close-sidebar" class="p-2 rounded-md hover:bg-[var(--morgi-border)]">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        <a href="{% url 'bank_dashboard' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm font-medium active"><i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard</a>
+        <a href="{% url 'bank_applications' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm"><i data-lucide="file-text" class="w-5 h-5"></i> Applications</a>
+        <div class="pl-11 space-y-1 text-[13px]">
+          <a href="{% url 'bank_applications_all' %}" class="block py-1 opacity-80">All Applications</a>
+          <a href="{% url 'bank_applications_pending' %}" class="block py-1 opacity-80">Pending</a>
+          <a href="{% url 'bank_applications_approved' %}" class="block py-1 opacity-80">Approved</a>
+          <a href="{% url 'bank_applications_rejected' %}" class="block py-1 opacity-80">Rejected</a>
+        </div>
+        <a href="{% url 'bank_contracts' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm"><i data-lucide="scroll-text" class="w-5 h-5"></i> Contracts</a>
+        <a href="{% url 'bank_repayments' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm"><i data-lucide="wallet" class="w-5 h-5"></i> Repayments</a>
+        <a href="{% url 'bank_reports' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm"><i data-lucide="chart-column" class="w-5 h-5"></i> Reports</a>
+        <a href="{% url 'bank_profile' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm"><i data-lucide="user-round" class="w-5 h-5"></i> Profile</a>
+        <div class="border-t border-[var(--morgi-border)] my-3"></div>
+        <a href="{% url 'bank_settings' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm"><i data-lucide="settings" class="w-5 h-5"></i> Settings</a>
+        <a href="{% url 'bank_help' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm"><i data-lucide="life-buoy" class="w-5 h-5"></i> Help</a>
+        <a href="#" onclick="bankLogout(); return false;" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm text-red-600 dark:text-red-400"><i data-lucide="log-out" class="w-5 h-5"></i> Logout</a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <!-- Header - Shadcn Admin style -->
+      <header class="h-[64px] morgi-header flex items-center justify-between px-4 lg:px-6 shrink-0 gap-4">
+        <div class="flex items-center gap-3">
+          <button id="open-sidebar" class="lg:hidden p-2 rounded-md hover:bg-[var(--morgi-border)]">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
+          <div class="hidden sm:block">
+            <h2 class="text-sm font-semibold">{% block page_title %}Dashboard{% endblock %}</h2>
+            <p class="text-xs text-[var(--morgi-muted)] hidden lg:block">{% block breadcrumb %}Bank / Dashboard{% endblock %}</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Search -->
+          <div class="hidden md:flex items-center gap-2 morgi-input rounded-lg px-3 py-2 w-[280px]">
+            <i data-lucide="search" class="w-4 h-4 text-[var(--morgi-muted)]"></i>
+            <input id="bankSearchInput" type="text" placeholder="Search applications, customers..." class="bg-transparent outline-none text-sm flex-1 placeholder:text-[var(--morgi-muted)]" onkeypress="if(event.key==='Enter'){ window.location.href='{% url 'bank_search' %}?q='+encodeURIComponent(this.value); }">
+            <span class="text-xs text-[var(--morgi-muted)] border border-[var(--morgi-border)] px-1.5 py-0.5 rounded">⌘K</span>
+          </div>
+
+          <!-- Theme Toggle - keeps class dark + localStorage -->
+          <button id="theme-toggle" aria-label="Toggle theme" class="w-9 h-9 flex items-center justify-center rounded-lg border border-[var(--morgi-border)] bg-[var(--morgi-card)] hover:bg-[var(--morgi-border)] transition-colors">
+            <!-- Moon = Light mode icon, Sun = Dark mode icon -->
+            <i id="icon-moon" data-lucide="moon" class="w-4 h-4"></i>
+            <i id="icon-sun" data-lucide="sun" class="w-4 h-4 hidden"></i>
+          </button>
+
+          <div class="relative">
+            <button id="notifBtn" class="w-9 h-9 flex items-center justify-center rounded-lg border border-[var(--morgi-border)] bg-[var(--morgi-card)] hover:bg-[var(--morgi-border)] relative">
+              <i data-lucide="bell" class="w-4 h-4"></i>
+              <span id="notifCount" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full font-bold" style="display:none">0</span>
+            </button>
+            <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 morgi-card shadow-xl z-50 overflow-hidden">
+              <div class="p-4 border-b border-[var(--morgi-border)] flex items-center justify-between">
+                <h3 class="font-semibold text-sm">Notifications</h3>
+                <a href="{% url 'bank_notifications' %}" class="text-xs font-medium" style="color:#0077B6">View all</a>
+              </div>
+              <div id="notifList" class="max-h-96 overflow-y-auto">
+                <div class="p-4 text-center text-sm text-[var(--morgi-muted)]">Loading...</div>
+              </div>
+              <div class="p-3 border-t border-[var(--morgi-border)] text-center">
+                <a href="#" onclick="bankMarkAllRead(); return false;" class="text-xs font-medium" style="color:#0077B6">Mark all as read</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="hidden sm:flex items-center gap-3 pl-3 border-l border-[var(--morgi-border)] ml-1">
+            {% if request.user.is_authenticated and request.user.profile_image %}<img src="{{ request.user.profile_image.url }}" alt="bank logo" class="w-8 h-8 rounded-full object-cover flex-shrink-0" style="border:2px solid #0077B6;">{% else %}<div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style="background: linear-gradient(135deg, #0077B6, #0A2B4E);">{% if request.user.is_authenticated %}{{ request.user.initials|default:"B" }}{% else %}B{% endif %}</div>{% endif %}
+            <div class="hidden lg:block text-left">
+              <p class="text-sm font-medium leading-none">{% if request.user.is_authenticated %}{{ request.user.get_full_name|default:request.user.email }}{% else %}Bank{% endif %}</p>
+              <p class="text-xs text-[var(--morgi-muted)]">{% if request.user.is_authenticated %}Bank Officer{% else %}Guest{% endif %}</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="flex-1 overflow-y-auto bg-[#f8fafc] dark:bg-[#081e36] p-4 lg:p-6">
+        {% block content %}{% endblock %}
+      </main>
+
+      <!-- Footer -->
+      <footer class="border-t border-[var(--morgi-border)] bg-[var(--morgi-card)] px-6 py-3 text-center text-xs text-[var(--morgi-muted)] hidden lg:block">
+        © 2026 MorgiHome • Bank Portal • Built with Shadcn Admin Template
+      </footer>
+    </div>
+  </div>
+
+  <!-- Action feedback: every button action shows a SweetAlert - nothing happens silently. -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  {% if messages %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function(){
+      {% for message in messages %}
+      Swal.fire({
+        icon: '{% if 'success' in message.tags %}success{% elif 'error' in message.tags %}error{% elif 'warning' in message.tags %}warning{% else %}info{% endif %}',
+        title: '{{ message|escapejs }}',
+        toast: true, position: 'top-end', showConfirmButton: false, timer: 5000, timerProgressBar: true
+      });
+      {% endfor %}
+    });
+  </script>
+  {% endif %}
+
+  <!-- Scripts -->
+  <script src="{% static 'bank/js/theme.js' %}"></script>
+  <script src="{% static 'bank/js/bank.js' %}?v=20260908-1"></script>
+  <script>
+    function morgiRenderIcons(){
+      try{
+        if(window.lucide && lucide.createIcons){ lucide.createIcons(); }
+      }catch(e){}
+      // Safety net: any icon name the lucide version does not know would stay
+      // blank - swap it for a generic dot so no empty holes remain.
+      try{
+        document.querySelectorAll('i[data-lucide]').forEach(function(el){
+          el.setAttribute('data-lucide', 'circle');
+        });
+        if(window.lucide && lucide.createIcons){ lucide.createIcons(); }
+      }catch(e){}
+    }
+    morgiRenderIcons();
+    // Mobile sidebar logic
+    const openBtn = document.getElementById('open-sidebar');
+    const closeBtn = document.getElementById('close-sidebar');
+    const mobileSidebar = document.getElementById('mobile-sidebar');
+    const overlay = document.getElementById('mobile-overlay');
+    function openSidebar() {
+      mobileSidebar.classList.remove('-translate-x-full');
+      overlay.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeSidebar() {
+      mobileSidebar.classList.add('-translate-x-full');
+      overlay.classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+    if (openBtn) openBtn.addEventListener('click', openSidebar);
+    if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+    if (overlay) overlay.addEventListener('click', closeSidebar);
+
+    // Logout - clears JWT and session
+    function bankLogout(){
+      try{ localStorage.clear(); sessionStorage.clear(); }catch(e){}
+      // For JWT (localStorage) + session: go to login page
+      window.location.href = "/login/";
+    }
+
+    // Search - Enter or Cmd+K
+    const searchInput = document.getElementById('bankSearchInput');
+    if(searchInput){
+      searchInput.addEventListener('keypress', function(e){
+        if(e.key === 'Enter'){
+          const q = this.value.trim();
+          if(q) window.location.href = "{% url 'bank_search' %}?q=" + encodeURIComponent(q);
+        }
+      });
+    }
+    document.addEventListener('keydown', function(e){
+      if((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k'){
+        e.preventDefault();
+        const inp = document.getElementById('bankSearchInput');
+        if(inp) inp.focus();
+      }
+    });
+
+    // Notifications dropdown - persistent server data (stored in DB, never vanishes).
+    function bankGetCookie(name){
+      const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+      return v ? v.pop() : '';
+    }
+    window.bankMarkAllRead = function(){
+      // Persist on the server so the count clears and STAYS cleared.
+      fetch("{% url 'bank_notifications_read' %}", {method:'POST', headers:{'X-CSRFToken': bankGetCookie('csrftoken'), 'X-Requested-With': 'XMLHttpRequest'}}).catch(function(){});
+      const nc = document.getElementById('notifCount'); if(nc) nc.style.display='none';
+      const sb = document.getElementById('sidebarNotifBadge'); if(sb) sb.style.display='none';
+      const nd = document.getElementById('notifDropdown'); if(nd) nd.classList.add('hidden');
+      return false;
+    };
+    function bankNotifApply(unread){
+      const nc = document.getElementById('notifCount');
+      const sb = document.getElementById('sidebarNotifBadge');
+      if(!unread){ if(nc) nc.style.display='none'; if(sb) sb.style.display='none'; return; }
+      if(nc){ nc.textContent = unread; nc.style.display='flex'; }
+      if(sb){ sb.textContent = unread; sb.style.display=''; }
+    }
+    // Load count as soon as the page opens (do not wait for a click)
+    fetch("{% url 'bank_notifications_api' %}")
+      .then(r=>r.json())
+      .then(data=>{ bankNotifApply(data.unread||0); })
+      .catch(()=>{});
+    const notifBtn = document.getElementById('notifBtn');
+    const notifDropdown = document.getElementById('notifDropdown');
+    const notifList = document.getElementById('notifList');
+    const notifCount = document.getElementById('notifCount');
+    if(notifBtn && notifDropdown){
+      notifBtn.addEventListener('click', function(e){
+        e.stopPropagation();
+        notifDropdown.classList.toggle('hidden');
+        if(!notifDropdown.classList.contains('hidden') && notifList){
+          fetch("{% url 'bank_notifications_api' %}")
+            .then(r=>r.json())
+            .then(data=>{
+              if(data.notifications){
+                if(!data.notifications.length){
+                  notifList.innerHTML = '<div class="p-6 text-center text-sm text-[var(--morgi-muted)]">No notifications.<br>You are all caught up.</div>';
+                } else {
+                  notifList.innerHTML = data.notifications.map(n=>`
+                    <a href="${n.link||'#'}" class="block p-3 flex gap-3 hover:bg-[var(--morgi-border)]/30 border-b border-[var(--morgi-border)]/50 last:border-0">
+                      <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${n.color==='blue'?'bg-blue-100 text-blue-600':n.color==='emerald'?'bg-emerald-100 text-emerald-600':'bg-amber-100 text-amber-600'}">
+                        <i data-lucide="${n.icon}" class="w-4 h-4"></i>
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium truncate">${n.title}</p>
+                        <p class="text-xs text-[var(--morgi-muted)] line-clamp-2">${n.message}</p>
+                        <p class="text-[11px] text-[var(--morgi-muted)] mt-1">${n.time} ${!n.read?'<span class=&quot;w-2 h-2 bg-blue-500 rounded-full inline-block ml-1&quot;></span>':''}</p>
+                      </div>
+                    </a>
+                  `).join('');
+                }
+                morgiRenderIcons();
+                bankNotifApply(data.unread||0);
+              }
+            }).catch(()=>{ if(notifList) notifList.innerHTML='<div class="p-4 text-center text-sm text-[var(--morgi-muted)]">No notifications</div>'; });
+        }
+      });
+      document.addEventListener('click', function(e){
+        if(notifDropdown && !notifDropdown.contains(e.target) && !notifBtn.contains(e.target)){
+          notifDropdown.classList.add('hidden');
+        }
+      });
+    }
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

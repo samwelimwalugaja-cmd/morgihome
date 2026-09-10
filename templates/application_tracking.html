@@ -1,0 +1,106 @@
+{% extends 'plainadmin/base.html' %}
+{% load static %}
+{% block title %}Application Tracking - MorgiHome{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/application_tracking.css' %}?v=1" rel="stylesheet">
+{% endblock %}
+{% block content %}
+<div class="pagetitle">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div>
+      <h1>Application Tracking</h1>
+      <nav>
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a href="/dashboard/">Home</a></li>
+          <li class="breadcrumb-item"><a href="/customer/applications/">My Applications</a></li>
+          <li class="breadcrumb-item active">Tracking</li>
+        </ol>
+      </nav>
+      <p class="text-muted small mb-0">Track your loan applications through all stages</p>
+    </div>
+    <span class="badge bg-primary" id="trackRef">#APP-2025-001</span>
+  </div>
+</div>
+
+<section class="section">
+  <div class="card" id="trackSummaryCard">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-3"><small class="text-muted d-block">Application</small><strong id="trackAppId">#APP-2025-001</strong></div>
+        <div class="col-md-3"><small class="text-muted d-block">Property</small><strong id="trackProperty">—</strong></div>
+        <div class="col-md-3"><small class="text-muted d-block">Loan Amount</small><strong id="trackLoan" style="color:#0077B6">—</strong></div>
+        <div class="col-md-3"><small class="text-muted d-block">Status</small><span id="trackStatus" class="status-badge status-pending">—</span></div>
+      </div>
+      <div class="mt-3 small text-muted">Applied Date: <span id="trackDate">—</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h5 class="card-title mb-0">📋 APPLICATION PROGRESS</h5></div>
+    <div class="card-body">
+      <div class="progress-timeline">
+        <div class="progress" style="height:6px;background:#E9ECEF"><div id="trackProgressBar" class="progress-bar" style="width:16%;background:#0077B6"></div></div>
+        <div class="row g-2 mt-3 text-center small" id="trackSteps">
+          <div class="col-2"><div class="step-icon done">✅</div><div class="step-label">Submitted</div><small class="text-success">15/01/25</small><div class="step-status text-success">Done</div></div>
+          <div class="col-2"><div class="step-icon current">🔄</div><div class="step-label">Document Review</div><small>Pending</small><div class="step-status" style="color:#0077B6">Current</div></div>
+          <div class="col-2"><div class="step-icon pending">⏳</div><div class="step-label">Valuation</div><small>Pending</small><div class="step-status text-muted">Pending</div></div>
+          <div class="col-2"><div class="step-icon pending">⏳</div><div class="step-label">Credit Assessment</div><small>Pending</small><div class="step-status text-muted">Pending</div></div>
+          <div class="col-2"><div class="step-icon pending">⏳</div><div class="step-label">Approval</div><small>Pending</small><div class="step-status text-muted">Pending</div></div>
+          <div class="col-2"><div class="step-icon pending">⏳</div><div class="step-label">Disbursement</div><small>Pending</small><div class="step-status text-muted">Pending</div></div>
+        </div>
+      </div>
+      <div class="mt-4 p-3 rounded" style="background:#f8fafc;border-left:4px solid #0077B6">
+        <div><strong>Current Stage:</strong> <span id="trackCurrent">Document Verification</span></div>
+        <div><strong>Next Step:</strong> <span id="trackNext">Property Valuation</span></div>
+        <div><strong>Estimated Time:</strong> <span id="trackEstimate">2-3 days</span></div>
+        <div class="mt-2 small text-muted">💡 <span id="trackTip">The current stage is document review. Please make sure you have uploaded all required documents to speed up the process.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-header"><h6 class="card-title mb-0">🤖 AI Assessment</h6></div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between py-2 border-bottom"><span>Affordability</span><strong id="trackAfford" style="color:#0077B6">—</strong></div>
+          <div class="d-flex justify-content-between py-2 border-bottom"><span>Risk Score</span><strong id="trackRisk">—</strong></div>
+          <div class="d-flex justify-content-between py-2"><span>DTI Ratio</span><strong id="trackDti">—</strong></div>
+          <div class="alert alert-info mt-3 mb-0 small" id="trackRec">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-header d-flex align-items-center justify-content-between"><h6 class="card-title mb-0">📎 Documents</h6><button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadDocsModal"><i class="bi bi-cloud-upload me-1"></i> Upload Documents</button></div>
+        <div class="card-body" id="trackDocs">
+          <div class="d-flex justify-content-between py-2 border-bottom"><span>✅ ID Copy</span><span class="badge bg-success">Uploaded</span></div>
+          <div class="d-flex justify-content-between py-2 border-bottom"><span>✅ Pay Slip</span><span class="badge bg-success">Uploaded</span></div>
+          <div class="d-flex justify-content-between py-2"><span>⏳ Bank Statement</span><span class="badge bg-warning text-dark">Pending</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mt-4">
+    <div class="card-header"><h6 class="card-title mb-0">📝 NOTES FROM BANK/LAWYER</h6></div>
+    <div class="card-body">
+      <div class="alert alert-light border"><i class="bi bi-chat-left-text me-2"></i> <span id="trackNotes">Please upload the bank statements for the last 3 months.</span><br><small class="text-muted">— Loan Officer, <span id="trackNotesDate">2025-01-16</span></small></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body d-flex gap-2 flex-wrap">
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadDocsModal"><i class="bi bi-cloud-upload me-1"></i> Upload Documents</button>
+      <a href="#" class="btn btn-outline-secondary"><i class="bi bi-chat-dots me-1"></i> Contact Support</a>
+      <a href="#" id="trackViewFull" class="btn btn-outline-primary"><i class="bi bi-file-text me-1"></i> View Full Application</a>
+    </div>
+  </div>
+</section>
+
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadDocsModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Upload Documents</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="file" id="trackFileInput" class="form-control" multiple accept=".pdf,.jpg,.png"><div class="form-text">PDF, JPG, PNG allowed</div></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" id="trackUploadBtn">Upload</button></div></div></div></div>
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'js/application_tracking.js' %}?v=1"></script>
+{% endblock %}

@@ -1,0 +1,194 @@
+{% extends 'bank/bank_base.html' %}
+{% load static humanize %}
+{% block title %}Dashboard - MorgiHome Bank{% endblock %}
+{% block page_title %}Bank Dashboard{% endblock %}
+{% block breadcrumb %}Bank / Dashboard{% endblock %}
+
+{% block content %}
+<!-- Welcome -->
+<div class="morgi-card p-5 lg:p-6 mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4" style="background: linear-gradient(135deg, #0A2B4E 0%, #0077B6 100%); color: white; border: none;">
+  <div>
+    <h1 class="text-xl lg:text-2xl font-bold">Welcome back, {{ bank_name }} 👋</h1>
+    <p class="text-sm text-white/80 mt-1">Here is today's bank operations summary • {{ today }}</p>
+  </div>
+  <div class="flex gap-2">
+    <a href="{% url 'bank_applications' %}" class="px-4 py-2 bg-white text-[#0A2B4E] rounded-lg text-sm font-semibold hover:bg-white/90">View Applications</a>
+    <a href="{% url 'bank_reports' %}" class="px-4 py-2 bg-white/20 text-white border border-white/30 rounded-lg text-sm font-semibold hover:bg-white/30 backdrop-blur">Download Report</a>
+  </div>
+</div>
+
+<!-- Quick Stats - 4 cards (REAL DATA) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="morgi-card p-5">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-widest text-[var(--morgi-muted)]">Total Applications</p>
+        <p class="text-2xl font-bold mt-2">{{ stats.total|intcomma }}</p>
+        <p class="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1"><i data-lucide="trending-up" class="w-3 h-3"></i> live from database</p>
+      </div>
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background: #0077B611; color: #0077B6;"><i data-lucide="files" class="w-6 h-6"></i></div>
+    </div>
+  </div>
+  <div class="morgi-card p-5">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-widest text-[var(--morgi-muted)]">Pending</p>
+        <p class="text-2xl font-bold mt-2">{{ stats.pending|intcomma }}</p>
+        <p class="text-xs text-amber-600 dark:text-amber-400 mt-1">need review</p>
+      </div>
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"><i data-lucide="clock-3" class="w-6 h-6"></i></div>
+    </div>
+  </div>
+  <div class="morgi-card p-5">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-widest text-[var(--morgi-muted)]">Approved</p>
+        <p class="text-2xl font-bold mt-2">{{ stats.approved|intcomma }}</p>
+        <p class="text-xs text-emerald-600 dark:text-emerald-400 mt-1">{{ approval_rate }}% approval rate</p>
+      </div>
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"><i data-lucide="circle-check" class="w-6 h-6"></i></div>
+    </div>
+  </div>
+  <div class="morgi-card p-5">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-widest text-[var(--morgi-muted)]">Total Disbursed (TZS)</p>
+        <p class="text-2xl font-bold mt-2">{{ stats.disbursed_amount|floatformat:0|intcomma }}</p>
+        <p class="text-xs text-[var(--morgi-muted)] mt-1">{{ stats.disbursed|intcomma }} executed contracts</p>
+      </div>
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background: #0A2B4E11; color: #0A2B4E;"><i data-lucide="banknote" class="w-6 h-6"></i></div>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+  <!-- Applications Chart -->
+  <div class="lg:col-span-2 morgi-card p-5 lg:p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-semibold">Applications per Month</h3>
+      <select class="morgi-input rounded-lg px-3 py-1.5 text-sm">
+        <option>Last 6 Months</option>
+        <option>This year</option>
+      </select>
+    </div>
+    <div class="h-[260px] relative">
+      <canvas id="appsChart"></canvas>
+    </div>
+    <div class="flex items-center gap-4 mt-4 text-xs">
+      <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full" style="background:#0077B6"></span> Applications</span>
+      <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full" style="background:#0A2B4E"></span> Approved</span>
+      <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> Disbursed</span>
+    </div>
+  </div>
+
+  <!-- AI Risk Summary + Quick Actions -->
+  <div class="space-y-6">
+    <div class="morgi-card p-5">
+      <h3 class="font-semibold mb-3 flex items-center gap-2"><i data-lucide="brain" class="w-4 h-4" style="color:#0077B6"></i> AI Risk Summary</h3>
+      <div class="space-y-3">
+        <div class="flex items-center justify-between p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
+          <div><p class="text-sm font-semibold text-emerald-800 dark:text-emerald-200">Low Risk</p><p class="text-xs text-emerald-600 dark:text-emerald-400">{{ ai_summary.low|intcomma }} applications ({{ ai_summary.low_pct }}%)</p></div>
+          <span class="text-lg font-bold text-emerald-700 dark:text-emerald-300">{{ ai_summary.low_pct }}%</span>
+        </div>
+        <div class="flex items-center justify-between p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+          <div><p class="text-sm font-semibold text-amber-800 dark:text-amber-200">Medium Risk</p><p class="text-xs text-amber-600 dark:text-amber-400">{{ ai_summary.medium|intcomma }} applications ({{ ai_summary.medium_pct }}%)</p></div>
+          <span class="text-lg font-bold text-amber-700 dark:text-amber-300">{{ ai_summary.medium_pct }}%</span>
+        </div>
+        <div class="flex items-center justify-between p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
+          <div><p class="text-sm font-semibold text-red-800 dark:text-red-200">High Risk</p><p class="text-xs text-red-600 dark:text-red-400">{{ ai_summary.high|intcomma }} applications ({{ ai_summary.high_pct }}%)</p></div>
+          <span class="text-lg font-bold text-red-700 dark:text-red-300">{{ ai_summary.high_pct }}%</span>
+        </div>
+      </div>
+      <a href="{% url 'bank_applications' %}" class="mt-4 w-full btn-primary py-2.5 rounded-lg text-sm font-medium flex items-center justify-center gap-2">Explore Applications <i data-lucide="arrow-right" class="w-4 h-4"></i></a>
+    </div>
+
+    <div class="morgi-card p-5">
+      <h3 class="font-semibold mb-3">Quick Actions</h3>
+      <div class="grid grid-cols-2 gap-2">
+        <a href="{% url 'bank_applications' %}" class="p-3 rounded-lg border border-[var(--morgi-border)] hover:bg-[var(--morgi-border)]/40 text-center transition">
+          <i data-lucide="file-search" class="w-6 h-6 mx-auto mb-1" style="color:#0077B6"></i>
+          <span class="text-xs font-medium">Review Applications</span>
+        </a>
+        <a href="{% url 'bank_contracts' %}" class="p-3 rounded-lg border border-[var(--morgi-border)] hover:bg-[var(--morgi-border)]/40 text-center transition">
+          <i data-lucide="file-signature" class="w-6 h-6 mx-auto mb-1" style="color:#0077B6"></i>
+          <span class="text-xs font-medium">Contracts</span>
+        </a>
+        <a href="{% url 'bank_repayments' %}" class="p-3 rounded-lg border border-[var(--morgi-border)] hover:bg-[var(--morgi-border)]/40 text-center transition">
+          <i data-lucide="hand-coins" class="w-6 h-6 mx-auto mb-1" style="color:#0077B6"></i>
+          <span class="text-xs font-medium">Repayments</span>
+        </a>
+        <a href="{% url 'bank_reports' %}" class="p-3 rounded-lg border border-[var(--morgi-border)] hover:bg-[var(--morgi-border)]/40 text-center transition">
+          <i data-lucide="download" class="w-6 h-6 mx-auto mb-1" style="color:#0077B6"></i>
+          <span class="text-xs font-medium">Download Report</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Applications -->
+<div class="morgi-card overflow-hidden">
+  <div class="p-5 flex items-center justify-between border-b border-[var(--morgi-border)]">
+    <h3 class="font-semibold">Recent Applications</h3>
+    <a href="{% url 'bank_applications' %}" class="text-sm font-medium" style="color:#0077B6">View all →</a>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full morgi-table">
+      <thead>
+        <tr class="text-left">
+          <th class="px-5 py-3">Customer</th>
+          <th class="px-5 py-3">Amount</th>
+          <th class="px-5 py-3">Type</th>
+          <th class="px-5 py-3">AI Risk</th>
+          <th class="px-5 py-3">Status</th>
+          <th class="px-5 py-3">Date</th>
+          <th class="px-5 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="text-sm">
+        {% for app in recent_applications %}
+        <tr>
+          <td class="px-5 py-3.5"><div class="flex items-center gap-3">{% if app.photo %}<img src="{{ app.photo }}" alt="{{ app.customer }}" class="w-8 h-8 rounded-full object-cover flex-shrink-0" style="border:2px solid #0077B6;">{% else %}<div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style="background: linear-gradient(135deg, #0077B6, #0A2B4E);">{{ app.initials|default:"-" }}</div>{% endif %}<div><p class="font-medium">{{ app.customer }}</p><p class="text-xs text-[var(--morgi-muted)]">{{ app.ref|default:app.id }}</p></div></div></td>
+          <td class="px-5 py-3.5 font-semibold">TZS {{ app.amount|floatformat:0|intcomma }}</td>
+          <td class="px-5 py-3.5">{{ app.type }}</td>
+          <td class="px-5 py-3.5"><span class="px-2.5 py-1 rounded-full text-xs font-medium {% if app.ai_risk == 'Low' %}bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300{% elif app.ai_risk == 'Medium' %}bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300{% else %}bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300{% endif %}">{{ app.ai_risk }} - {{ app.ai_percent }}%</span></td>
+          <td class="px-5 py-3.5"><span class="px-2.5 py-1 rounded-full text-xs font-medium border">{{ app.status|title }}</span></td>
+          <td class="px-5 py-3.5 text-[var(--morgi-muted)]">{{ app.date }}</td>
+          <td class="px-5 py-3.5"><a href="{{ app.link }}" class="btn-primary px-3 py-1.5 rounded-lg text-xs font-medium">View</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="px-5 py-10 text-center text-[var(--morgi-muted)]">No applications yet. New mortgage applications will appear here.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const ctx = document.getElementById('appsChart');
+  if (ctx) {
+    const isDark = document.documentElement.classList.contains('dark');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: {{ chart_labels|safe }},
+        datasets: [
+          { label: 'Applications', data: {{ chart_applications|safe }}, backgroundColor: '#0077B6', borderRadius: 6, barThickness: 18 },
+          { label: 'Approved', data: {{ chart_approved|safe }}, backgroundColor: '#0A2B4E', borderRadius: 6, barThickness: 18 },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: isDark ? '#94a3b8' : '#64748b' } },
+          y: { grid: { color: isDark ? '#1e3a5f' : '#e2e8f0' }, ticks: { color: isDark ? '#94a3b8' : '#64748b' }, beginAtZero: true }
+        }
+      }
+    });
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends 'plainadmin/base.html' %}
+{% load static %}
+{% block title %}Admin Verification Dashboard - MorgiHome{% endblock %}
+{% block content %}
+<div class="pagetitle">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div>
+      <h1>Admin Verification Dashboard</h1>
+      <nav><ol class="breadcrumb mb-0"><li class="breadcrumb-item"><a href="/dashboard/">Home</a></li><li class="breadcrumb-item active">Admin Verify</li></ol></nav>
+    </div>
+    <div class="d-flex gap-2">
+      <select id="adminFilter" class="form-select form-select-sm" style="width:180px">
+        <option value="all">All Users</option>
+        <option value="pending_identity">Pending Identity</option>
+        <option value="not_verified">Not Verified</option>
+      </select>
+      <button id="adminRefresh" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+    </div>
+  </div>
+</div>
+
+<section class="section">
+  <div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="card text-center"><div class="card-body"><h4 id="adminStatTotal">—</h4><small class="text-muted">Total Users</small></div></div></div>
+    <div class="col-md-3"><div class="card text-center"><div class="card-body"><h4 id="adminStatPending" style="color:#FFC107">—</h4><small class="text-muted">Pending Identity</small></div></div></div>
+    <div class="col-md-3"><div class="card text-center"><div class="card-body"><h4 id="adminStatVerified" style="color:#28A745">—</h4><small class="text-muted">Fully Verified</small></div></div></div>
+    <div class="col-md-3"><div class="card text-center"><div class="card-body"><h4 id="adminStatNotVerified" style="color:#DC3545">—</h4><small class="text-muted">Not Verified</small></div></div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header d-flex align-items-center justify-content-between">
+      <h5 class="card-title mb-0">Users Requiring Verification</h5>
+      <input type="text" id="adminSearch" class="form-control form-control-sm" placeholder="Search username/email..." style="width:220px">
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead><tr><th>User</th><th>Role</th><th>Email</th><th>Phone</th><th>Email</th><th>Phone</th><th>Identity</th><th>Overall</th><th>Actions</th></tr></thead>
+          <tbody id="adminTableBody"><tr><td colspan="9" class="text-center py-4"><div class="spinner-border text-primary"></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Reject Identity</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><label class="form-label">Reason</label><textarea id="rejectReason" class="form-control" rows="3" placeholder="Enter rejection reason"></textarea></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-danger" id="rejectConfirm">Reject</button></div></div></div></div>
+
+<script>
+(function(){
+  const API='/api/';
+  function authHeaders(){ const t=localStorage.getItem('access'); const h={'Content-Type':'application/json'}; if(t) h['Authorization']='Bearer '+t; return h; }
+  let allUsers=[];
+  let pendingRejectId=null;
+
+  async function fetchUsers(){
+    const filter=document.getElementById('adminFilter').value;
+    try{
+      const res=await fetch(API+'admin/verify/?status='+filter, {headers: authHeaders()});
+      if(!res.ok) throw new Error('Failed - admin only');
+      const data=await res.json();
+      allUsers=data;
+      render();
+    }catch(e){
+      document.getElementById('adminTableBody').innerHTML=`<tr><td colspan="9" class="text-center text-danger py-4">Failed: ${e.message} (Admin only)</td></tr>`;
+    }
+  }
+
+  function render(){
+    const q=(document.getElementById('adminSearch').value||'').toLowerCase();
+    let filtered=allUsers.filter(u=> !q || u.username.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
+    document.getElementById('adminStatTotal').textContent=allUsers.length;
+    document.getElementById('adminStatPending').textContent=allUsers.filter(u=>u.identity_status==='pending').length;
+    document.getElementById('adminStatVerified').textContent=allUsers.filter(u=>u.is_verified).length;
+    document.getElementById('adminStatNotVerified').textContent=allUsers.filter(u=>!u.is_verified).length;
+    const tbody=document.getElementById('adminTableBody');
+    if(!filtered.length){ tbody.innerHTML='<tr><td colspan="9" class="text-center text-muted py-4">No users found</td></tr>'; return; }
+    tbody.innerHTML=filtered.map(u=>{
+      const badge=(v)=> v?'<span class="badge bg-success">✅ Verified</span>':'<span class="badge bg-warning">⏳ Pending</span>';
+      const idBadge=u.identity_status==='verified'?'<span class="badge bg-success">Verified</span>':u.identity_status==='pending'?'<span class="badge bg-warning">Pending</span>':u.identity_status==='rejected'?'<span class="badge bg-danger">Rejected</span>':'<span class="badge bg-secondary">Not Submitted</span>';
+      const overall=u.is_verified?'<span class="badge bg-success">Fully Verified</span>':(u.verification_level==='partially_verified'?'<span class="badge bg-warning">Partially</span>':'<span class="badge bg-danger">Not Verified</span>');
+      const actions=u.identity_status==='pending'?`<button class="btn btn-sm btn-success me-1" onclick="approveIdentity(${u.id})">Approve</button><button class="btn btn-sm btn-danger" onclick="openReject(${u.id})">Reject</button>`:'<span class="text-muted small">—</span>';
+      return `<tr><td><strong>${u.username}</strong></td><td><span class="badge bg-light text-dark border">${u.role}</span></td><td class="small">${u.email}</td><td class="small">${u.phone_number||'—'}</td><td>${badge(u.email_verified)}</td><td>${badge(u.phone_verified)}</td><td>${idBadge}</td><td>${overall}</td><td>${actions}</td></tr>`;
+    }).join('');
+  }
+
+  window.approveIdentity=async function(id){
+    if(!confirm('Approve identity for user '+id+'?')) return;
+    try{
+      const res=await fetch(API+'admin/verify/'+id+'/', {method:'POST', headers: authHeaders(), body: JSON.stringify({action:'approve'})});
+      const data=await res.json();
+      showToast(data.message,'success');
+      fetchUsers();
+    }catch(e){ showToast(e.message,'error'); }
+  };
+  window.openReject=function(id){
+    pendingRejectId=id;
+    new bootstrap.Modal(document.getElementById('rejectModal')).show();
+  };
+  document.getElementById('rejectConfirm')?.addEventListener('click', async ()=>{
+    const reason=document.getElementById('rejectReason').value;
+    if(!pendingRejectId) return;
+    try{
+      const res=await fetch(API+'admin/verify/'+pendingRejectId+'/', {method:'POST', headers: authHeaders(), body: JSON.stringify({action:'reject', reason})});
+      const data=await res.json();
+      showToast(data.message,'success');
+      bootstrap.Modal.getInstance(document.getElementById('rejectModal')).hide();
+      fetchUsers();
+    }catch(e){ showToast(e.message,'error'); }
+  });
+
+  document.getElementById('adminFilter')?.addEventListener('change', fetchUsers);
+  document.getElementById('adminSearch')?.addEventListener('input', render);
+  document.getElementById('adminRefresh')?.addEventListener('click', fetchUsers);
+
+  fetchUsers();
+})();
+</script>
+{% endblock %}

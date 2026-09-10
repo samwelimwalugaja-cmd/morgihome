@@ -1,0 +1,156 @@
+{% extends 'plainadmin/base.html' %}
+{% load static %}
+{% block title %}Account Verification - MorgiHome{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/verification.css' %}?v=1" rel="stylesheet">
+{% endblock %}
+{% block content %}
+<div class="pagetitle">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div>
+      <h1>🔐 Account Verification</h1>
+      <nav><ol class="breadcrumb mb-0"><li class="breadcrumb-item"><a href="/dashboard/">Home</a></li><li class="breadcrumb-item active">Verification</li></ol></nav>
+      <p class="text-muted small mb-0">Confirm your account to fully use the system</p>
+    </div>
+  </div>
+</div>
+
+<section class="section">
+  <!-- Progress Bar -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <h6 class="card-title mb-3">📊 Verification Progress</h6>
+      <div class="progress" style="height:10px;background:#E9ECEF"><div id="verifyProgressBar" class="progress-bar" style="width:0%;background:#0077B6"></div></div>
+      <div class="row g-2 mt-3 text-center small" id="verifySteps">
+        <div class="col-4"><div class="step-icon" id="step1Icon" style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;background:#E9ECEF;color:#6C757D">1</div><div class="step-label">Email</div><small id="step1Status" class="text-muted">Pending</small></div>
+        <div class="col-4"><div class="step-icon" id="step2Icon" style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;background:#E9ECEF;color:#6C757D">2</div><div class="step-label">Phone</div><small id="step2Status" class="text-muted">Pending</small></div>
+        <div class="col-4"><div class="step-icon" id="step3Icon" style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;background:#E9ECEF;color:#6C757D">3</div><div class="step-label">NIN</div><small id="step3Status" class="text-muted">Pending</small></div>
+      </div>
+      <div class="text-center mt-3">
+        <span class="badge bg-light text-dark border" id="verifyOverallBadge">0/3 Completed</span>
+        <span class="ms-2" id="verifyOverallStatus">Not Verified</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Step 1: Email -->
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <h5 class="card-title mb-0">📧 Step 1: Email Verification</h5>
+          <span id="emailBadge2" class="badge bg-warning">Pending</span>
+        </div>
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div>
+              <div class="text-muted small">Status: <span id="emailStatus2">⏳ Pending</span></div>
+              <div class="small">Email: <strong id="emailValue">—</strong></div>
+            </div>
+            <div id="emailVerifiedIcon" style="display:none;color:#28A745;font-size:24px">✅</div>
+          </div>
+          <div id="emailPendingBox" class="p-3 bg-light rounded">
+            <p class="small text-muted mb-2">We have sent a verification link to your email. Please click the link that was sent.</p>
+            <button id="resendEmailBtn2" class="btn btn-sm btn-outline-primary"><i class="bi bi-arrow-clockwise me-1"></i> Resend Verification Email</button>
+            <div id="emailResendResult" class="mt-2 small" style="display:none"></div>
+          </div>
+          <div id="emailVerifiedBox" class="alert alert-success d-none"><i class="bi bi-check-circle me-2"></i> Email verified successfully! ✅</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Phone -->
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <h5 class="card-title mb-0">📱 Step 2: Phone Verification</h5>
+          <span id="phoneBadge2" class="badge bg-warning">Pending</span>
+        </div>
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div>
+              <div class="text-muted small">Status: <span id="phoneStatus2">⏳ Pending</span></div>
+              <div class="small">Phone Number: <strong id="phoneValue">—</strong></div>
+            </div>
+            <div id="phoneVerifiedIcon" style="display:none;color:#28A745;font-size:24px">✅</div>
+          </div>
+          <div id="phonePendingBox" class="p-3 bg-light rounded">
+            <p class="small text-muted mb-2">We have sent an OTP code to your phone number. Enter the OTP code below:</p>
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+              <input type="text" id="otpInput2" class="form-control text-center" placeholder="_ _ _ _ _ _" maxlength="6" style="max-width:200px;letter-spacing:8px;font-weight:700;font-size:18px">
+              <button id="verifyPhoneBtn2" class="btn btn-primary" style="background:#0077B6;border-color:#0077B6"><i class="bi bi-check-lg me-1"></i> Verify Phone</button>
+              <button id="resendOtpBtn2" class="btn btn-outline-secondary"><i class="bi bi-arrow-clockwise me-1"></i> Resend OTP</button>
+            </div>
+            <small class="text-muted mt-2 d-block">💡 The OTP code expires after 5 minutes.</small>
+            <div id="phoneResult" class="mt-2" style="display:none"></div>
+          </div>
+          <div id="phoneVerifiedBox" class="alert alert-success d-none"><i class="bi bi-check-circle me-2"></i> Phone verified! ✅</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: NIN -->
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <h5 class="card-title mb-0">🪪 Step 3: NIN (NIDA) Verification</h5>
+          <span id="ninBadge2" class="badge bg-secondary">Not Submitted</span>
+        </div>
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div>
+              <div class="text-muted small">Status: <span id="ninStatus2">⏳ Pending</span></div>
+              <div class="small">NIN: <strong id="ninValue">—</strong></div>
+            </div>
+            <div id="ninVerifiedIcon" style="display:none;color:#28A745;font-size:24px">✅</div>
+          </div>
+          <div id="ninPendingBox" class="p-3 bg-light rounded">
+            <p class="small text-muted mb-2">Please enter your NIN and upload your ID.</p>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">NIN Number <span class="text-danger">*</span></label>
+                <input type="text" id="ninNumberInput" class="form-control" placeholder="____________________" maxlength="20">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Upload ID <span class="text-danger">*</span></label>
+                <input type="file" id="ninFileInput" class="form-control" accept=".jpg,.jpeg,.png,.pdf">
+                <small class="text-muted">JPG, PNG, PDF</small>
+                <div id="ninFilePreview" class="mt-2"></div>
+              </div>
+            </div>
+            <button id="submitNinBtn" class="btn btn-primary mt-3" style="background:#0077B6;border-color:#0077B6"><i class="bi bi-cloud-upload me-1"></i> Submit NIN Verification</button>
+            <div id="ninResult" class="mt-2" style="display:none"></div>
+            <small class="text-muted mt-2 d-block">💡 The ID will be verified by an admin within 1-2 days.</small>
+          </div>
+          <div id="ninVerifiedBox" class="alert alert-success d-none"><i class="bi bi-check-circle me-2"></i> NIN verified! ✅</div>
+          <div id="ninPendingAlert" class="alert alert-warning d-none"><i class="bi bi-clock me-2"></i> NIN submitted, awaiting admin verification (Pending).</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="card mt-4">
+    <div class="card-header"><h5 class="card-title mb-0">📋 Verification Summary</h5></div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead><tr><th>Step</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td>Email</td><td id="summaryEmailStatus"><span class="badge bg-warning">Pending</span></td><td id="summaryEmailDate">-</td><td id="summaryEmailAction"><button class="btn btn-sm btn-outline-primary" onclick="document.getElementById('resendEmailBtn2').click()">Resend</button></td></tr>
+            <tr><td>Phone</td><td id="summaryPhoneStatus"><span class="badge bg-warning">Pending</span></td><td id="summaryPhoneDate">-</td><td id="summaryPhoneAction"><a href="#phonePendingBox" class="btn btn-sm btn-primary" style="background:#0077B6;border-color:#0077B6">Verify Now</a></td></tr>
+            <tr><td>NIN</td><td id="summaryNinStatus"><span class="badge bg-secondary">Not Submitted</span></td><td id="summaryNinDate">-</td><td id="summaryNinAction"><button class="btn btn-sm btn-outline-primary" onclick="document.getElementById('ninNumberInput').focus()">Submit</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="p-3 bg-light d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div><strong>Overall Status:</strong> <span id="summaryOverall">🟡 0/3 Verifications Completed</span></div>
+        <span id="summaryOverallBadge" class="badge bg-warning">Partially Verified</span>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'js/verification.js' %}?v=1"></script>
+{% endblock %}

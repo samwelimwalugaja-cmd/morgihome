@@ -1,0 +1,881 @@
+{% extends 'plainadmin/base.html' %}
+{% load static %}
+{% block title %}Dashboard - MorgiHome{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/mortgage_application_form.css' %}?v=1" rel="stylesheet">
+{% endblock %}
+{% block content %}
+
+<!-- Overview View -->
+<section id="view-overview" class="view-section">
+  <!-- Verification banner REMOVED per spec - Email/Phone/NIN have been removed. Customers/Sellers do not need verification. -->
+  <div id="verifyBanner" class="d-none" style="display:none !important"></div>
+  <div class="page-header">
+    <h1 class="page-title">Dashboard</h1>
+    <nav class="breadcrumb"><a href="{% url 'home' %}" class="breadcrumb-item">MorgiHome</a><span class="breadcrumb-item active">Dashboard</span><span class="breadcrumb-item active"><span class="badge bg-light text-dark border ms-2" id="roleBadge">ROLE</span></span></nav>
+  </div>
+  <div class="row g-4 mb-4">
+    <div class="col-12 col-xxl-5">
+      <div class="card welcome-card h-100">
+        <div class="card-body d-flex align-items-center">
+          <div class="welcome-content">
+            <p class="welcome-greeting">Welcome back,</p>
+            <h3 class="welcome-name" id="welcomeName">User!</h3>
+            <div class="welcome-date"><i class="bi bi-calendar3"></i> <span id="currentDate"></span> <i class="bi bi-clock ms-3"></i> <span id="currentTime"></span></div>
+            <p class="text-muted small mb-0 mt-2" id="welcomeMsg">Manage everything from here.</p>
+          </div>
+          <div class="welcome-illustration d-none d-md-block"><img src="{% static 'images/morgihome-official-logo.png' %}" alt="Welcome" style="width:180px;opacity:1;filter:none;" onerror="this.style.display='none'"></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-md-4 col-xxl">
+      <div class="card stat-card card-lift h-100">
+        <div class="card-body">
+          <div class="stat-card-header"><span class="stat-card-label">Properties</span><div class="stat-card-icon primary"><i class="bi bi-houses"></i></div></div>
+          <div class="stat-card-value" id="statProperties">—</div>
+          <div class="stat-card-change positive" id="statPropertiesSub">Available</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-md-4 col-xxl">
+      <div class="card stat-card card-lift h-100">
+        <div class="card-body">
+          <div class="stat-card-header"><span class="stat-card-label">Mortgages</span><div class="stat-card-icon success"><i class="bi bi-bank"></i></div></div>
+          <div class="stat-card-value" id="statMortgages">—</div>
+          <div class="stat-card-change" id="statMortgagesSub">Applications</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-md-4 col-xxl">
+      <div class="card stat-card card-lift h-100">
+        <div class="card-body">
+          <div class="stat-card-header"><span class="stat-card-label">Role</span><div class="stat-card-icon info"><i class="bi bi-shield-check"></i></div></div>
+          <div class="stat-card-value" id="statRole">—</div>
+          <div class="stat-card-change"><span id="statRoleSub">Authenticated</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-12 col-xl-8">
+      <div class="card h-100">
+        <div class="card-header d-flex align-items-center justify-content-between"><h5 class="card-title mb-0">Properties Overview <small class="text-muted">| Recent</small></h5><button class="btn-icon" id="refreshBtn" title="Refresh"><i class="bi bi-arrow-clockwise"></i></button></div>
+        <div class="card-body"><div id="propertiesTableWrap"><div class="text-center py-4"><div class="spinner-border text-primary"></div><p class="text-muted mt-2">Loading...</p></div></div></div>
+      </div>
+    </div>
+    <div class="col-12 col-xl-4">
+      <div class="card h-100">
+        <div class="card-header"><h5 class="card-title mb-0">Quick Actions</h5></div>
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            <a href="#" class="btn btn-primary btn-sm" data-view="properties"><i class="bi bi-search me-1"></i> Browse Properties</a>
+            <a href="#" class="btn btn-success btn-sm" data-view="mortgages"><i class="bi bi-bank me-1"></i> Apply for Mortgage</a>
+            <a href="#" class="btn btn-outline-secondary btn-sm" data-view="profile"><i class="bi bi-person me-1"></i> View Profile</a>
+          </div>
+          <div class="mt-4">
+            <h6 class="fw-bold" style="font-size:14px">Role Guide</h6>
+            <p class="text-muted small" id="roleHintText">—</p>
+          </div>
+        </div>
+      </div>
+      <div class="card mt-4">
+        <div class="card-header"><h5 class="card-title mb-0">System Info</h5></div>
+        <div class="card-body p-0">
+          <ul class="list-group list-group-flush small">
+            <li class="list-group-item d-flex justify-content-between"><span class="text-muted">API</span><span class="fw-medium" id="apiStatus">Checking...</span></li>
+            <li class="list-group-item d-flex justify-content-between"><span class="text-muted">User ID</span><span class="fw-medium" id="infoUserId">—</span></li>
+            <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Email</span><span class="fw-medium" id="infoEmail">—</span></li>
+            <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Wallet</span><span class="fw-medium" id="statBalance">TZS 0</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Properties View - Detailed (as per spec) -->
+<section id="view-properties" class="view-section d-none">
+  <div class="page-header"><h1 class="page-title">Properties</h1><nav class="breadcrumb"><a href="#" class="breadcrumb-item" data-view="overview">Dashboard</a><span class="breadcrumb-item active">Properties</span></nav><p class="text-muted small mb-0">Search your dream home</p></div>
+  <div class="card mb-3"><div class="card-body"><div class="row g-3"><div class="col-md-4"><label class="form-label">Search</label><input type="text" id="propSearchInput" class="form-control" placeholder="Search houses, areas, or descriptions..."></div><div class="col-md-2"><label class="form-label">Property Type</label><select id="propTypeFilter" class="form-select"><option value="all">All Types</option><option value="house">House</option><option value="apartment">Apartment</option><option value="land">Land</option><option value="commercial">Commercial</option></select></div><div class="col-md-2"><label class="form-label">Bedrooms</label><select id="propBedFilter" class="form-select"><option value="any">Any</option><option value="1">1+ Bedrooms</option><option value="2">2+ Bedrooms</option><option value="3">3+ Bedrooms</option><option value="4">4+ Bedrooms</option></select></div><div class="col-md-2"><label class="form-label">Location</label><select id="propLocationFilter" class="form-select"><option value="all">All Locations</option></select></div><div class="col-md-2"><label class="form-label">Sort By</label><select id="propSort" class="form-select"><option value="newest">Newest First</option><option value="price_low">Price: Low to High</option><option value="price_high">Price: High to Low</option><option value="popular">Most Popular</option></select></div><div class="col-md-3"><label class="form-label">Min Price</label><input type="number" id="propMinPrice" class="form-control" placeholder="Min Price"></div><div class="col-md-3"><label class="form-label">Max Price</label><input type="number" id="propMaxPrice" class="form-control" placeholder="Max Price"></div><div class="col-md-6 d-flex align-items-end gap-2"><button id="propApplyFilters" class="btn btn-primary" style="background:#0077B6;border-color:#0077B6">Apply Filters</button><button id="propClearFilters" class="btn btn-outline-secondary">Clear All</button><button id="gridViewBtn" class="btn btn-outline-secondary btn-sm ms-2"><i class="bi bi-grid"></i> Grid</button><button id="listViewBtn" class="btn btn-outline-secondary btn-sm"><i class="bi bi-list"></i> List</button></div></div></div></div>
+  <div class="card mb-3"><div class="card-body"><h6>📊 Quick Stats</h6><div class="row g-3 text-center"><div class="col-6 col-md-3"><div class="border rounded p-3"><div class="text-muted small">Total Properties</div><h4 id="statTotal">—</h4></div></div><div class="col-6 col-md-3"><div class="border rounded p-3"><div class="text-muted small">Available</div><h4 id="statAvailable" style="color:#28A745">—</h4></div></div><div class="col-6 col-md-3"><div class="border rounded p-3"><div class="text-muted small">Sold</div><h4 id="statSold" style="color:#DC3545">—</h4></div></div><div class="col-6 col-md-3"><div class="border rounded p-3"><div class="text-muted small">Under Review</div><h4 id="statReview" style="color:#FFC107">—</h4></div></div></div></div></div>
+  <div id="propertiesContainer" class="row g-4"><div class="col-12 text-center py-5"><div class="spinner-border text-primary"></div></div></div>
+  <div class="card mt-4"><div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2"><span class="text-muted small" id="propPaginationInfo">Showing 0 of 0 properties</span><nav><ul class="pagination pagination-sm mb-0" id="propPagination"></ul></nav></div></div>
+</section>
+
+<!-- Mortgages View - Apply Mortgage ONLY (Customer) -->
+<section id="view-mortgages" class="view-section d-none">
+  <div class="pagetitle">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <div>
+        <h1>Apply for Mortgage</h1>
+        <nav>
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="#" data-view="overview">Home</a></li>
+            <li class="breadcrumb-item active">Apply</li>
+          </ol>
+        </nav>
+      </div>
+      <a href="#" class="btn btn-outline-secondary" data-view="applications"><i class="bi bi-list me-1"></i> My Applications</a>
+    </div>
+  </div>
+  <section class="section">
+    <form id="mortgageApplyForm" enctype="multipart/form-data" novalidate>
+      <div class="card mortgage-form-card">
+        <div class="card-header">
+          <h5 class="card-title mb-0"><i class="bi bi-house me-2 text-primary"></i> Mortgage Application Form</h5>
+          <p class="text-muted small mb-0 mt-1">Customer (Customer/Borrower) - Fill all required fields</p>
+        </div>
+        <div class="card-body">
+          <div class="form-section">
+            <h6 class="form-section-title"><span class="section-number">1</span> Property Details <small class="text-muted">- House Details</small></h6>
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Property Selection <span class="text-danger">*</span></label>
+                <select id="maProperty" name="property" class="form-select" required>
+                  <option value="">-- Select Property --</option>
+                </select>
+                <div class="form-text">Choose the property you want to purchase</div>
+              </div>
+            </div>
+          </div>
+          <div class="form-section">
+            <h6 class="form-section-title"><span class="section-number">2</span> Loan Details <small class="text-muted">- Loan Details</small></h6>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Loan Amount (TZS) <span class="text-danger">*</span></label>
+                <input type="number" id="maLoanAmount" name="loan_amount" class="form-control" placeholder="Enter the loan amount (TZS)" required min="1000000" step="100000">
+                <small class="text-muted">Example: 50,000,000</small>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Down Payment (TZS) <span class="text-danger">*</span></label>
+                <input type="number" id="maDownPayment" name="down_payment" class="form-control" placeholder="Enter the deposit amount (TZS)" required min="0" step="100000">
+                <small class="text-muted">Example: 10,000,000</small>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Repayment Period (Months) <span class="text-danger">*</span></label>
+                <select id="maRepaymentPeriod" name="repayment_period" class="form-select" required>
+                  <option value="">-- Select Period --</option>
+                  <option value="12">12 months (1 year)</option>
+                  <option value="24">24 months (2 years)</option>
+                  <option value="36">36 months (3 years)</option>
+                  <option value="48">48 months (4 years)</option>
+                  <option value="60">60 months (5 years)</option>
+                  <option value="72">72 months (6 years)</option>
+                  <option value="84">84 months (7 years)</option>
+                  <option value="96">96 months (8 years)</option>
+                  <option value="108">108 months (9 years)</option>
+                  <option value="120">120 months (10 years)</option>
+                  <option value="180">180 months (15 years)</option>
+                  <option value="240" selected>240 months (20 years)</option>
+                  <option value="300">300 months (25 years)</option>
+                  <option value="360">360 months (30 years)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="form-section">
+            <h6 class="form-section-title"><span class="section-number">3</span> Financial Details <small class="text-muted">- Financial Details</small></h6>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Monthly Income (TZS) <span class="text-danger">*</span></label>
+                <input type="number" id="maMonthlyIncome" name="monthly_income" class="form-control" placeholder="Enter your monthly income (TZS)" required min="0" step="10000">
+                <small class="text-muted">Example: 2,000,000</small>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Monthly Expenses (TZS) <span class="text-danger">*</span></label>
+                <input type="number" id="maMonthlyExpenses" name="monthly_expenses" class="form-control" placeholder="Enter your monthly expenses (TZS)" required min="0" step="10000">
+                <small class="text-muted">Example: 800,000</small>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Employment Status <span class="text-danger">*</span></label>
+                <select id="maEmploymentStatus" name="employment_status" class="form-select" required>
+                  <option value="">-- Select --</option>
+                  <option value="employed">Employed</option>
+                  <option value="self_employed">Self-Employed</option>
+                  <option value="business_owner">Business Owner</option>
+                  <option value="unemployed">Unemployed</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="form-section">
+            <h6 class="form-section-title"><span class="section-number">4</span> Documents <small class="text-muted">- Documents</small></h6>
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Upload Documents</label>
+                <input type="file" id="maDocuments" name="documents" class="form-control" multiple accept=".pdf,.jpg,.jpeg,.png">
+                <div class="form-text">Allowed: ID/Passport Copy, Pay Slip, Bank Statement, Tax Clearance. Multiple files allowed. Supported: PDF, JPG, PNG</div>
+                <div id="maFileList" class="mt-2 small text-muted"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card ai-assessment-card d-none" id="maAiCard">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <h5 class="card-title mb-0"><i class="bi bi-cpu me-2 text-primary"></i> AI Affordability Assessment</h5>
+          <span class="badge bg-primary">Live Calculation</span>
+        </div>
+        <div class="card-body">
+          <div class="row g-4">
+            <div class="col-md-6 col-xl-3"><div class="ai-metric"><div class="ai-metric-label">Monthly Installment</div><div class="ai-metric-value" id="maMonthlyInstallment">—</div><small class="text-muted">Amount to pay every month</small></div></div>
+            <div class="col-md-6 col-xl-3"><div class="ai-metric"><div class="ai-metric-label">Affordability Score</div><div class="ai-metric-value" id="maAffordabilityScore">—</div><small class="text-muted" id="maAffordabilityDesc"></small><div class="progress mt-2" style="height:8px"><div id="maAffordabilityBar" class="progress-bar" style="width:0%"></div></div></div></div>
+            <div class="col-md-6 col-xl-3"><div class="ai-metric"><div class="ai-metric-label">Risk Score</div><div class="ai-metric-value" id="maRiskScore">—</div><small class="text-muted" id="maRiskDesc"></small><div class="progress mt-2" style="height:8px"><div id="maRiskBar" class="progress-bar" style="width:0%"></div></div></div></div>
+            <div class="col-md-6 col-xl-3"><div class="ai-metric"><div class="ai-metric-label">DTI Ratio</div><div class="ai-metric-value" id="maDtiRatio">—</div><small class="text-muted">Debt-to-Income Ratio</small><div class="progress mt-2" style="height:8px"><div id="maDtiBar" class="progress-bar bg-info" style="width:0%"></div></div></div></div>
+          </div>
+          <div class="alert mt-4 mb-0" id="maRecommendation" style="display:none"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body d-flex gap-3 justify-content-end flex-wrap">
+          <a href="#" class="btn btn-secondary" data-view="overview" style="background:#0A2B4E;border-color:#0A2B4E;min-width:140px"><i class="bi bi-x-lg me-1"></i> Cancel</a>
+          <button type="submit" class="btn btn-primary" id="maSubmitBtn" style="background:#0077B6;border-color:#0077B6;min-width:180px"><i class="bi bi-send me-1"></i> Submit Application</button>
+        </div>
+      </div>
+    </form>
+  </section>
+</section>
+
+<!-- Applications View - My Applications (Customer) -->
+<section id="view-applications" class="view-section d-none">
+  <div class="pagetitle">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <div>
+        <h1>My Mortgage Applications</h1>
+        <nav>
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="#" data-view="overview">Home</a></li>
+            <li class="breadcrumb-item active">My Applications</li>
+          </ol>
+        </nav>
+        <p class="text-muted small mb-0">View all your loan applications and their statuses</p>
+      </div>
+      <a href="#" class="btn btn-primary" data-view="mortgages" style="background:#0077B6;border-color:#0077B6"><i class="bi bi-plus-lg me-1"></i> Apply for New Mortgage</a>
+    </div>
+  </div>
+  <section class="section">
+    <div class="filters-bar">
+      <div class="filter-group"><label>Status Filter</label><select id="appStatusFilter2" class="form-select"><option value="all">All</option><option value="pending">Pending</option><option value="document_verification">Document Verification</option><option value="valuation">Valuation</option><option value="credit_assessment">Credit Assessment</option><option value="approved">Approved</option><option value="rejected">Rejected</option><option value="disbursed">Disbursed</option></select></div>
+      <div class="filter-group"><label>Search</label><input type="text" id="appSearch2" class="form-control" placeholder="Search by property name or loan amount"></div>
+      <div class="filter-group"><label>Sort By</label><select id="appSort2" class="form-select"><option value="newest">Newest First</option><option value="oldest">Oldest First</option><option value="highest">Highest Amount</option><option value="lowest">Lowest Amount</option></select></div>
+    </div>
+    <div id="applicationsGrid2" class="applications-grid">
+      <div class="text-center py-5 w-100" style="grid-column:1/-1"><div class="spinner-border text-primary"></div></div>
+    </div>
+    <div id="applicationsEmpty2" class="text-center py-5 d-none">
+      <i class="bi bi-inbox" style="font-size:48px;color:#cbd5e0"></i><h6 class="mt-3">No applications found</h6><p class="text-muted">You have not applied for any mortgage yet.</p><a href="#" class="btn btn-primary" data-view="mortgages">Apply Now</a>
+    </div>
+  </section>
+</section>
+
+<!-- Tracking View -->
+<section id="view-tracking" class="view-section d-none">
+  <div class="pagetitle">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <div>
+        <h1>Application Tracking</h1>
+        <nav><ol class="breadcrumb mb-0"><li class="breadcrumb-item"><a href="#" data-view="overview">Home</a></li><li class="breadcrumb-item"><a href="#" data-view="applications">My Applications</a></li><li class="breadcrumb-item active">Tracking</li></ol></nav>
+        <p class="text-muted small mb-0">Track your loan applications through all stages</p>
+      </div>
+      <span class="badge bg-primary" id="dashTrackRef">#APP-2025-001</span>
+    </div>
+  </div>
+  <section class="section">
+    <div class="card">
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-3"><small class="text-muted d-block">Application</small><strong id="dashTrackAppId">#APP-2025-001</strong></div>
+          <div class="col-md-3"><small class="text-muted d-block">Property</small><strong id="dashTrackProperty">—</strong></div>
+          <div class="col-md-3"><small class="text-muted d-block">Loan Amount</small><strong id="dashTrackLoan" style="color:#0077B6">—</strong></div>
+          <div class="col-md-3"><small class="text-muted d-block">Status</small><span id="dashTrackStatus" class="status-badge status-pending">—</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h5 class="card-title mb-0">📋 APPLICATION PROGRESS</h5></div>
+      <div class="card-body">
+        <div class="progress" style="height:6px;background:#E9ECEF"><div id="dashTrackProgressBar" class="progress-bar" style="width:16%;background:#0077B6"></div></div>
+        <div class="row g-2 mt-3 text-center small" id="dashTrackSteps">
+          <div class="col-2"><div class="step-icon done">✅</div><div class="step-label">Submitted</div></div>
+          <div class="col-2"><div class="step-icon current">🔄</div><div class="step-label">Document Review</div></div>
+          <div class="col-2"><div class="step-icon pending">⏳</div><div class="step-label">Valuation</div></div>
+          <div class="col-2"><div class="step-icon pending">⏳</div><div class="step-label">Credit Assessment</div></div>
+          <div class="col-2"><div class="step-icon pending">⏳</div><div class="step-label">Approval</div></div>
+          <div class="col-2"><div class="step-icon pending">⏳</div><div class="step-label">Disbursement</div></div>
+        </div>
+        <div class="mt-4 p-3 rounded" style="background:#f8fafc;border-left:4px solid #0077B6">
+          <div><strong>Current Stage:</strong> <span id="dashTrackCurrent">Document Verification</span></div>
+          <div><strong>Next Step:</strong> <span id="dashTrackNext">Property Valuation</span></div>
+          <div><strong>Estimated Time:</strong> 2-3 days</div>
+        </div>
+      </div>
+    </div>
+    <div class="row g-4">
+      <div class="col-lg-6"><div class="card h-100"><div class="card-header"><h6 class="card-title mb-0">🤖 AI Assessment</h6></div><div class="card-body"><div class="d-flex justify-content-between py-2 border-bottom"><span>Affordability</span><strong id="dashTrackAfford">—</strong></div><div class="d-flex justify-content-between py-2 border-bottom"><span>Risk Score</span><strong id="dashTrackRisk">—</strong></div><div class="d-flex justify-content-between py-2"><span>DTI Ratio</span><strong id="dashTrackDti">—</strong></div></div></div></div>
+      <div class="col-lg-6"><div class="card h-100"><div class="card-header"><h6 class="card-title mb-0">📎 Documents</h6></div><div class="card-body" id="dashTrackDocs"><div class="text-muted small">Loading...</div></div></div></div>
+    </div>
+    <div class="card mt-4"><div class="card-body d-flex gap-2 flex-wrap"><a href="#" class="btn btn-primary" data-view="applications"><i class="bi bi-arrow-left me-1"></i> Back to Applications</a><a href="/customer/track/1/" class="btn btn-outline-primary"><i class="bi bi-box-arrow-up-right me-1"></i> Open Full Tracking Page</a></div></div>
+  </section>
+</section>
+
+<!-- Profile View -->
+<section id="view-profile" class="view-section d-none">
+  <div class="page-header"><h1 class="page-title">Profile</h1><nav class="breadcrumb"><a href="#" class="breadcrumb-item" data-view="overview">Dashboard</a><span class="breadcrumb-item active">Profile</span></nav></div>
+  <div class="row g-4">
+    <div class="col-12 col-xl-4">
+      <div class="card text-center">
+        <div class="card-body">
+          <div id="profileAvatarWrap" class="d-flex justify-content-center mb-3"></div>
+          <h4 id="profileName" class="mb-1">—</h4>
+          <p id="profileRole" class="text-muted small mb-2">—</p>
+          <div class="mb-3"><span class="badge bg-success" id="profileVerified">Not Verified</span></div>
+          <div class="mt-3 text-start">
+            <label class="form-label small">Change Photo</label>
+            <input type="file" id="profileImageInput" accept="image/*" class="form-control form-control-sm mb-2">
+            <button class="btn btn-primary btn-sm w-100" id="uploadAvatarBtn"><i class="bi bi-cloud-upload me-1"></i> Upload Photo</button>
+            <small class="text-muted d-block mt-2">If no photo is set, the initial of your name will be shown. Selecting a file shows instant preview in the circle before upload.</small>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-xl-8">
+      <div class="card">
+        <div class="card-header"><h5 class="card-title mb-0">Details</h5></div>
+        <div class="card-body">
+          <div class="row g-3" id="profileDetails"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Notifications View - Exact ModernAdmin Template -->
+<section id="view-notifications" class="view-section d-none">
+  <div class="pagetitle">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <div>
+        <h1>Notification Center</h1>
+        <nav>
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="#" data-view="overview">Home</a></li>
+            <li class="breadcrumb-item active">Notifications</li>
+          </ol>
+        </nav>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#notifSettingsModal"><i class="bi bi-gear"></i></button>
+        <button class="btn btn-outline-primary"><i class="bi bi-check2-all me-1"></i> Mark All Read</button>
+      </div>
+    </div>
+  </div>
+  <section class="section">
+    <div class="row">
+      <div class="col-lg-3">
+        <div class="card notif-stats-card">
+          <div class="card-body">
+            <div class="notif-stats-grid">
+              <div class="notif-stat-item"><div class="notif-stat-value unread">7</div><div class="notif-stat-label">Unread</div></div>
+              <div class="notif-stat-item"><div class="notif-stat-value">42</div><div class="notif-stat-label">This Week</div></div>
+              <div class="notif-stat-item"><div class="notif-stat-value">186</div><div class="notif-stat-label">This Month</div></div>
+              <div class="notif-stat-item"><div class="notif-stat-value alerts">3</div><div class="notif-stat-label">Alerts</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h6 class="card-title mb-0">Categories</h6></div>
+          <div class="card-body p-0">
+            <nav class="notif-categories">
+              <a href="#" class="notif-category active"><span class="notif-category-icon"><i class="bi bi-inbox"></i></span><span class="notif-category-label">All Notifications</span><span class="notif-category-count">42</span></a>
+              <a href="#" class="notif-category"><span class="notif-category-icon text-danger"><i class="bi bi-shield-exclamation"></i></span><span class="notif-category-label">Security</span><span class="notif-category-count">3</span></a>
+              <a href="#" class="notif-category"><span class="notif-category-icon text-success"><i class="bi bi-bag-check"></i></span><span class="notif-category-label">Orders</span><span class="notif-category-count">12</span></a>
+              <a href="#" class="notif-category"><span class="notif-category-icon text-primary"><i class="bi bi-people"></i></span><span class="notif-category-label">Team</span><span class="notif-category-count">8</span></a>
+              <a href="#" class="notif-category"><span class="notif-category-icon text-warning"><i class="bi bi-credit-card"></i></span><span class="notif-category-label">Billing</span><span class="notif-category-count">5</span></a>
+              <a href="#" class="notif-category"><span class="notif-category-icon text-info"><i class="bi bi-gear"></i></span><span class="notif-category-label">System</span><span class="notif-category-count">14</span></a>
+            </nav>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h6 class="card-title mb-0">Quick Actions</h6></div>
+          <div class="card-body"><div class="d-grid gap-2"><button class="btn btn-outline-secondary btn-sm"><i class="bi bi-archive me-2"></i>Archive All Read</button><button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-2"></i>Clear All</button></div></div>
+        </div>
+      </div>
+      <div class="col-lg-9">
+        <div class="card notif-inbox-card">
+          <div class="card-header">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+              <div class="d-flex align-items-center gap-3">
+                <div class="form-check"><input class="form-check-input" type="checkbox" id="selectAllNotif"></div>
+                <div class="dropdown"><button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">Actions</button><ul class="dropdown-menu"><li><a class="dropdown-item" href="#"><i class="bi bi-check2 me-2"></i>Mark as read</a></li><li><a class="dropdown-item" href="#"><i class="bi bi-archive me-2"></i>Archive</a></li><li><hr class="dropdown-divider"></li><li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i>Delete</a></li></ul></div>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <div class="input-group input-group-sm" style="width: 200px;"><input type="text" class="form-control" placeholder="Search notifications..."><button class="btn btn-outline-secondary" type="button"><i class="bi bi-search"></i></button></div>
+                <div class="dropdown"><button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-sort-down"></i></button><ul class="dropdown-menu dropdown-menu-end"><li><a class="dropdown-item active" href="#">Newest First</a></li><li><a class="dropdown-item" href="#">Oldest First</a></li><li><a class="dropdown-item" href="#">Unread First</a></li></ul></div>
+              </div>
+            </div>
+          </div>
+          <div class="card-body p-0">
+            <div class="notif-section"><div class="notif-section-header"><span>Today</span><span class="notif-section-count">4 notifications</span></div>
+              <div class="notif-item unread"><div class="notif-item-select"><input class="form-check-input" type="checkbox"></div><div class="notif-item-avatar danger"><i class="bi bi-shield-exclamation"></i></div><div class="notif-item-content"><div class="notif-item-header"><h6>Unusual Sign-in Activity Detected</h6><span class="notif-item-time">10 min ago</span></div><p>We noticed a new sign-in from Windows device in San Francisco, CA. If this wasn't you, please secure your account immediately.</p><div class="notif-item-footer"><span class="notif-item-tag danger">Security</span><div class="notif-item-actions"><button class="btn btn-sm btn-danger">Secure Account</button><button class="btn btn-sm btn-outline-secondary">It was me</button></div></div></div></div>
+              <div class="notif-item unread"><div class="notif-item-select"><input class="form-check-input" type="checkbox"></div><div class="notif-item-avatar success"><i class="bi bi-bag-check"></i></div><div class="notif-item-content"><div class="notif-item-header"><h6>Order #ORD-2024-7842 Delivered</h6><span class="notif-item-time">2 hours ago</span></div><p>Great news! Your order has been delivered to 123 Main St. Please confirm receipt.</p><div class="notif-item-footer"><span class="notif-item-tag success">Orders</span><div class="notif-item-actions"><button class="btn btn-sm btn-primary">Confirm Receipt</button><button class="btn btn-sm btn-outline-secondary">View Order</button></div></div></div></div>
+              <div class="notif-item unread"><div class="notif-item-select"><input class="form-check-input" type="checkbox"></div><div class="notif-item-avatar primary"><i class="bi bi-person-plus"></i></div><div class="notif-item-content"><div class="notif-item-header"><h6>Mike Chen joined your team</h6><span class="notif-item-time">3 hours ago</span></div><p>Mike Chen has accepted your invitation and joined the Engineering team as a Senior Developer.</p><div class="notif-item-footer"><span class="notif-item-tag primary">Team</span><div class="notif-item-actions"><button class="btn btn-sm btn-outline-primary">View Profile</button></div></div></div></div>
+              <div class="notif-item"><div class="notif-item-select"><input class="form-check-input" type="checkbox"></div><div class="notif-item-avatar info"><i class="bi bi-rocket-takeoff"></i></div><div class="notif-item-content"><div class="notif-item-header"><h6>New Feature: Advanced Analytics</h6><span class="notif-item-time">5 hours ago</span></div><p>We've launched Advanced Analytics! Get deeper insights into your data with custom reports and real-time dashboards.</p><div class="notif-item-footer"><span class="notif-item-tag info">Updates</span><div class="notif-item-actions"><button class="btn btn-sm btn-outline-primary">Try Now</button></div></div></div></div>
+            </div>
+            <div class="notif-section"><div class="notif-section-header"><span>Yesterday</span><span class="notif-section-count">3 notifications</span></div>
+              <div class="notif-item"><div class="notif-item-select"><input class="form-check-input" type="checkbox"></div><div class="notif-item-avatar warning"><i class="bi bi-credit-card"></i></div><div class="notif-item-content"><div class="notif-item-header"><h6>Payment Method Expiring Soon</h6><span class="notif-item-time">Yesterday, 4:30 PM</span></div><p>Your Visa ending in 4242 will expire next month. Update your payment method to avoid service interruption.</p><div class="notif-item-footer"><span class="notif-item-tag warning">Billing</span><div class="notif-item-actions"><button class="btn btn-sm btn-primary">Update Card</button></div></div></div></div>
+              <div class="notif-item"><div class="notif-item-select"><input class="form-check-input" type="checkbox"></div><div class="notif-item-avatar success"><i class="bi bi-check-circle"></i></div><div class="notif-item-content"><div class="notif-item-header"><h6>Task Completed: Q4 Report</h6><span class="notif-item-time">Yesterday, 2:15 PM</span></div><p>Emily Davis completed the Q4 Financial Report task. The report is now ready for review.</p><div class="notif-item-footer"><span class="notif-item-tag success">Tasks</span><div class="notif-item-actions"><button class="btn btn-sm btn-outline-primary">View Report</button></div></div></div></div>
+              <div class="notif-item"><div class="notif-item-select"><input class="form-check-input" type="checkbox"></div><div class="notif-item-avatar secondary"><i class="bi bi-chat-dots"></i></div><div class="notif-item-content"><div class="notif-item-header"><h6>New Comment on Your Post</h6><span class="notif-item-time">Yesterday, 11:00 AM</span></div><p>James Wilson commented on your post "Building Scalable Microservices": "Great insights! Would love to see more about..."</p><div class="notif-item-footer"><span class="notif-item-tag secondary">Social</span><div class="notif-item-actions"><button class="btn btn-sm btn-outline-secondary">View Comment</button></div></div></div></div>
+            </div>
+            <div class="notif-section"><div class="notif-section-header"><span>This Week</span><span class="notif-section-count">5 notifications</span></div>
+              <div class="notif-item"><div class="notif-item-select"><input class="form-check-input" type="checkbox"></div><div class="notif-item-avatar info"><i class="bi bi-arrow-up-circle"></i></div><div class="notif-item-content"><div class="notif-item-header"><h6>System Maintenance Complete</h6><span class="notif-item-time">Monday, 6:00 AM</span></div><p>Scheduled maintenance has been completed. Version 3.2.0 is now live with improved performance and new features.</p><div class="notif-item-footer"><span class="notif-item-tag info">System</span><div class="notif-item-actions"><button class="btn btn-sm btn-outline-primary">View Changelog</button></div></div></div></div>
+              <div class="notif-item"><div class="notif-item-select"><input class="form-check-input" type="checkbox"></div><div class="notif-item-avatar success"><i class="bi bi-trophy"></i></div><div class="notif-item-content"><div class="notif-item-header"><h6>Achievement Unlocked: Power User</h6><span class="notif-item-time">Sunday, 3:45 PM</span></div><p>Congratulations! You've logged in 100 days in a row. You've earned the "Power User" badge.</p><div class="notif-item-footer"><span class="notif-item-tag success">Achievements</span><div class="notif-item-actions"><button class="btn btn-sm btn-outline-primary">View Badges</button></div></div></div></div>
+              <div class="notif-item"><div class="notif-item-select"><input class="form-check-input" type="checkbox"></div><div class="notif-item-avatar warning"><i class="bi bi-hdd"></i></div><div class="notif-item-content"><div class="notif-item-header"><h6>Storage Quota Warning</h6><span class="notif-item-time">Saturday, 9:00 AM</span></div><p>You've used 80% of your storage quota (40GB of 50GB). Consider upgrading or removing unused files.</p><div class="notif-item-footer"><span class="notif-item-tag warning">System</span><div class="notif-item-actions"><button class="btn btn-sm btn-primary">Upgrade Storage</button><button class="btn btn-sm btn-outline-secondary">Manage Files</button></div></div></div></div>
+            </div>
+          </div>
+          <div class="card-footer bg-transparent"><div class="d-flex align-items-center justify-content-between flex-wrap gap-2"><span class="text-muted small">Showing 12 of 186 notifications</span><nav><ul class="pagination pagination-sm mb-0"><li class="page-item disabled"><a class="page-link" href="#">Previous</a></li><li class="page-item active"><a class="page-link" href="#">1</a></li><li class="page-item"><a class="page-link" href="#">2</a></li><li class="page-item"><a class="page-link" href="#">3</a></li><li class="page-item"><a class="page-link" href="#">Next</a></li></ul></nav></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <div class="modal fade" id="notifSettingsModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title"><i class="bi bi-bell-fill me-2"></i>Notification Preferences</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="row"><div class="col-md-6"><h6 class="mb-3">Delivery Channels</h6><div class="notif-pref-item"><div class="notif-pref-info"><h6><i class="bi bi-envelope me-2"></i>Email Notifications</h6><p>Receive notifications via email</p></div><div class="form-check form-switch"><input class="form-check-input" type="checkbox" checked></div></div><div class="notif-pref-item"><div class="notif-pref-info"><h6><i class="bi bi-app-indicator me-2"></i>Push Notifications</h6><p>Browser push notifications</p></div><div class="form-check form-switch"><input class="form-check-input" type="checkbox" checked></div></div><div class="notif-pref-item"><div class="notif-pref-info"><h6><i class="bi bi-phone me-2"></i>SMS Notifications</h6><p>Text message alerts</p></div><div class="form-check form-switch"><input class="form-check-input" type="checkbox"></div></div></div><div class="col-md-6"><h6 class="mb-3">Notification Types</h6><div class="notif-pref-item"><div class="notif-pref-info"><h6><i class="bi bi-shield text-danger me-2"></i>Security Alerts</h6><p>Sign-in attempts, password changes</p></div><div class="form-check form-switch"><input class="form-check-input" type="checkbox" checked></div></div><div class="notif-pref-item"><div class="notif-pref-info"><h6><i class="bi bi-bag text-success me-2"></i>Order Updates</h6><p>Shipping, delivery confirmations</p></div><div class="form-check form-switch"><input class="form-check-input" type="checkbox" checked></div></div><div class="notif-pref-item"><div class="notif-pref-info"><h6><i class="bi bi-megaphone text-warning me-2"></i>Marketing</h6><p>Promotions and offers</p></div><div class="form-check form-switch"><input class="form-check-input" type="checkbox"></div></div></div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary">Save Preferences</button></div></div></div></div>
+</section>
+
+<!-- Settings View - Exact ModernAdmin Template -->
+<section id="view-settings" class="view-section d-none">
+  <div class="pagetitle">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <div><h1>Account Settings</h1><nav><ol class="breadcrumb mb-0"><li class="breadcrumb-item"><a href="#" data-view="overview">Home</a></li><li class="breadcrumb-item active">Settings</li></ol></nav></div>
+      <a href="#" class="btn btn-outline-secondary" data-view="profile"><i class="bi bi-person me-1"></i> View Profile</a>
+    </div>
+  </div>
+  <section class="section">
+    <div class="row">
+      <div class="col-lg-3">
+        <div class="card settings-user-card"><div class="card-body text-center"><div class="settings-user-avatar" style="position:relative;display:inline-block"><span id="settingsAvatarWrap"><span class="avatar-initial avatar-initial--lg">M</span></span><label class="settings-avatar-edit" for="settingsAvatarInput" style="position:absolute;bottom:0;right:0;background:#0077B6;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer"><i class="bi bi-pencil"></i></label><input type="file" id="settingsAvatarInput" class="d-none" accept="image/*"></div><h6 class="mt-3 mb-1" id="settingsUserName">User</h6><p class="text-muted small mb-2" id="settingsUserEmail">—</p><span class="badge bg-success-light text-success" style="background:rgba(33,150,83,.12);color:#219653">Premium Account</span></div></div>
+        <div class="card"><div class="card-body p-2"><nav class="settings-nav-menu" role="tablist">
+          <a href="#account" class="settings-nav-link active" data-bs-toggle="pill" data-bs-target="#account" role="tab"><i class="bi bi-person"></i><span>Account</span></a>
+          <a href="#security" class="settings-nav-link" data-bs-toggle="pill" data-bs-target="#security" role="tab"><i class="bi bi-shield-lock"></i><span>Security</span></a>
+          <a href="#preferences" class="settings-nav-link" data-bs-toggle="pill" data-bs-target="#preferences" role="tab"><i class="bi bi-sliders"></i><span>Preferences</span></a>
+          <a href="#billing" class="settings-nav-link" data-bs-toggle="pill" data-bs-target="#billing" role="tab"><i class="bi bi-credit-card"></i><span>Billing</span></a>
+          <a href="#integrations" class="settings-nav-link" data-bs-toggle="pill" data-bs-target="#integrations" role="tab"><i class="bi bi-plug"></i><span>Integrations</span></a>
+          <a href="#danger" class="settings-nav-link text-danger" data-bs-toggle="pill" data-bs-target="#danger" role="tab"><i class="bi bi-exclamation-triangle"></i><span>Danger Zone</span></a>
+        </nav></div></div>
+        <div class="card bg-primary-light border-0" style="background:rgba(0,119,182,.08)"><div class="card-body"><div class="d-flex align-items-center gap-3"><div class="settings-help-icon bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:40px;height:40px"><i class="bi bi-question-circle"></i></div><div><h6 class="mb-1">Need Help?</h6><p class="small text-muted mb-2">Check our documentation or contact support.</p><a href="#" class="btn btn-sm btn-primary">Get Help</a></div></div></div></div>
+      </div>
+      <div class="col-lg-9">
+        <div class="tab-content">
+          <div class="tab-pane fade show active" id="account" role="tabpanel">
+            <div class="card"><div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-person me-2"></i>Personal Information</h5></div><div class="card-body"><form><div class="row g-3"><div class="col-md-6"><label class="form-label">First Name</label><input type="text" class="form-control" id="settingsFirstName" value=""></div><div class="col-md-6"><label class="form-label">Last Name</label><input type="text" class="form-control" id="settingsLastName" value=""></div><div class="col-md-6"><label class="form-label">Email Address</label><div class="input-group"><input type="email" class="form-control" id="settingsEmail" value=""><span class="input-group-text text-success"><i class="bi bi-check-circle-fill"></i></span></div></div><div class="col-md-6"><label class="form-label">Phone Number</label><input type="tel" class="form-control" id="settingsPhone" value=""></div><div class="col-12"><label class="form-label">Bio</label><textarea class="form-control" rows="3" placeholder="Tell us about yourself..." id="settingsBio"></textarea></div></div><div class="mt-4"><button type="button" class="btn btn-primary" onclick="showToast('Settings saved','success')">Save Changes</button><button type="button" class="btn btn-outline-secondary ms-2">Cancel</button></div></form></div></div>
+            <div class="card"><div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-share me-2"></i>Social Profiles</h5></div><div class="card-body"><div class="settings-social-list"><div class="settings-social-item d-flex align-items-center justify-content-between p-2 border rounded mb-2"><div class="d-flex align-items-center gap-2"><div class="bg-dark text-white rounded d-flex align-items-center justify-content-center" style="width:36px;height:36px"><i class="bi bi-github"></i></div><div><h6 class="mb-0">GitHub</h6><p class="small text-muted mb-0">@johndoe</p></div></div><button class="btn btn-sm btn-outline-danger">Disconnect</button></div><div class="settings-social-item d-flex align-items-center justify-content-between p-2 border rounded mb-2"><div class="d-flex align-items-center gap-2"><div class="bg-primary text-white rounded d-flex align-items-center justify-content-center" style="width:36px;height:36px"><i class="bi bi-linkedin"></i></div><div><h6 class="mb-0">LinkedIn</h6><p class="small text-muted mb-0">Connected</p></div></div><button class="btn btn-sm btn-outline-danger">Disconnect</button></div></div></div></div>
+          </div>
+          <div class="tab-pane fade" id="security" role="tabpanel"><div class="card"><div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-key me-2"></i>Password</h5></div><div class="card-body"><div class="row g-3"><div class="col-md-12"><label class="form-label">Current Password</label><input type="password" class="form-control" placeholder="Enter current password"></div><div class="col-md-6"><label class="form-label">New Password</label><input type="password" class="form-control" placeholder="Enter new password"></div><div class="col-md-6"><label class="form-label">Confirm New Password</label><input type="password" class="form-control" placeholder="Confirm new password"></div></div><div class="mt-4"><button class="btn btn-primary">Update Password</button></div></div></div><div class="card"><div class="card-header d-flex align-items-center justify-content-between"><h5 class="card-title mb-0"><i class="bi bi-shield-check me-2"></i>Two-Factor Authentication</h5><span class="badge bg-success">Enabled</span></div><div class="card-body"><p class="text-muted">Add an extra layer of security to your account by enabling two-factor authentication.</p><button class="btn btn-sm btn-outline-secondary">Manage 2FA</button></div></div></div>
+          <div class="tab-pane fade" id="preferences" role="tabpanel"><div class="card"><div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-palette me-2"></i>Appearance</h5></div><div class="card-body"><label class="form-label">Theme</label><div class="d-flex gap-3"><label class="border p-3 rounded text-center" style="cursor:pointer"><input type="radio" name="themePref" value="light" checked> <i class="bi bi-sun"></i> Light</label><label class="border p-3 rounded text-center" style="cursor:pointer"><input type="radio" name="themePref" value="dark"> <i class="bi bi-moon"></i> Dark</label></div></div></div></div>
+          <div class="tab-pane fade" id="billing" role="tabpanel"><div class="card"><div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-credit-card me-2"></i>Billing</h5></div><div class="card-body"><p class="text-muted">Billing history and payment methods will appear here.</p><button class="btn btn-primary">View Invoices</button></div></div></div>
+          <div class="tab-pane fade" id="integrations" role="tabpanel"><div class="card"><div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-plug me-2"></i>Integrations</h5></div><div class="card-body"><p class="text-muted">Connected apps and services.</p></div></div></div>
+          <div class="tab-pane fade" id="danger" role="tabpanel"><div class="card border-danger"><div class="card-header bg-danger text-white"><h5 class="card-title mb-0 text-white"><i class="bi bi-exclamation-triangle me-2"></i>Danger Zone</h5></div><div class="card-body"><h6>Delete Account</h6><p class="text-muted small">Once you delete your account, there is no going back.</p><button class="btn btn-danger">Delete Account</button></div></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</section>
+
+<!-- Repayment Schedule - Customer -->
+<section id="view-repayment" class="view-section d-none">
+  <div class="pagetitle"><div class="d-flex align-items-center justify-content-between flex-wrap gap-2"><div><h1>Repayment Schedule</h1><nav><ol class="breadcrumb mb-0"><li class="breadcrumb-item"><a href="#" data-view="overview">Home</a></li><li class="breadcrumb-item active">Repayment</li></ol></nav></div></div></div>
+  <section class="section"><div class="card"><div class="card-header"><h5 class="card-title mb-0">Repayment Schedule</h5></div><div class="card-body"><p class="text-muted">Your monthly repayment schedule will appear here. Track due dates, amounts, and status.</p><div class="alert alert-info">No repayments yet. Apply for a mortgage to generate schedule.</div></div></div></section>
+</section>
+
+<!-- Contracts -->
+<section id="view-contracts" class="view-section d-none">
+  <div class="pagetitle"><div class="d-flex align-items-center justify-content-between flex-wrap gap-2"><div><h1>My Contracts</h1><nav><ol class="breadcrumb mb-0"><li class="breadcrumb-item"><a href="#" data-view="overview">Home</a></li><li class="breadcrumb-item active">Contracts</li></ol></nav></div></div></div>
+  <section class="section"><div class="card"><div class="card-header d-flex align-items-center justify-content-between"><h5 class="card-title mb-0">Contracts</h5><button class="btn btn-sm btn-primary"><i class="bi bi-plus"></i> New Contract</button></div><div class="card-body"><div class="table-responsive"><table class="table table-hover"><thead><tr><th>Contract ID</th><th>Property</th><th>Status</th><th>Date</th><th>Action</th></tr></thead><tbody><tr><td colspan="5" class="text-center text-muted py-4">No contracts yet.</td></tr></tbody></table></div></div></div></section>
+</section>
+
+<!-- Buyers - Seller -->
+<section id="view-buyers" class="view-section d-none">
+  <div class="pagetitle"><div class="d-flex align-items-center justify-content-between flex-wrap gap-2"><div><h1>Interested Buyers</h1><nav><ol class="breadcrumb mb-0"><li class="breadcrumb-item"><a href="#" data-view="overview">Home</a></li><li class="breadcrumb-item active">Buyers</li></ol></nav></div></div></div>
+  <section class="section"><div class="card"><div class="card-header"><h5 class="card-title mb-0">Interested Buyers</h5></div><div class="card-body"><p class="text-muted">Buyers interested in your properties will appear here.</p></div></div></section>
+</section>
+
+<!-- Risk -->
+<section id="view-risk" class="view-section d-none">
+  <div class="pagetitle"><div class="d-flex align-items-center justify-content-between flex-wrap gap-2"><div><h1>Risk Analysis</h1><nav><ol class="breadcrumb mb-0"><li class="breadcrumb-item"><a href="#" data-view="overview">Home</a></li><li class="breadcrumb-item active">Risk</li></ol></nav></div></div></div>
+  <section class="section"><div class="row g-4"><div class="col-lg-4"><div class="card"><div class="card-body text-center"><h6>AI Risk Scores</h6><p class="text-muted small">AI-powered risk assessment</p><a href="#" class="btn btn-sm btn-primary">View Scores</a></div></div></div><div class="col-lg-4"><div class="card"><div class="card-body text-center"><h6>Affordability Reports</h6><p class="text-muted small">Borrower affordability analysis</p><a href="#" class="btn btn-sm btn-primary">View Reports</a></div></div></div><div class="col-lg-4"><div class="card"><div class="card-body text-center"><h6>High Risk Borrowers</h6><p class="text-muted small">Flagged high risk accounts</p><a href="#" class="btn btn-sm btn-danger">View List</a></div></div></div></div></section>
+</section>
+
+<!-- Reports -->
+<section id="view-reports" class="view-section d-none">
+  <div class="pagetitle"><div class="d-flex align-items-center justify-content-between flex-wrap gap-2"><div><h1>Reports</h1><nav><ol class="breadcrumb mb-0"><li class="breadcrumb-item"><a href="#" data-view="overview">Home</a></li><li class="breadcrumb-item active">Reports</li></ol></nav></div></div></div>
+  <section class="section"><div class="card"><div class="card-header"><h5 class="card-title mb-0">Reports Center</h5></div><div class="card-body"><div class="row g-3"><div class="col-md-4"><div class="card border"><div class="card-body"><h6>Mortgage Reports</h6><p class="small text-muted">Monthly mortgage performance</p><button class="btn btn-sm btn-outline-primary w-100">Download</button></div></div></div><div class="col-md-4"><div class="card border"><div class="card-body"><h6>Financial Reports</h6><p class="small text-muted">Financial summaries</p><button class="btn btn-sm btn-outline-primary w-100">Download</button></div></div></div><div class="col-md-4"><div class="card border"><div class="card-body"><h6>Monthly Summary</h6><p class="small text-muted">Executive summary</p><button class="btn btn-sm btn-outline-primary w-100">View</button></div></div></div></div></div></div></section>
+</section>
+
+<!-- Signatures -->
+<section id="view-signatures" class="view-section d-none">
+  <div class="pagetitle"><div class="d-flex align-items-center justify-content-between flex-wrap gap-2"><div><h1>Signature Management</h1><nav><ol class="breadcrumb mb-0"><li class="breadcrumb-item"><a href="#" data-view="overview">Home</a></li><li class="breadcrumb-item active">Signatures</li></ol></nav></div></div></div>
+  <section class="section"><div class="row g-4"><div class="col-lg-6"><div class="card"><div class="card-header"><h5 class="card-title mb-0">Awaiting My Signature</h5></div><div class="card-body"><p class="text-muted">Contracts awaiting your signature.</p><div class="alert alert-warning">No pending signatures.</div></div></div></div><div class="col-lg-6"><div class="card"><div class="card-header"><h5 class="card-title mb-0">Signature History</h5></div><div class="card-body"><p class="text-muted">History of signed documents.</p></div></div></div></div></section>
+</section>
+
+<!-- Transactions -->
+<section id="view-transactions" class="view-section d-none">
+  <div class="pagetitle"><div class="d-flex align-items-center justify-content-between flex-wrap gap-2"><div><h1>Transactions</h1><nav><ol class="breadcrumb mb-0"><li class="breadcrumb-item"><a href="#" data-view="overview">Home</a></li><li class="breadcrumb-item active">Transactions</li></ol></nav></div></div></div>
+  <section class="section"><div class="card"><div class="card-header"><h5 class="card-title mb-0">Transactions</h5></div><div class="card-body"><p class="text-muted">All transactions will appear here.</p></div></div></section>
+</section>
+
+<!-- Activity -->
+<section id="view-activity" class="view-section d-none">
+  <div class="pagetitle"><div class="d-flex align-items-center justify-content-between flex-wrap gap-2"><div><h1>Activity Log</h1><nav><ol class="breadcrumb mb-0"><li class="breadcrumb-item"><a href="#" data-view="overview">Home</a></li><li class="breadcrumb-item active">Activity</li></ol></nav></div></div></div>
+  <section class="section"><div class="card"><div class="card-header"><h5 class="card-title mb-0">Recent Activity</h5></div><div class="card-body"><ul class="list-group"><li class="list-group-item"><i class="bi bi-box-arrow-in-right me-2 text-success"></i> Logged in <small class="text-muted float-end">Just now</small></li><li class="list-group-item"><i class="bi bi-person me-2 text-primary"></i> Viewed profile <small class="text-muted float-end">1 hour ago</small></li></ul></div></div></section>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/mortgage_application_form.js' %}?v=1"></script>
+<script src="{% static 'js/properties.js' %}?v=1"></script>
+<script src="{% static 'js/repayment_schedule.js' %}?v=1"></script>
+<script src="{% static 'js/my_contracts.js' %}?v=1"></script>
+<script>
+  function showView(name){
+    document.querySelectorAll('.view-section').forEach(el=>el.classList.add('d-none'));
+    const target=document.getElementById('view-'+name);
+    if(target) target.classList.remove('d-none');
+    document.querySelectorAll('.sidebar-nav a[data-view]').forEach(a=>{
+      a.classList.toggle('active', a.dataset.view===name);
+    });
+    if(name==='properties') {
+      if(typeof loadPropertiesGrid==='function') loadPropertiesGrid();
+      // Also trigger properties page logic if available
+      if(window.propertiesApp && typeof window.propertiesApp.render==='function') window.propertiesApp.render();
+    }
+    if(name==='mortgages') {
+      // Apply form - properties already loaded via mortgage_application_form.js
+    }
+    if(name==='applications') loadApplications();
+    if(name==='tracking') loadTrackingDashboard();
+    if(name==='repayment') {
+      // Repayment view - will load via repayment_schedule.js if present
+      if(typeof fetchSchedule==='function') fetchSchedule();
+    }
+    if(name==='contracts') {
+      // Contracts view - handled by my_contracts.js
+    }
+    if(name==='profile') renderProfile();
+    if(name==='notifications') {
+      // Notifications already rendered
+    }
+    if(name==='settings') {
+      // Settings already rendered
+    }
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  document.querySelectorAll('[data-view]').forEach(a=>{
+    a.addEventListener('click', e=>{ if(a.dataset.view){ e.preventDefault(); showView(a.dataset.view); }});
+  });
+
+  // Clock
+  function updateClock(){
+    const now=new Date();
+    const dEl=document.getElementById('currentDate');
+    const tEl=document.getElementById('currentTime');
+    if(dEl) dEl.textContent=now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    if(tEl) tEl.textContent=now.toLocaleTimeString('en-US',{hour12:false});
+  }
+  setInterval(updateClock,1000); updateClock();
+
+  (function initUser(){
+    if(!requireAuth()) return;
+    const u=getUser();
+    // Bank users are redirected to the new shadcn-admin template as requested - move all information there
+    if(u && u.role==='bank' && window.location.pathname==='/dashboard/'){
+      window.location.replace('/bank/dashboard/');
+      return;
+    }
+    if(!u){ fetchProfile(); return; }
+    renderUserUI(u);
+    fetchProfile();
+  })();
+
+  function renderUserUI(u){
+    const displayName = u.full_name || (u.first_name ? (u.first_name+' '+(u.last_name||'')).trim() : '') || u.email?.split('@')[0] || u.username || 'User';
+    const name=displayName; const role=(u.role||'customer').toUpperCase();
+    const email=u.email||'';
+    if(window.renderHeaderAvatars) renderHeaderAvatars(u);
+    const pWrap=document.getElementById('profileAvatarWrap');
+    if(pWrap) pWrap.innerHTML=avatarHtml(u,'lg');
+    const pn=document.getElementById('profileName'); if(pn) pn.textContent=name;
+    const pr=document.getElementById('profileRole'); if(pr) pr.textContent=role;
+    const demo=document.getElementById('demoInitial'); if(demo) demo.textContent=getInitials(name);
+    const sr=document.getElementById('statRole'); if(sr) sr.textContent=role;
+    const rb=document.getElementById('roleBadge'); if(rb) rb.textContent=role;
+    const wn=document.getElementById('welcomeName'); if(wn) wn.textContent=name+'!';
+    const iuid=document.getElementById('infoUserId'); if(iuid) iuid.textContent=u.id||'—';
+    const iem=document.getElementById('infoEmail'); if(iem) iem.textContent=email;
+    const wm=document.getElementById('welcomeMsg'); if(wm) wm.textContent='Welcome '+name+'! Your role is '+role+'. Manage everything from here.';
+    const vBadge=document.getElementById('profileVerified');
+    if(vBadge){ if(u.is_verified){ vBadge.textContent='Verified'; vBadge.className='badge bg-success'; } else { vBadge.textContent='Not Verified'; vBadge.className='badge bg-warning text-dark'; } }
+    const ht=document.getElementById('roleHintText'); if(ht) ht.textContent=hints[u.role]||hints.customer;
+    const details=document.getElementById('profileDetails');
+    if(details) details.innerHTML=`
+      <div class="col-md-6"><label class="form-label">Full Name</label><input class="form-control" value="${displayName||''}" disabled></div>
+      <div class="col-md-6"><label class="form-label">Email</label><input class="form-control" value="${u.email||''}" disabled></div>
+      <div class="col-md-6"><label class="form-label">Phone</label><input class="form-control" value="${u.phone_number||'—'}" disabled></div>
+      <div class="col-md-6"><label class="form-label">Role</label><input class="form-control" value="${u.role||''}" disabled></div>
+      <div class="col-md-6"><label class="form-label">Verified</label><input class="form-control" value="${u.is_verified?'Yes':'No'}" disabled></div>
+      <div class="col-md-6"><label class="form-label">User ID</label><input class="form-control" value="${u.id||''}" disabled></div>
+      <div class="col-md-6"><label class="form-label">Initials</label><input class="form-control" value="${u.initials||getInitials(displayName)}" disabled></div>
+      <div class="col-md-6"><label class="form-label">Avatar URL</label><input class="form-control" value="${u.avatar_url||'— (initial shown)'}" disabled></div>
+    `;
+  }
+
+  async function fetchProfile(){
+    try{
+      const res=await fetch(API_BASE+'auth/profile/',{headers:authHeaders()});
+      if(res.ok){ const data=await res.json(); localStorage.setItem('user',JSON.stringify(data)); renderUserUI(data); document.getElementById('apiStatus').textContent='Online'; document.getElementById('apiStatus').className='fw-medium text-success'; }
+      else if(res.status===401){ showToast('Session expired, login again','error'); setTimeout(()=>window.location.href='/login/',1200); }
+      else { document.getElementById('apiStatus').textContent='Error '+res.status; }
+    }catch(e){ document.getElementById('apiStatus').textContent='Offline'; document.getElementById('apiStatus').className='fw-medium text-danger'; }
+    loadStats();
+  }
+
+  async function loadStats(){
+    try{
+      const [pRes,mRes]=await Promise.all([fetch(API_BASE+'properties/',{headers:authHeaders()}), fetch(API_BASE+'mortgages/',{headers:authHeaders()}).catch(()=>null)]);
+      if(pRes && pRes.ok){
+        const data=await pRes.json(); const arr=Array.isArray(data)?data:(data.results||[]);
+        document.getElementById('statProperties').textContent=arr.length;
+        const sub=document.getElementById('statPropertiesSub'); if(sub) sub.textContent=arr.length? arr.filter(x=>x.status==='available').length+' available':'No data';
+        renderPropsTable(arr.slice(0,5));
+        fillPropSelect(arr);
+      }
+      if(mRes && mRes.ok){
+        const mData=await mRes.json(); const mArr=Array.isArray(mData)?mData:(mData.results||[]);
+        document.getElementById('statMortgages').textContent=mArr.length;
+        const sub=document.getElementById('statMortgagesSub'); if(sub) sub.textContent=mArr.length? 'active':'No applications';
+        const cnt=document.getElementById('mortgageCount'); if(cnt) cnt.textContent=mArr.length;
+      } else {
+        document.getElementById('statMortgages').textContent='0';
+      }
+    }catch(e){}
+  }
+  function renderPropsTable(arr){
+    const wrap=document.getElementById('propertiesTableWrap');
+    if(!wrap) return;
+    if(!arr.length){ wrap.innerHTML='<p class="text-muted text-center py-3">No properties yet. No listings available.</p>'; return; }
+    let html='<div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th>Title</th><th>Location</th><th>Price</th><th>Status</th></tr></thead><tbody>';
+    arr.forEach(p=>{ html+=`<tr><td>${p.title}</td><td class="text-muted small">${p.location}</td><td class="fw-bold" style="color:#0077B6">${Number(p.price).toLocaleString()} TZS</td><td><span class="badge ${p.status==='available'?'bg-success':'bg-warning'}">${p.status}</span></td></tr>`; });
+    html+='</tbody></table></div><div class="text-center mt-2"><a href="#" class="btn btn-sm btn-outline-primary" data-view="properties">View All Properties</a></div>';
+    wrap.innerHTML=html;
+    wrap.querySelector('[data-view="properties"]')?.addEventListener('click',e=>{e.preventDefault();showView('properties')});
+  }
+  function fillPropSelect(arr){
+    const sel=document.getElementById('mProp'); if(!sel) return;
+    sel.innerHTML='<option value="">-- Select property --</option>';
+    arr.forEach(p=>{ const o=document.createElement('option'); o.value=p.id; o.textContent=p.title+' ('+p.location+')'; sel.appendChild(o); });
+  }
+
+  async function loadPropertiesGrid(){
+    const grid=document.getElementById('propsGrid'); const empty=document.getElementById('propsEmpty');
+    if(!grid) return;
+    grid.innerHTML='<div class="col-12 text-center py-4"><div class="spinner-border text-primary"></div></div>';
+    try{
+      const res=await fetch(API_BASE+'properties/',{headers:authHeaders()});
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const data=await res.json(); const arr=Array.isArray(data)?data:(data.results||[]);
+      const q=(document.getElementById('propSearch').value||'').toLowerCase();
+      const f=document.getElementById('propFilter').value;
+      let filtered=arr.filter(p=>{ const matchQ=!q || p.title.toLowerCase().includes(q) || p.location.toLowerCase().includes(q); const matchF=f==='*' || p.property_type===f; return matchQ && matchF; });
+      if(!filtered.length){ grid.innerHTML=''; empty.classList.remove('d-none'); return; }
+      empty.classList.add('d-none');
+      grid.innerHTML=filtered.map(p=>{
+        let img=p.image||''; if(img && img.startsWith('/')) img=window.location.origin+img;
+        const imgHtml=img?`<img src="${img}" class="card-img-top" style="height:180px;object-fit:cover" onerror="this.style.display='none'">`:`<div style="height:180px;background:#eef2f7;display:flex;align-items:center;justify-content:center"><i class="bi bi-house" style="font-size:42px;color:#a0aec0"></i></div>`;
+        return `<div class="col-md-6 col-xl-4"><div class="card h-100">${imgHtml}<div class="card-body"><h6 class="card-title mb-1">${p.title}</h6><p class="text-muted small mb-2"><i class="bi bi-geo-alt me-1"></i>${p.location}</p><p class="fw-bold mb-2" style="color:#0077B6">${Number(p.price).toLocaleString()} TZS</p><p class="small text-muted">${(p.description||'').slice(0,90)}...</p><div class="d-flex gap-2 mt-2"><span class="badge bg-light text-dark border">${p.bedrooms} Beds</span><span class="badge bg-light text-dark border">${p.bathrooms} Baths</span><span class="badge ${p.status==='available'?'bg-success':'bg-warning'}">${p.status}</span></div></div></div></div>`;
+      }).join('');
+    }catch(e){ grid.innerHTML=`<div class="col-12"><div class="alert alert-danger">Failed to load properties: ${e.message}</div></div>`; }
+  }
+  document.getElementById('propSearch')?.addEventListener('input', loadPropertiesGrid);
+  document.getElementById('propFilter')?.addEventListener('change', loadPropertiesGrid);
+  document.getElementById('reloadProps')?.addEventListener('click', loadPropertiesGrid);
+  document.getElementById('refreshBtn')?.addEventListener('click', ()=>{ loadStats(); if(window.showToast) showToast('Refreshed','info'); });
+
+  async function loadMortgages(){
+    const wrap=document.getElementById('mortgageList');
+    if(!wrap) return;
+    wrap.innerHTML='<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+    try{
+      const res=await fetch(API_BASE+'mortgages/',{headers:authHeaders()});
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const data=await res.json(); const arr=Array.isArray(data)?data:(data.results||[]);
+      if(!arr.length){ wrap.innerHTML='<p class="text-muted text-center py-3">You have no mortgage applications yet. Fill the form on the left.</p>'; return; }
+      wrap.innerHTML=arr.map(m=>`<div class="border rounded p-3 mb-2"><div class="d-flex justify-content-between"><strong>#${m.id} - ${m.property_details? m.property_details.title : ('Property '+m.property)}</strong><span class="badge ${m.status==='approved'?'bg-success':m.status==='rejected'?'bg-danger':'bg-warning'}">${m.status||'pending'}</span></div><div class="small text-muted mt-1">Amount: ${Number(m.loan_amount||m.amount||0).toLocaleString()} TZS · Term: ${m.repayment_period||m.term_months||'-'} months</div></div>`).join('');
+    }catch(e){ wrap.innerHTML=`<div class="alert alert-danger small">Failed: ${e.message}</div>`; }
+  }
+  async function loadApplications(){
+    const grid=document.getElementById('applicationsGrid2');
+    const empty=document.getElementById('applicationsEmpty2');
+    if(!grid) return;
+    grid.innerHTML='<div class="text-center py-5 w-100" style="grid-column:1/-1"><div class="spinner-border text-primary"></div></div>';
+    try{
+      const res=await fetch(API_BASE+'mortgages/',{headers:authHeaders()});
+      const data=await res.json();
+      let arr=Array.isArray(data)?data:(data.results||[]);
+      // Filters
+      const statusFilter=document.getElementById('appStatusFilter2');
+      const searchEl=document.getElementById('appSearch2');
+      const sortEl=document.getElementById('appSort2');
+      const status=statusFilter?statusFilter.value:'all';
+      const q=(searchEl?searchEl.value:'').toLowerCase().trim();
+      const sort=sortEl?sortEl.value:'newest';
+      if(status!=='all') arr=arr.filter(a=>a.status===status);
+      if(q){
+        arr=arr.filter(a=>{
+          const prop=(a.property_details?a.property_details.title:'')+' '+(a.property_details?a.property_details.location:'');
+          const amt=String(a.loan_amount||'');
+          return prop.toLowerCase().includes(q) || amt.includes(q);
+        });
+      }
+      if(sort==='newest') arr.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+      else if(sort==='oldest') arr.sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+      else if(sort==='highest') arr.sort((a,b)=>parseFloat(b.loan_amount)-parseFloat(a.loan_amount));
+      else if(sort==='lowest') arr.sort((a,b)=>parseFloat(a.loan_amount)-parseFloat(b.loan_amount));
+      if(!arr.length){
+        grid.classList.add('d-none');
+        if(empty) empty.classList.remove('d-none');
+        return;
+      }
+      if(empty) empty.classList.add('d-none');
+      grid.classList.remove('d-none');
+      const statusMap={pending:{label:'Pending',color:'pending',icon:'🟡'},document_verification:{label:'Document Verification',color:'document_verification',icon:'🟠'},valuation:{label:'Valuation',color:'valuation',icon:'🔵'},credit_assessment:{label:'Credit Assessment',color:'credit_assessment',icon:'🟣'},approved:{label:'Approved',color:'approved',icon:'🟢'},rejected:{label:'Rejected',color:'rejected',icon:'🔴'},disbursed:{label:'Disbursed',color:'disbursed',icon:'🟢'}};
+      function formatTZS(n){ return 'TZS '+Number(n).toLocaleString('en-US'); }
+      function formatDate(d){ return new Date(d).toLocaleString('en-US',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}); }
+      grid.innerHTML=arr.map(app=>{
+        const prop=app.property_details?app.property_details.title:('Property #'+app.property);
+        const s=statusMap[app.status]||statusMap.pending;
+        const afford=app.affordability_score!=null?Number(app.affordability_score).toFixed(1):'—';
+        const risk=app.risk_score!=null?Number(app.risk_score).toFixed(1):'—';
+        const monthly=app.monthly_installment?formatTZS(app.monthly_installment):'—';
+        return `<div class="app-card"><div class="app-card-header"><h6>🏠 ${prop}</h6><div class="meta"><span>💰 ${formatTZS(app.loan_amount)}</span><span>📅 ${formatDate(app.created_at)}</span></div></div><div class="app-card-body"><div><span class="status-badge status-${s.color}">${s.icon} ${s.label}</span></div><div class="ai-assessment-mini"><div class="ai-item"><div class="ai-label">Affordability</div><div class="ai-value">${afford}%</div><div class="ai-progress"><div class="ai-progress-bar" style="width:${afford!=='—'?afford:0}%;background:${afford>100?'#28A745':afford>=80?'#FFC107':'#DC3545'}"></div></div></div><div class="ai-item"><div class="ai-label">Risk</div><div class="ai-value">${risk}%</div><div class="ai-progress"><div class="ai-progress-bar" style="width:${risk!=='—'?risk:0}%;background:${risk<40?'#28A745':risk<=70?'#FFC107':'#DC3545'}"></div></div></div></div><div class="small text-muted mt-2">Monthly Installment: <strong style="color:#0077B6">${monthly}</strong></div></div><div class="app-card-footer"><button class="btn btn-view btn-sm" style="background:#0077B6;color:#fff" onclick="viewAppDashboard(${app.id})"><i class="bi bi-eye me-1"></i> View Details</button><button class="btn btn-sm" style="background:#0A2B4E;color:#fff" onclick="trackAppDashboard(${app.id})"><i class="bi bi-graph-up me-1"></i> Track Progress</button></div></div>`;
+      }).join('');
+    }catch(e){
+      grid.innerHTML=`<div class="alert alert-danger w-100" style="grid-column:1/-1">Failed: ${e.message}</div>`;
+    }
+  }
+  async function loadTrackingDashboard(){
+    try{
+      const res=await fetch(API_BASE+'mortgages/', {headers: authHeaders()});
+      const data=await res.json();
+      const arr=Array.isArray(data)?data:(data.results||[]);
+      const app=arr[0];
+      if(!app) return;
+      const el=(id)=>document.getElementById(id);
+      if(el('dashTrackAppId')) el('dashTrackAppId').textContent='#APP-'+String(app.id).padStart(4,'0');
+      if(el('dashTrackRef')) el('dashTrackRef').textContent='#APP-'+String(app.id).padStart(4,'0');
+      if(el('dashTrackProperty')) el('dashTrackProperty').textContent=app.property_details?app.property_details.title:'Property #'+app.property;
+      if(el('dashTrackLoan')) el('dashTrackLoan').textContent='TZS '+Number(app.loan_amount).toLocaleString();
+      if(el('dashTrackStatus')) { el('dashTrackStatus').textContent=app.status; el('dashTrackStatus').className='status-badge status-'+app.status; }
+      if(el('dashTrackAfford')) el('dashTrackAfford').textContent=(app.affordability_score||'—')+'%';
+      if(el('dashTrackRisk')) el('dashTrackRisk').textContent=(app.risk_score||'—')+'%';
+      if(el('dashTrackDti')) el('dashTrackDti').textContent=(app.dti_ratio?app.dti_ratio.toFixed(1)+'%':'—');
+      const steps=['pending','document_verification','valuation','credit_assessment','approved','disbursed'];
+      const idx=steps.indexOf(app.status);
+      const pct=((idx+1)/steps.length)*100;
+      const bar=document.getElementById('dashTrackProgressBar');
+      if(bar) bar.style.width=pct+'%';
+    }catch(e){ console.error(e); }
+  }
+  window.viewAppDashboard=async function(id){
+    const modalEl=document.getElementById('appDetailModal');
+    if(modalEl){
+      const modal=new bootstrap.Modal(modalEl);
+      const body=document.getElementById('appDetailBody');
+      const title=document.getElementById('appDetailTitle');
+      if(body) body.innerHTML='<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+      if(title) title.textContent='Application #'+id;
+      modal.show();
+      try{
+        const res=await fetch(API_BASE+'mortgages/'+id+'/', {headers: authHeaders()});
+        const app=await res.json();
+        if(body){
+          const prop=app.property_details?app.property_details.title:'Property #'+app.property;
+          body.innerHTML=`<div class="row g-4"><div class="col-md-6"><h6>Application Details</h6><ul class="list-group small"><li class="list-group-item d-flex justify-content-between"><span>Property</span><strong>${prop}</strong></li><li class="list-group-item d-flex justify-content-between"><span>Loan Amount</span><strong>TZS ${Number(app.loan_amount).toLocaleString()}</strong></li><li class="list-group-item d-flex justify-content-between"><span>Status</span><span class="status-badge status-${app.status}">${app.status}</span></li></ul></div><div class="col-md-6"><h6>AI Assessment</h6><ul class="list-group small"><li class="list-group-item d-flex justify-content-between"><span>Affordability</span><strong>${app.affordability_score||'—'}%</strong></li><li class="list-group-item d-flex justify-content-between"><span>Risk</span><strong>${app.risk_score||'—'}%</strong></li></ul></div></div><div class="mt-3"><a href="/customer/track/${app.id}/" class="btn btn-sm btn-primary">Track Progress</a></div>`;
+        }
+      }catch(e){ if(body) body.innerHTML=`<div class="alert alert-danger">${e.message}</div>`; }
+    } else {
+      window.location.href='/customer/applications/'+id+'/';
+    }
+  };
+  window.trackAppDashboard=function(id){ window.location.href='/customer/track/'+id+'/'; };
+  // Bind filters for dashboard grid
+  document.getElementById('appStatusFilter2')?.addEventListener('change', loadApplications);
+  document.getElementById('appSearch2')?.addEventListener('input', loadApplications);
+  document.getElementById('appSort2')?.addEventListener('change', loadApplications);
+  function renderProfile(){ const u=getUser(); if(u) renderUserUI(u); }
+
+  (function(){
+    const input=document.getElementById('profileImageInput');
+    if(!input) return;
+    let previewUrl=null;
+    input.addEventListener('change', ()=>{
+      const file=input.files && input.files[0];
+      if(!file) return;
+      if(previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl=URL.createObjectURL(file);
+      const pWrap=document.getElementById('profileAvatarWrap');
+      if(pWrap) pWrap.innerHTML='<img src="'+previewUrl+'" class="rounded-circle" style="width:96px;height:96px;object-fit:cover;border-radius:50%;border:3px solid #fff;box-shadow:0 4px 16px rgba(0,0,0,.12)"><div class="text-center mt-2"><small class="text-muted">Preview - click Upload Photo to save</small></div>';
+      const hWrap=document.getElementById('headerAvatarWrap');
+      if(hWrap) hWrap.innerHTML='<img src="'+previewUrl+'" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;border-radius:50%;">';
+      const dWrap=document.getElementById('dropdownAvatarWrap');
+      if(dWrap) dWrap.innerHTML='<img src="'+previewUrl+'" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;border-radius:50%;">';
+      const sWrap=document.getElementById('sidebarAvatarWrap');
+      if(sWrap) sWrap.innerHTML='<img src="'+previewUrl+'" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;border-radius:50%;">';
+      if(window.showToast) showToast('Preview ready - click Upload Photo to save','info');
+    });
+  })();
+  document.getElementById('uploadAvatarBtn')?.addEventListener('click', async ()=>{
+    const input=document.getElementById('profileImageInput');
+    const btn=document.getElementById('uploadAvatarBtn');
+    if(!input.files.length){ notifyError('Please choose a photo first', 'No Photo'); return; }
+    const file=input.files[0];
+    if(file.size>5242880){ notifyError('Photo too large. Maximum 5MB', 'Failed ❌'); return; }
+    if(!['image/jpeg','image/jpg','image/png','image/webp'].includes(file.type) && !file.name.match(/\.(jpg|jpeg|png|webp)$/i)){ notifyError('Photo type not allowed. Use JPG/PNG', 'Failed ❌'); return; }
+    const origText=btn ? btn.innerHTML : '';
+    if(btn){ btn.disabled=true; btn.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span> Uploading...'; }
+    const form=new FormData(); form.append('profile_image', file);
+    try{
+      const token=getToken();
+      const res=await fetch(API_BASE+'auth/profile/',{method:'PATCH', headers:{'Authorization':'Bearer '+token}, body:form});
+      const text=await res.text();
+      let data={}; try{ data=text?JSON.parse(text):{} }catch(e){ data={detail:text}; }
+      if(res.ok){
+        localStorage.setItem('user', JSON.stringify(data));
+        renderUserUI(data);
+        if(window.renderHeaderAvatars) renderHeaderAvatars(data);
+        notifySuccess('Profile photo updated successfully! ✅', 'Success');
+        // also show a browser alert as backup (as requested, no action should happen silently)
+        try{ if(window.showToast) {} }catch(e){}
+      } else {
+        const msg=data.profile_image ? (Array.isArray(data.profile_image)?data.profile_image[0]:data.profile_image) : (data.detail||data.error||text.slice(0,200)||'Failed to upload photo');
+        notifyError('Failed to upload photo: '+(msg||'Try again'), 'Failed ❌');
+      }
+    }catch(e){
+      console.error(e);
+      notifyError('Failed: '+(e.message||'Network error. Verify the server is running'), 'Failed ❌');
+    } finally {
+      if(btn){ btn.disabled=false; btn.innerHTML=origText || '<i class="bi bi-cloud-upload me-1"></i> Upload Photo'; }
+    }
+  });
+
+  // Verification REMOVED for Email/Phone/NIN - banner disabled per spec
+  async function updateVerificationUI(){
+    try{ const banner=document.getElementById('verifyBanner'); if(banner) banner.style.display='none'; }catch(e){}
+    // Business verification for Bank is still only shown on /verify/bank/
+  }
+
+  function checkVerification(action){
+    return true; // allow all actions, the badge shows the status
+  }
+
+  updateVerificationUI();
+  loadStats();
+</script>
+{% endblock %}

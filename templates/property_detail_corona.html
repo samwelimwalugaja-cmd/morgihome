@@ -1,0 +1,291 @@
+{% extends base_template|default:'corona_base.html' %}
+{% load humanize %}
+{% block title %}{{ property.title }} - MorgiHome{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h3 class="page-title">
+    <span class="page-title-icon bg-gradient-primary text-white me-2"><i class="mdi {% if property.property_category == 'plot' %}mdi-map{% else %}mdi-home{% endif %}"></i></span> {{ property.title }}
+  </h3>
+  <nav aria-label="breadcrumb">
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% if user.role == 'realestate' %}/realestate/properties/{% elif user.role == 'customer' %}/customer/properties/{% else %}/properties/{% endif %}">Properties</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ property.title|truncatechars:30 }}</li>
+    </ul>
+  </nav>
+</div>
+
+{% if not_owned %}
+<div class="row">
+  <div class="col-12">
+    <div class="card bg-gradient-warning card-img-holder text-white">
+      <div class="card-body">
+        <h4 class="font-weight-normal mb-3">Not Your Property <i class="mdi mdi-alert mdi-24px float-end"></i></h4>
+        <p>You are viewing a property that is not owned by you. This property belongs to {{ property.seller.get_full_name|default:property.seller.email }}.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="row">
+  <!-- Left - Gallery and Details - 8 cols -->
+  <div class="col-12 col-xl-8 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <!-- Gallery - Beautiful -->
+        <div style="border-radius: 12px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.3); margin-bottom: 20px;">
+          {% if property.cover_image_url %}
+            <img src="{{ property.cover_image_url }}" alt="{{ property.title }}" style="width: 100%; height: 420px; object-fit: cover;">
+          {% else %}
+            <div style="width: 100%; height: 420px; background: linear-gradient(135deg, #2c2e33 0%, #191c24 100%); display: flex; align-items: center; justify-content: center; flex-direction: column;">
+              <i class="mdi mdi-home" style="font-size: 80px; color: #6c7293;"></i>
+              <p class="text-muted mt-2">No Image Available</p>
+            </div>
+          {% endif %}
+          {% if property.get_gallery_urls %}
+          <div style="display: flex; gap: 8px; overflow-x: auto; padding: 12px; background: #191c24; border-top: 1px solid #2c2e33;">
+            {% for url in property.get_gallery_urls %}
+              <img src="{{ url }}" alt="gallery" style="width: 90px; height: 70px; object-fit: cover; border-radius: 8px; cursor: pointer; border: 2px solid #2c2e33; transition: all 0.2s;" onmouseover="this.style.borderColor='#0077B6'" onmouseout="this.style.borderColor='#2c2e33'" onclick="document.querySelector('[alt=\'{{ property.title }}\']').src=this.src">
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Title and Price - Beautiful -->
+        <div class="d-flex justify-content-between align-items-start mb-4" style="flex-wrap: wrap; gap: 15px;">
+          <div style="flex: 1; min-width: 250px;">
+            <h2 class="mb-1" style="font-weight: 800; color: #fff; font-size: 26px;">{{ property.title }}</h2>
+            <p class="text-muted mb-0" style="font-size: 14px;"><i class="mdi mdi-map-marker text-primary"></i> {{ property.location }} • <span class="badge badge-outline-primary">{{ property.get_property_category_display|default:property.get_property_type_display }}</span> • <span class="badge badge-outline-info">{{ property.get_property_type_display }}</span></p>
+          </div>
+          <div class="text-end" style="min-width: 150px;">
+            <h2 class="text-primary mb-1" style="font-weight: 800; font-size: 28px;">TZS {{ property.price|intcomma }}</h2>
+            <span class="badge {% if property.status == 'available' %}badge-outline-success{% elif property.status == 'sold' %}badge-outline-danger{% else %}badge-outline-warning{% endif %}" style="font-size: 12px; padding: 6px 12px;">{{ property.get_status_display }}</span>
+          </div>
+        </div>
+
+        <!-- Features Grid - Beautiful Cards -->
+        <div class="row mb-4">
+          {% if property.property_category == 'house' or not property.property_category %}
+          <div class="col-6 col-md-3 mb-3">
+            <div class="card" style="background: #191c24; border: 1px solid #2c2e33; border-radius: 12px; text-align: center; padding: 15px;">
+              <i class="mdi mdi-hotel" style="font-size: 28px; color: #0077B6;"></i>
+              <h3 class="mt-2 mb-0" style="color: #fff;">{{ property.bedrooms }}</h3>
+              <small class="text-muted">Bedrooms</small>
+            </div>
+          </div>
+          <div class="col-6 col-md-3 mb-3">
+            <div class="card" style="background: #191c24; border: 1px solid #2c2e33; border-radius: 12px; text-align: center; padding: 15px;">
+              <i class="mdi mdi-hot-tub" style="font-size: 28px; color: #0077B6;"></i>
+              <h3 class="mt-2 mb-0" style="color: #fff;">{{ property.bathrooms }}</h3>
+              <small class="text-muted">Bathrooms</small>
+            </div>
+          </div>
+          <div class="col-6 col-md-3 mb-3">
+            <div class="card" style="background: #191c24; border: 1px solid #2c2e33; border-radius: 12px; text-align: center; padding: 15px;">
+              <i class="mdi mdi-ruler-square" style="font-size: 28px; color: #0077B6;"></i>
+              <h3 class="mt-2 mb-0" style="color: #fff;">{{ property.area }} m²</h3>
+              <small class="text-muted">Area</small>
+            </div>
+          </div>
+          <div class="col-6 col-md-3 mb-3">
+            <div class="card" style="background: #191c24; border: 1px solid #2c2e33; border-radius: 12px; text-align: center; padding: 15px;">
+              <i class="mdi mdi-calendar" style="font-size: 28px; color: #0077B6;"></i>
+              <h3 class="mt-2 mb-0" style="color: #fff;">{{ property.year_built|default:"—" }}</h3>
+              <small class="text-muted">Year Built</small>
+            </div>
+          </div>
+          {% else %}
+          <div class="col-6 col-md-3 mb-3">
+            <div class="card" style="background: #191c24; border: 1px solid #2c2e33; border-radius: 12px; text-align: center; padding: 15px;">
+              <i class="mdi mdi-ruler-square" style="font-size: 28px; color: #0077B6;"></i>
+              <h3 class="mt-2 mb-0" style="color: #fff;">{{ property.area }} m²</h3>
+              <small class="text-muted">Area</small>
+            </div>
+          </div>
+          <div class="col-6 col-md-3 mb-3">
+            <div class="card" style="background: #191c24; border: 1px solid #2c2e33; border-radius: 12px; text-align: center; padding: 15px;">
+              <i class="mdi mdi-map" style="font-size: 28px; color: #0077B6;"></i>
+              <h3 class="mt-2 mb-0" style="color: #fff; font-size: 16px;">{{ property.plot_dimensions|default:"—" }}</h3>
+              <small class="text-muted">Dimensions</small>
+            </div>
+          </div>
+          <div class="col-6 col-md-3 mb-3">
+            <div class="card" style="background: #191c24; border: 1px solid #2c2e33; border-radius: 12px; text-align: center; padding: 15px;">
+              <i class="mdi mdi-terrain" style="font-size: 28px; color: #0077B6;"></i>
+              <h3 class="mt-2 mb-0" style="color: #fff; font-size: 14px;">{{ property.get_land_type_display|default:"—" }}</h3>
+              <small class="text-muted">Land Type</small>
+            </div>
+          </div>
+          <div class="col-6 col-md-3 mb-3">
+            <div class="card" style="background: #191c24; border: 1px solid #2c2e33; border-radius: 12px; text-align: center; padding: 15px;">
+              <i class="mdi mdi-file-document" style="font-size: 28px; color: #0077B6;"></i>
+              <h3 class="mt-2 mb-0" style="color: #fff; font-size: 14px;">{{ property.get_title_deed_available_display|default:"—" }}</h3>
+              <small class="text-muted">Title Deed</small>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+        <h4 style="font-weight: 700; color: #fff; border-left: 4px solid #0077B6; padding-left: 12px;"><i class="mdi mdi-file-document-outline text-primary"></i> Description</h4>
+        <p class="text-muted" style="line-height: 1.8; font-size: 14px; background: #191c24; padding: 15px; border-radius: 8px; border: 1px solid #2c2e33;">{{ property.description }}</p>
+
+        {% if property.property_category == 'house' %}
+        <h4 style="font-weight: 700; color: #fff; border-left: 4px solid #0077B6; padding-left: 12px; margin-top: 25px;"><i class="mdi mdi-home-variant text-primary"></i> House Features</h4>
+        <div class="row mt-3">
+          <div class="col-md-6">
+            <div class="card" style="background: #191c24; border: 1px solid #2c2e33;">
+              <div class="card-body">
+                <ul class="list-arrow" style="list-style: none; padding: 0;">
+                  {% if property.floor_number %}<li style="padding: 8px 0; border-bottom: 1px solid #2c2e33;"><i class="mdi mdi-layers text-primary"></i> Floor: <strong>{{ property.floor_number }} / {{ property.total_floors|default:"—" }}</strong></li>{% endif %}
+                  {% if property.parking %}<li style="padding: 8px 0; border-bottom: 1px solid #2c2e33;"><i class="mdi mdi-car text-primary"></i> Parking: <strong>{{ property.parking }}</strong></li>{% endif %}
+                  {% if property.furnished %}<li style="padding: 8px 0; border-bottom: 1px solid #2c2e33;"><i class="mdi mdi-sofa text-primary"></i> Furnished: <strong>{{ property.get_furnished_display }}</strong></li>{% endif %}
+                  {% if property.property_condition %}<li style="padding: 8px 0; border-bottom: 1px solid #2c2e33;"><i class="mdi mdi-home-search text-primary"></i> Condition: <strong>{{ property.get_property_condition_display }}</strong></li>{% endif %}
+                  {% if property.property_size %}<li style="padding: 8px 0; border-bottom: 1px solid #2c2e33;"><i class="mdi mdi-ruler text-primary"></i> House Size: <strong>{{ property.property_size }} m²</strong></li>{% endif %}
+                  {% if property.land_size %}<li style="padding: 8px 0;"><i class="mdi mdi-map text-primary"></i> Land Size: <strong>{{ property.land_size }} m²</strong></li>{% endif %}
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card" style="background: #191c24; border: 1px solid #2c2e33;">
+              <div class="card-body">
+                <h6 style="color: #fff; margin-bottom: 15px;"><i class="mdi mdi-star text-warning"></i> Additional Features</h6>
+                <div class="row">
+                  {% if property.security %}<div class="col-6 mb-2"><span class="badge badge-outline-success" style="width: 100%; padding: 8px;"><i class="mdi mdi-shield-check"></i> Security</span></div>{% endif %}
+                  {% if property.swimming_pool %}<div class="col-6 mb-2"><span class="badge badge-outline-success" style="width: 100%; padding: 8px;"><i class="mdi mdi-pool"></i> Pool</span></div>{% endif %}
+                  {% if property.garden %}<div class="col-6 mb-2"><span class="badge badge-outline-success" style="width: 100%; padding: 8px;"><i class="mdi mdi-flower"></i> Garden</span></div>{% endif %}
+                  {% if property.balcony %}<div class="col-6 mb-2"><span class="badge badge-outline-success" style="width: 100%; padding: 8px;"><i class="mdi mdi-balcony"></i> Balcony</span></div>{% endif %}
+                  {% if property.elevator %}<div class="col-6 mb-2"><span class="badge badge-outline-success" style="width: 100%; padding: 8px;"><i class="mdi mdi-elevator"></i> Elevator</span></div>{% endif %}
+                  {% if property.air_conditioning %}<div class="col-6 mb-2"><span class="badge badge-outline-success" style="width: 100%; padding: 8px;"><i class="mdi mdi-air-conditioner"></i> AC</span></div>{% endif %}
+                  {% if property.backup_generator %}<div class="col-6 mb-2"><span class="badge badge-outline-success" style="width: 100%; padding: 8px;"><i class="mdi mdi-power"></i> Generator</span></div>{% endif %}
+                  {% if not property.security and not property.swimming_pool and not property.garden and not property.balcony and not property.elevator and not property.air_conditioning and not property.backup_generator %}<p class="text-muted text-center" style="width: 100%;">No additional features</p>{% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <h4 style="font-weight: 700; color: #fff; border-left: 4px solid #0077B6; padding-left: 12px; margin-top: 25px;"><i class="mdi mdi-terrain text-primary"></i> Land Features</h4>
+        <div class="row mt-3">
+          <div class="col-md-6">
+            <div class="card" style="background: #191c24; border: 1px solid #2c2e33;">
+              <div class="card-body">
+                <ul class="list-arrow" style="list-style: none; padding: 0;">
+                  <li style="padding: 8px 0; border-bottom: 1px solid #2c2e33;"><i class="mdi mdi-map text-primary"></i> Land Use: <strong>{{ property.get_land_use_display|default:"—" }}</strong></li>
+                  <li style="padding: 8px 0; border-bottom: 1px solid #2c2e33;"><i class="mdi mdi-map-marker-radius text-primary"></i> Zoning: <strong>{{ property.get_zoning_display|default:"—" }}</strong></li>
+                  <li style="padding: 8px 0; border-bottom: 1px solid #2c2e33;"><i class="mdi mdi-file-document text-primary"></i> Title Deed: <strong>{{ property.get_title_deed_available_display|default:"—" }}</strong></li>
+                  <li style="padding: 8px 0;"><i class="mdi mdi-map-legend text-primary"></i> Survey Plan: <strong>{{ property.get_survey_plan_available_display|default:"—" }}</strong></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card" style="background: #191c24; border: 1px solid #2c2e33;">
+              <div class="card-body">
+                <h6 style="color: #fff; margin-bottom: 15px;"><i class="mdi mdi-tools text-primary"></i> Infrastructure</h6>
+                <div class="row">
+                  <div class="col-6 mb-2"><span class="badge {% if property.infrastructure_road %}badge-outline-success{% else %}badge-outline-secondary{% endif %}" style="width: 100%; padding: 8px;"><i class="mdi mdi-road"></i> Road {% if property.infrastructure_road %}✓{% else %}✗{% endif %}</span></div>
+                  <div class="col-6 mb-2"><span class="badge {% if property.infrastructure_electricity %}badge-outline-success{% else %}badge-outline-secondary{% endif %}" style="width: 100%; padding: 8px;"><i class="mdi mdi-flash"></i> Electricity {% if property.infrastructure_electricity %}✓{% else %}✗{% endif %}</span></div>
+                  <div class="col-6 mb-2"><span class="badge {% if property.infrastructure_water %}badge-outline-success{% else %}badge-outline-secondary{% endif %}" style="width: 100%; padding: 8px;"><i class="mdi mdi-water"></i> Water {% if property.infrastructure_water %}✓{% else %}✗{% endif %}</span></div>
+                  <div class="col-6 mb-2"><span class="badge {% if property.infrastructure_sewage %}badge-outline-success{% else %}badge-outline-secondary{% endif %}" style="width: 100%; padding: 8px;"><i class="mdi mdi-pipe"></i> Sewage {% if property.infrastructure_sewage %}✓{% else %}✗{% endif %}</span></div>
+                  <div class="col-6 mb-2"><span class="badge {% if property.infrastructure_internet %}badge-outline-success{% else %}badge-outline-secondary{% endif %}" style="width: 100%; padding: 8px;"><i class="mdi mdi-wifi"></i> Internet {% if property.infrastructure_internet %}✓{% else %}✗{% endif %}</span></div>
+                  <div class="col-6 mb-2"><span class="badge {% if property.infrastructure_fenced %}badge-outline-success{% else %}badge-outline-secondary{% endif %}" style="width: 100%; padding: 8px;"><i class="mdi mdi-fence"></i> Fenced {% if property.infrastructure_fenced %}✓{% else %}✗{% endif %}</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if property.title_deed_file or property.survey_plan_file or property.tax_clearance_file or property.land_certificate_file or property.building_permit_file %}
+        <h4 style="font-weight: 700; color: #fff; border-left: 4px solid #0077B6; padding-left: 12px; margin-top: 25px;"><i class="mdi mdi-file-document-multiple text-primary"></i> Documents</h4>
+        <div class="list-group mt-3">
+          {% if property.title_deed_file %}<a href="{{ property.title_deed_file.url }}" target="_blank" class="list-group-item list-group-item-action" style="background: #191c24; border-color: #2c2e33; color: #fff; border-radius: 8px; margin-bottom: 8px;"><i class="mdi mdi-file-document text-primary" style="font-size: 20px;"></i> <strong>Title Deed</strong> <span class="badge badge-outline-primary float-end" style="margin-top: 5px;">View <i class="mdi mdi-open-in-new"></i></span><br><small class="text-muted">Ownership Title</small></a>{% endif %}
+          {% if property.survey_plan_file %}<a href="{{ property.survey_plan_file.url }}" target="_blank" class="list-group-item list-group-item-action" style="background: #191c24; border-color: #2c2e33; color: #fff; border-radius: 8px; margin-bottom: 8px;"><i class="mdi mdi-map-legend text-primary" style="font-size: 20px;"></i> <strong>Survey Plan</strong> <span class="badge badge-outline-primary float-end" style="margin-top: 5px;">View <i class="mdi mdi-open-in-new"></i></span><br><small class="text-muted">Area Map</small></a>{% endif %}
+          {% if property.tax_clearance_file %}<a href="{{ property.tax_clearance_file.url }}" target="_blank" class="list-group-item list-group-item-action" style="background: #191c24; border-color: #2c2e33; color: #fff; border-radius: 8px; margin-bottom: 8px;"><i class="mdi mdi-file-check text-primary" style="font-size: 20px;"></i> <strong>Tax Clearance</strong> <span class="badge badge-outline-primary float-end" style="margin-top: 5px;">View <i class="mdi mdi-open-in-new"></i></span><br><small class="text-muted">Tax Certificate</small></a>{% endif %}
+          {% if property.land_certificate_file %}<a href="{{ property.land_certificate_file.url }}" target="_blank" class="list-group-item list-group-item-action" style="background: #191c24; border-color: #2c2e33; color: #fff; border-radius: 8px; margin-bottom: 8px;"><i class="mdi mdi-certificate text-primary" style="font-size: 20px;"></i> <strong>Land Certificate</strong> <span class="badge badge-outline-primary float-end" style="margin-top: 5px;">View <i class="mdi mdi-open-in-new"></i></span><br><small class="text-muted">Land Certificate</small></a>{% endif %}
+          {% if property.building_permit_file %}<a href="{{ property.building_permit_file.url }}" target="_blank" class="list-group-item list-group-item-action" style="background: #191c24; border-color: #2c2e33; color: #fff; border-radius: 8px; margin-bottom: 8px;"><i class="mdi mdi-home-variant text-primary" style="font-size: 20px;"></i> <strong>Building Permit</strong> <span class="badge badge-outline-primary float-end" style="margin-top: 5px;">View <i class="mdi mdi-open-in-new"></i></span><br><small class="text-muted">Building Permit</small></a>{% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="card-title" style="border-left: 4px solid #0077B6; padding-left: 12px;"><i class="mdi mdi-account text-primary"></i> Seller Information</h4>
+        <div class="d-flex align-items-center mb-3" style="background: linear-gradient(135deg, #191c24 0%, #2c2e33 100%); padding: 15px; border-radius: 10px; border: 1px solid #444;">
+          <div class="bg-dark rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px; background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%) !important; color: white; font-weight: bold; font-size: 22px; flex-shrink: 0;">{{ property.seller.initials|default:"S" }}</div>
+          <div style="flex: 1; min-width: 0;">
+            <h6 class="mb-0" style="color: #fff; font-weight: 700;">{{ property.seller.get_full_name|default:property.seller.email }}</h6>
+            <small class="text-muted">{{ property.seller.get_role_display }} • {% if property.seller.is_verified %}<span class="text-success">Verified ✓</span>{% else %}<span class="text-warning">Not Verified</span>{% endif %}</small><br>
+            <span class="badge badge-outline-primary" style="font-size: 10px; margin-top: 5px;">{{ property.seller.email|truncatechars:25 }}</span>
+          </div>
+        </div>
+        <div class="mb-3" style="background: #191c24; padding: 12px; border-radius: 8px; border: 1px solid #2c2e33;">
+          <p class="mb-2" style="color: #fff;"><i class="mdi mdi-email text-primary"></i> <strong>Email:</strong> {{ property.seller.email }}</p>
+          <p class="mb-0" style="color: #fff;"><i class="mdi mdi-phone text-primary"></i> <strong>Phone:</strong> {{ property.seller.phone_number|default:"Not provided" }}</p>
+        </div>
+        <div class="d-grid gap-2">
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#contactSellerModal" style="background:#0077B6; border-color:#0077B6; padding: 12px; font-weight: 600; border-radius: 8px;"><i class="mdi mdi-message"></i> Contact Seller</button>
+          {% if is_customer %}
+          {% if property.property_category == 'plot' %}
+          <a href="/customer/apply/?property={{ property.id }}&type=land" class="btn btn-success" style="padding: 12px; font-weight: 600; border-radius: 8px;"><i class="mdi mdi-bank"></i> Apply Mortgage</a>
+          {% else %}
+          <a href="/customer/apply/?property={{ property.id }}&type=residential" class="btn btn-success" style="padding: 12px; font-weight: 600; border-radius: 8px;"><i class="mdi mdi-bank"></i> Apply Mortgage</a>
+          {% endif %}
+          {% elif is_owner %}
+          <a href="/realestate/properties/edit/{{ property.id }}/" class="btn btn-warning" style="padding: 12px; font-weight: 600; border-radius: 8px;"><i class="mdi mdi-pencil"></i> Edit Property</a>
+          {% endif %}
+        </div>
+        <div class="alert mt-3" style="background: rgba(0,119,182,0.1); border: 1px solid rgba(0,119,182,0.2); border-radius: 8px; padding: 12px;">
+          <small style="color: #6c7293;"><i class="mdi mdi-shield-check text-primary"></i> <strong>Verified Property</strong> — This property is listed as <span class="text-primary">{{ property.get_status_display }}</span> and has been reviewed.</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="card-body">
+        <h4 class="card-title" style="border-left: 4px solid #0077B6; padding-left: 12px;"><i class="mdi mdi-map-marker text-primary"></i> Location & Details</h4>
+        <p class="text-muted" style="background: #191c24; padding: 10px; border-radius: 6px; border: 1px solid #2c2e33;"><i class="mdi mdi-map-marker text-primary"></i> {{ property.location }}</p>
+        <div style="height: 160px; background: linear-gradient(135deg, #2c2e33 0%, #191c24 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-direction: column; border: 1px solid #444;">
+          <i class="mdi mdi-map" style="font-size: 40px; color: #0077B6;"></i>
+          <span class="text-muted mt-2" style="font-size: 12px;">Map preview</span>
+          <small class="text-muted" style="font-size: 10px;">{{ property.location }}</small>
+        </div>
+        <div class="d-flex gap-2 mt-3" style="flex-wrap: wrap;">
+          <span class="badge badge-outline-primary" style="padding: 8px 12px;"><i class="mdi mdi-calendar"></i> {{ property.created_at|date:"d M Y" }}</span>
+          <span class="badge badge-outline-success" style="padding: 8px 12px;"><i class="mdi mdi-eye"></i> {{ property.napa|default:"No NaPa" }}</span>
+          <span class="badge badge-outline-info" style="padding: 8px 12px;"><i class="mdi mdi-tag"></i> #{{ property.id }}</span>
+        </div>
+        <a href="{% if user.role == 'realestate' %}/realestate/properties/{% else %}/properties/{% endif %}" class="btn btn-outline-secondary w-100 mt-3" style="border-radius: 8px;"><i class="mdi mdi-arrow-left"></i> Back to Properties</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Contact Seller Modal -->
+<div class="modal fade" id="contactSellerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background: #191c24; border: 1px solid #2c2e33; border-radius: 12px;">
+      <div class="modal-header" style="border-bottom: 1px solid #2c2e33; background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%);">
+        <h5 class="modal-title" style="color: white; font-weight: 700;"><i class="mdi mdi-message"></i> Contact {{ property.seller.get_full_name|default:"Seller" }}</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center" style="padding: 30px;">
+        <div class="mb-4">
+          <div class="bg-dark rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 80px; height: 80px; background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%) !important; color: white; font-weight: bold; font-size: 28px;">{{ property.seller.initials|default:"S" }}</div>
+          <h5 class="mt-3" style="color: #fff;">{{ property.seller.get_full_name|default:property.seller.email }}</h5>
+          <p class="text-muted">{{ property.seller.get_role_display }}</p>
+        </div>
+        <div class="d-grid gap-3">
+          <a href="mailto:{{ property.seller.email }}" class="btn btn-outline-primary" style="padding: 12px; border-radius: 8px; border-width: 2px;"><i class="mdi mdi-email" style="font-size: 20px;"></i> <strong>Email</strong><br><small>{{ property.seller.email }}</small></a>
+          <a href="tel:{{ property.seller.phone_number }}" class="btn btn-primary" style="background:#0077B6; padding: 12px; border-radius: 8px;"><i class="mdi mdi-phone" style="font-size: 20px;"></i> <strong>Phone Call</strong><br><small>{{ property.seller.phone_number|default:"Not provided" }}</small></a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

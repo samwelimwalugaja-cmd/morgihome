@@ -1,0 +1,58 @@
+{% extends 'plainadmin/base.html' %}
+{% load static %}
+{% block title %}Verify Email - MorgiHome{% endblock %}
+{% block content %}
+<div class="pagetitle">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div>
+      <h1>Verify Email</h1>
+      <nav><ol class="breadcrumb mb-0"><li class="breadcrumb-item"><a href="/dashboard/">Home</a></li><li class="breadcrumb-item active">Verify Email</li></ol></nav>
+    </div>
+  </div>
+</div>
+
+<section class="section">
+  <div class="row justify-content-center">
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-body text-center py-5">
+          {% if verified %}
+            <div style="width:80px;height:80px;border-radius:50%;background:#D4EDDA;color:#155724;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:40px">✅</div>
+            <h4 class="text-success">Email Verified Successfully!</h4>
+            <p class="text-muted">{{ message }}</p>
+            <a href="/verify/status/" class="btn btn-primary mt-3" style="background:#0077B6;border-color:#0077B6">Go to Verification Status</a>
+            <a href="/dashboard/" class="btn btn-outline-secondary mt-3 ms-2">Go to Dashboard</a>
+          {% else %}
+            <div style="width:80px;height:80px;border-radius:50%;background:#F8D7DA;color:#721C24;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:40px">❌</div>
+            <h4 class="text-danger">Verification Failed</h4>
+            <p class="text-muted">{{ message|default:"Invalid or expired token." }}</p>
+            <p class="small text-muted">Token: {{ token|default:"—" }}</p>
+            <button id="resendBtn" class="btn btn-primary mt-3" style="background:#0077B6;border-color:#0077B6">Resend Verification Email</button>
+            <a href="/verify/status/" class="btn btn-outline-secondary mt-3 ms-2">Check Status</a>
+          {% endif %}
+        </div>
+      </div>
+      {% if not verified %}
+      <div class="card mt-4">
+        <div class="card-body">
+          <h6>Didn't receive email?</h6>
+          <p class="small text-muted">Check your spam folder or click resend. The verification link will be sent to your registered email.</p>
+          <p class="small text-muted">For testing (DEBUG), token is: <code>{{ token }}</code> and console shows email.</p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<script>
+document.getElementById('resendBtn')?.addEventListener('click', async ()=>{
+  try{
+    const res=await fetch('/api/verify/email/send/', {method:'POST', headers:{'Authorization':'Bearer '+(localStorage.getItem('access')||''),'Content-Type':'application/json'}});
+    const data=await res.json();
+    if(window.showToast) showToast(data.message||'Email sent','success');
+    else alert(data.message);
+  }catch(e){ alert(e.message); }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,301 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>{% block title %}MorgiHome - Corona{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'corona/vendors/mdi/css/materialdesignicons.min.css' %}">
+  <link rel="stylesheet" href="{% static 'corona/vendors/ti-icons/css/themify-icons.css' %}">
+  <link rel="stylesheet" href="{% static 'corona/vendors/css/vendor.bundle.base.css' %}">
+  <link rel="stylesheet" href="{% static 'corona/vendors/font-awesome/css/font-awesome.min.css' %}">
+  <link rel="stylesheet" href="{% static 'corona/vendors/jvectormap/jquery-jvectormap.css' %}">
+  <link rel="stylesheet" href="{% static 'corona/vendors/flag-icon-css/css/flag-icons.min.css' %}">
+  <link rel="stylesheet" href="{% static 'corona/vendors/owl-carousel-2/owl.carousel.min.css' %}">
+  <link rel="stylesheet" href="{% static 'corona/vendors/owl-carousel-2/owl.theme.default.min.css' %}">
+  <link rel="stylesheet" href="{% static 'corona/css/style.css' %}">
+  <link href="{% static 'images/favicon.ico' %}?v=4" rel="icon" sizes="48x48">
+  <link href="{% static 'images/favicon-32x32.png' %}?v=4" rel="icon" type="image/png" sizes="32x32">
+  <link href="{% static 'images/favicon-16x16.png' %}?v=4" rel="icon" type="image/png" sizes="16x16">
+  <link href="{% static 'images/apple-touch-icon.png' %}?v=4" rel="apple-touch-icon" type="image/png">
+  <style>
+    /* MorgiHome override - keep Corona dark theme, only change primary where needed */
+    .bg-primary { background-color: #0077B6 !important; }
+    .text-primary { color: #0077B6 !important; }
+    .btn-primary { background-color: #0077B6 !important; border-color: #0077B6 !important; }
+    .sidebar .nav .nav-item.active > .nav-link { background: #0077B6 !important; }
+    /* Sidebar static and scrollable */
+    .sidebar {
+      position: static !important;
+      height: 100vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    .sidebar .nav {
+      overflow-y: auto;
+      max-height: calc(100vh - 180px);
+      padding-bottom: 20px;
+    }
+    .sidebar::-webkit-scrollbar { width: 6px; }
+    .sidebar::-webkit-scrollbar-track { background: #191c24; }
+    .sidebar::-webkit-scrollbar-thumb { background: #2c2e33; border-radius: 3px; }
+    .sidebar::-webkit-scrollbar-thumb:hover { background: #444; }
+    /* Fix file input visibility - Corona dark theme */
+    .form-control[type="file"] {
+      color: #fff !important;
+      background: #2c2e33 !important;
+      border: 1px solid #444 !important;
+      padding: 8px !important;
+    }
+    .form-control[type="file"]::file-selector-button,
+    .form-control[type="file"]::-webkit-file-upload-button {
+      background: #0077B6 !important;
+      color: white !important;
+      border: none !important;
+      padding: 6px 12px !important;
+      border-radius: 4px !important;
+      margin-right: 12px !important;
+      cursor: pointer;
+    }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <div class="container-scroller">
+    <!-- Sidebar - Corona -->
+    <nav class="sidebar sidebar-offcanvas" id="sidebar">
+      <div class="sidebar-brand-wrapper d-none d-lg-flex align-items-center justify-content-center fixed-top" style="background: #191c24;">
+        <a class="sidebar-brand brand-logo" href="/" style="text-decoration: none; display: flex; align-items: center; gap: 10px; color: white; font-weight: bold; font-size: 20px; letter-spacing: -0.5px;">
+          <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 16px; flex-shrink: 0;">M</div>
+          <span>MorgiHome</span>
+        </a>
+        <a class="sidebar-brand brand-logo-mini" href="/" style="text-decoration: none;"><div style="width: 32px; height: 32px; background: #0077B6; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">M</div></a>
+      </div>
+      <ul class="nav">
+        <li class="nav-item profile">
+          <div class="profile-desc">
+            <div class="profile-pic">
+              <div class="count-indicator">
+                {% if user.is_authenticated and user.profile_image %}
+                  <img class="img-xs rounded-circle" src="{{ user.profile_image.url }}" alt="">
+                {% else %}
+                  <div class="img-xs rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%); color: white; font-weight: bold; font-size: 14px; flex-shrink: 0;">{% if user.is_authenticated %}{% if user.is_authenticated %}{{ user.first_name|default:user.email|slice:":1"|upper|default:"M" }}{% else %}M{% endif %}{% else %}M{% endif %}</div>
+                {% endif %}
+                <span class="count bg-success"></span>
+              </div>
+              <div class="profile-name">
+                <h5 class="mb-0 font-weight-normal">{% if user.is_authenticated %}{{ user.get_full_name|default:user.email }}{% else %}Guest{% endif %}</h5>
+                <span>{% if user.is_authenticated %}{{ user.get_role_display }}{% else %}Visitor{% endif %}</span>
+              </div>
+            </div>
+            <a href="#" id="profile-dropdown" data-bs-toggle="dropdown"><i class="mdi mdi-dots-vertical"></i></a>
+            <div class="dropdown-menu dropdown-menu-right sidebar-dropdown preview-list" aria-labelledby="profile-dropdown">
+                <div class="preview-thumbnail"><div class="preview-icon bg-dark rounded-circle"><i class="mdi mdi-account-outline text-primary"></i></div></div>
+                <div class="preview-item-content"><p class="preview-subject ellipsis mb-1 text-small">Profile</p></div>
+              </a>
+              <div class="dropdown-divider"></div>
+              <a href="#" onclick="coronaLogout(); return false;" class="dropdown-item preview-item">
+                <div class="preview-thumbnail"><div class="preview-icon bg-dark rounded-circle"><i class="mdi mdi-logout text-danger"></i></div></div>
+                <div class="preview-item-content"><p class="preview-subject ellipsis mb-1 text-small">Logout</p></div>
+              </a>
+            </div>
+          </div>
+        </li>
+        <li class="nav-item nav-category"><span class="nav-link">{% block portal_label %}Portal{% endblock %}</span></li>
+        {% block sidebar_nav %}
+        <!-- Role nav injected here -->
+        {% endblock %}
+        <li class="nav-item nav-category"><span class="nav-link">System</span></li>
+        <li class="nav-item menu-items"><a class="nav-link" href="#" onclick="coronaLogout(); return false;"><span class="menu-icon"><i class="mdi mdi-logout"></i></span><span class="menu-title">Logout</span></a></li>
+      </ul>
+    </nav>
+
+    <div class="container-fluid page-body-wrapper">
+      <!-- Navbar - Corona -->
+      <nav class="navbar p-0 fixed-top d-flex flex-row">
+        <div class="navbar-brand-wrapper d-flex d-lg-none align-items-center justify-content-center">
+          <a class="navbar-brand brand-logo-mini" href="/"><img src="{% static 'corona/images/logo-mini.svg' %}" alt="logo" /></a>
+        </div>
+        <div class="navbar-menu-wrapper flex-grow d-flex align-items-stretch">
+          <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-toggle="minimize"><span class="mdi mdi-menu"></span></button>
+          <ul class="navbar-nav w-100">
+            <li class="nav-item w-100" style="position: relative;">
+              <form class="nav-link mt-2 mt-md-0 d-none d-lg-flex search" onsubmit="return false;" style="position: relative;">
+                <input type="text" id="coronaSearch" class="form-control" placeholder="Search properties, applications..." autocomplete="off" onkeypress="if(event.key==='Enter'){ const q=this.value.trim(); if(q) handleCoronaSearch(q); }" oninput="handleCoronaSearchInput(this.value)">
+                <div id="coronaSearchResults" class="dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; right: 0; max-height: 400px; overflow-y: auto; background: #191c24; border: 1px solid #2c2e33; border-radius: 8px; margin-top: 5px; z-index: 1050;"></div>
+              </form>
+            </li>
+          </ul>
+          <ul class="navbar-nav navbar-nav-right">
+            <li class="nav-item nav-settings d-none d-lg-block">
+              <a class="nav-link" href="#"><i class="mdi mdi-view-grid"></i></a>
+            </li>
+            <li class="nav-item dropdown border-left">
+              <a class="nav-link count-indicator dropdown-toggle" id="notificationDropdown" href="#" data-bs-toggle="dropdown">
+                <i class="mdi mdi-bell"></i>
+                <span class="count bg-danger"></span>
+              </a>
+              <div class="dropdown-menu dropdown-menu-end navbar-dropdown preview-list" aria-labelledby="notificationDropdown">
+                <h6 class="p-3 mb-0">Notifications</h6>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item preview-item">
+                  <div class="preview-thumbnail"><div class="preview-icon bg-dark rounded-circle"><i class="mdi mdi-calendar text-success"></i></div></div>
+                  <div class="preview-item-content">
+                    <p class="preview-subject mb-1">Event today</p>
+                    <p class="text-muted ellipsis mb-0"> Just a reminder that you have an event today </p>
+                  </div>
+                </a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item preview-item">
+                  <div class="preview-thumbnail"><div class="preview-icon bg-dark rounded-circle"><i class="mdi mdi-cog text-danger"></i></div></div>
+                  <div class="preview-item-content">
+                    <p class="preview-subject mb-1">Settings</p>
+                    <p class="text-muted ellipsis mb-0"> Update dashboard </p>
+                  </div>
+                </a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item preview-item">
+                  <div class="preview-thumbnail"><div class="preview-icon bg-dark rounded-circle"><i class="mdi mdi-link-variant text-warning"></i></div></div>
+                  <div class="preview-item-content">
+                    <p class="preview-subject mb-1">Launch Admin</p>
+                    <p class="text-muted ellipsis mb-0"> New admin wow! </p>
+                  </div>
+                </a>
+                <div class="dropdown-divider"></div>
+                <p class="p-3 mb-0 text-center">See all notifications</p>
+              </div>
+            </li>
+            <li class="nav-item dropdown">
+              <a class="nav-link" id="profileDropdown" href="#" data-bs-toggle="dropdown">
+                <div class="navbar-profile">
+                  {% if user.is_authenticated and user.profile_image %}
+                    <img class="img-xs rounded-circle" src="{{ user.profile_image.url }}" alt="">
+                  {% else %}
+                    <div class="img-xs rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%); color: white; font-weight: bold; font-size: 14px; flex-shrink: 0;">{% if user.is_authenticated %}{% if user.is_authenticated %}{{ user.first_name|default:user.email|slice:":1"|upper|default:"M" }}{% else %}M{% endif %}{% else %}M{% endif %}</div>
+                  {% endif %}
+                  <p class="mb-0 d-none d-sm-block navbar-profile-name">{% if user.is_authenticated %}{{ user.get_full_name|default:user.email }}{% else %}Guest{% endif %}</p>
+                  <i class="mdi mdi-menu-down d-none d-sm-block"></i>
+                </div>
+              </a>
+              <div class="dropdown-menu dropdown-menu-end navbar-dropdown preview-list" aria-labelledby="profileDropdown">
+                <h6 class="p-3 mb-0">Profile</h6>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item preview-item" href="#" onclick="coronaLogout(); return false;"><div class="preview-thumbnail"><div class="preview-icon bg-dark rounded-circle"><i class="mdi mdi-logout text-danger"></i></div></div><div class="preview-item-content"><p class="preview-subject mb-1">Log out</p></div></a>
+              </div>
+            </li>
+          </ul>
+          <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button" data-toggle="offcanvas"><span class="mdi mdi-format-line-spacing"></span></button>
+        </div>
+      </nav>
+
+      <!-- Main Panel - Corona -->
+      <div class="main-panel">
+        <div class="content-wrapper">
+          {% block content %}{% endblock %}
+        </div>
+        <footer class="footer">
+          <div class="d-sm-flex justify-content-center justify-content-sm-between">
+            <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Copyright © 2026 <a href="/">MorgiHome</a>. All rights reserved.</span>
+            <span class="text-muted float-none float-sm-end d-block mt-1 mt-sm-0 text-center">Hand-crafted & made with <i class="mdi mdi-heart text-danger"></i> by Brain-Wave • Innovation Group</span>
+          </div>
+        </footer>
+      </div>
+    </div>
+  </div>
+
+  <script src="{% static 'corona/vendors/js/vendor.bundle.base.js' %}"></script>
+  <script src="{% static 'corona/vendors/chart.js/chart.umd.js' %}"></script>
+  <!-- progressbar.js removed - not included in corona-free dist, was causing 404 -->
+  <script src="{% static 'corona/vendors/jvectormap/jquery-jvectormap.min.js' %}"></script>
+  <script src="{% static 'corona/vendors/jvectormap/jquery-jvectormap-world-mill-en.js' %}"></script>
+  <script src="{% static 'corona/vendors/owl-carousel-2/owl.carousel.min.js' %}"></script>
+  <script src="{% static 'corona/js/off-canvas.js' %}"></script>
+  <script src="{% static 'corona/js/misc.js' %}"></script>
+  <script src="{% static 'corona/js/settings.js' %}"></script>
+  <script src="{% static 'corona/js/todolist.js' %}"></script>
+  <script src="{% static 'corona/js/dashboard.js' %}"></script>
+  <script>
+    // Simple auth check - only redirect if not authenticated and trying to access protected page directly
+    // Back button will work normally - browser will reload from server due to NoCache headers, server will handle auth
+    (function(){
+      var isAuthenticated = {% if user.is_authenticated %}true{% else %}false{% endif %};
+      if(!isAuthenticated && isProtected){
+        var hasToken = false;
+        try{ hasToken = !!localStorage.getItem('access') || !!localStorage.getItem('token'); }catch(e){}
+        // Only redirect if also no token and not already on login page
+        if(!hasToken && window.location.pathname !== '/login/' && window.location.pathname !== '/signup/'){
+          // Allow a small delay for page to load, then redirect
+          // But don't break back button - only redirect on initial load, not on pageshow
+          if(!performance.getEntriesByType('navigation')[0] || performance.getEntriesByType('navigation')[0].type !== 'back_forward'){
+            // window.location.replace('/login/');
+          }
+        }
+      }
+    })();
+    function coronaLogout(){
+      try{ localStorage.clear(); sessionStorage.clear(); }catch(e){}
+      // Clear browser history and go to login - back will go to login, not to protected page (due to NoCache)
+      try{ history.pushState(null, '', '/login/'); history.replaceState(null, '', '/login/'); }catch(e){}
+      window.location.replace('/login/');
+    }
+    // Search - show results
+    function handleCoronaSearch(q){
+      q = (q||'').trim();
+      if(!q) return;
+      var role = "{% if user.is_authenticated %}{{ user.role }}{% else %}customer{% endif %}";
+      if(role === 'realestate') window.location.href = '/realestate/properties/?q=' + encodeURIComponent(q);
+      else if(role === 'seller') window.location.href = '/seller/properties/?q=' + encodeURIComponent(q);
+      else window.location.href = '/properties/?q=' + encodeURIComponent(q);
+    }
+    function handleCoronaSearchInput(val){
+      var resultsDiv = document.getElementById('coronaSearchResults');
+      if(!resultsDiv) return;
+      var q = (val||'').trim();
+      if(q.length < 2){ resultsDiv.style.display='none'; return; }
+      var role = "{% if user.is_authenticated %}{{ user.role }}{% else %}customer{% endif %}";
+      var url = '/api/properties/search/?q=' + encodeURIComponent(q);
+      var token = '';
+      try{ token = localStorage.getItem('access') || ''; }catch(e){}
+      fetch(url, {headers: token ? {'Authorization': 'Bearer ' + token} : {}})
+        .then(r => r.json())
+        .then(data => {
+          var items = Array.isArray(data) ? data : (data.results || data.properties || data.data || []);
+          if(!items || items.length===0){
+            resultsDiv.innerHTML = '<div class="p-3 text-center text-muted">No results for \"' + q.replace(/"/g,'&quot;') + '\"</div><div class="dropdown-divider"></div><a href="#" onclick="handleCoronaSearch(document.getElementById(\'coronaSearch\').value); return false;" class="p-2 text-center d-block text-primary">Search for \"' + q.replace(/"/g,'&quot;') + '\"</a>';
+            resultsDiv.style.display='block';
+            return;
+          }
+          var html='';
+          items.slice(0,5).forEach(function(item){
+            var title = item.title || item.name || 'Property';
+            var loc = item.location || '';
+            var price = item.price ? 'TZS ' + Number(item.price).toLocaleString() : '';
+            var id = item.id || '';
+            var link = '/properties/' + id + '/';
+            html += '<a href=\"' + link + '\" class=\"dropdown-item preview-item\" style=\"display:flex; align-items:center; gap:10px; padding:10px;\"><div class=\"preview-thumbnail\"><div class=\"preview-icon bg-dark rounded-circle\"><i class=\"mdi mdi-home text-primary\"></i></div></div><div class=\"preview-item-content\" style=\"flex:1;\"><p class=\"preview-subject mb-1\" style=\"color:#fff;\">' + title + '</p><p class=\"text-muted mb-0\" style=\"font-size:12px;\">' + loc + ' • ' + price + '</p></div></a>';
+          });
+          html += '<div class=\"dropdown-divider\"></div><a href=\"#\" onclick=\"handleCoronaSearch(document.getElementById(\'coronaSearch\').value); return false;\" class=\"p-2 text-center d-block text-primary\">See all results for \"' + q.replace(/"/g,'&quot;') + '\"</a>';
+          resultsDiv.innerHTML = html;
+          resultsDiv.style.display='block';
+        })
+        .catch(function(){
+          resultsDiv.innerHTML = '<div class=\"p-3 text-center\"><a href=\"#\" onclick=\"handleCoronaSearch(document.getElementById(\'coronaSearch\').value); return false;\" class=\"text-primary\">Search for \"' + q.replace(/"/g,'&quot;') + '\"</a></div>';
+          resultsDiv.style.display='block';
+        });
+    }
+    document.addEventListener('click', function(e){
+      var resultsDiv = document.getElementById('coronaSearchResults');
+      var input = document.getElementById('coronaSearch');
+      if(resultsDiv && input && !e.target.closest('#coronaSearch') && !e.target.closest('#coronaSearchResults')){
+        resultsDiv.style.display='none';
+      }
+    });
+    // Override all logout links to use coronaLogout
+    document.querySelectorAll('a[href="#"][onclick*="window.location.href=\'/login/\'"]').forEach(function(a){
+      a.setAttribute('onclick', 'coronaLogout(); return false;');
+    });
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

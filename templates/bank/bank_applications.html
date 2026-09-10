@@ -1,0 +1,115 @@
+{% extends 'bank/bank_base.html' %}
+{% load humanize %}
+{% block title %}Applications - MorgiHome Bank{% endblock %}
+{% block page_title %}Loan Applications{% endblock %}
+{% block breadcrumb %}Bank / Applications{% endblock %}
+
+{% block content %}
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+  <div>
+    <h1 class="text-xl font-bold">Applications List</h1>
+    <p class="text-sm text-[var(--morgi-muted)]">Total {{ total_all|intcomma }} • {{ pending_count|intcomma }} pending decision{% if search_q %} • search "{{ search_q }}"{% endif %}</p>
+  </div>
+  <div class="flex gap-2">
+    <a href="{% url 'bank_applications' %}" class="btn-secondary px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"><i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reset</a>
+  </div>
+</div>
+
+<!-- Filters - Shadcn style -->
+<div class="morgi-card p-4 mb-6">
+  <div class="flex flex-col lg:flex-row gap-3">
+    <div class="flex-1 relative">
+      <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--morgi-muted)]"></i>
+      <input id="searchInput" type="text" placeholder="Search by name, #APP, phone..." class="morgi-input w-full pl-10 pr-4 py-2.5 rounded-lg text-sm">
+    </div>
+    <select id="statusFilter" class="morgi-input rounded-lg px-3 py-2.5 text-sm min-w-[160px]">
+      <option value="">All Statuses</option>
+      <option value="pending">Pending</option>
+      <option value="review">Review</option>
+      <option value="approved">Approved</option>
+      <option value="rejected">Rejected</option>
+      <option value="disbursed">Disbursed</option>
+    </select>
+    <select class="morgi-input rounded-lg px-3 py-2.5 text-sm min-w-[160px]">
+      <option>All Types</option>
+      <option>House</option>
+      <option>Business</option>
+      <option>Construction</option>
+    </select>
+    <select class="morgi-input rounded-lg px-3 py-2.5 text-sm min-w-[160px]">
+      <option>All Risks (AI)</option>
+      <option>Low</option>
+      <option>Medium</option>
+      <option>High</option>
+    </select>
+  </div>
+</div>
+
+<!-- Table -->
+<div class="morgi-card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full morgi-table">
+      <thead>
+        <tr>
+          <th class="px-5 py-3 text-left"><input type="checkbox" class="rounded"></th>
+          <th class="px-5 py-3 text-left">Customer / ID</th>
+          <th class="px-5 py-3 text-left">Amount & Type</th>
+          <th class="px-5 py-3 text-left">Income / Score</th>
+          <th class="px-5 py-3 text-left">AI Risk</th>
+          <th class="px-5 py-3 text-left">Status</th>
+          <th class="px-5 py-3 text-left">Date</th>
+          <th class="px-5 py-3 text-right">Action</th>
+        </tr>
+      </thead>
+      <tbody id="appTable" class="text-sm">
+        {% for app in applications %}
+        <tr data-status="{{ app.status }}" data-name="{{ app.customer|lower }} #app-{{ app.id }}">
+          <td class="px-5 py-4"><input type="checkbox" class="rounded"></td>
+          <td class="px-5 py-4"><div class="flex items-center gap-3">{% if app.photo %}<img src="{{ app.photo }}" alt="{{ app.customer }}" class="w-9 h-9 rounded-full object-cover flex-shrink-0" style="border:2px solid #0077B6;">{% else %}<div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style="background: linear-gradient(135deg, #0077B6, #0A2B4E);">{{ app.initials|default:"-" }}</div>{% endif %}<div><p class="font-semibold">{{ app.customer }}</p><p class="text-xs text-[var(--morgi-muted)]">{{ app.ref|default:app.id }}{% if app.phone %} • {{ app.phone }}{% endif %}</p></div></div></td>
+          <td class="px-5 py-4"><p class="font-semibold">TZS {{ app.amount|floatformat:0|intcomma }}</p><p class="text-xs text-[var(--morgi-muted)]">{{ app.type }}</p></td>
+          <td class="px-5 py-4"><p class="font-medium">TZS {{ app.income|floatformat:0|intcomma }} / month</p><p class="text-xs text-[var(--morgi-muted)]">Score: {{ app.score }}</p></td>
+          <td class="px-5 py-4"><span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold {% if app.ai_risk == 'Low' %}bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800{% elif app.ai_risk == 'Medium' %}bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800{% else %}bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800{% endif %}"><span class="w-2 h-2 {% if app.ai_risk == 'Low' %}bg-emerald-500{% elif app.ai_risk == 'Medium' %}bg-amber-500{% else %}bg-red-500{% endif %} rounded-full"></span> {{ app.ai_risk }} {{ app.ai_percent }}%</span></td>
+          <td class="px-5 py-4"><span class="px-3 py-1 rounded-full text-xs font-semibold border">{{ app.status|title }}</span></td>
+          <td class="px-5 py-4 text-[var(--morgi-muted)]">{{ app.date }}</td>
+          <td class="px-5 py-4 text-right"><div class="flex justify-end gap-1"><a href="{{ app.link }}" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--morgi-border)]"><i data-lucide="eye" class="w-4 h-4"></i></a>{% if app.status == 'pending' %}<a href="{% url 'bank_application_review' app.id %}" class="w-8 h-8 flex items-center justify-center rounded-lg bg-[#0077B6] text-white hover:bg-[#005a8c]"><i data-lucide="check" class="w-4 h-4"></i></a>{% endif %}</div></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" class="px-5 py-12 text-center text-[var(--morgi-muted)]">No applications found. New mortgage applications will appear here.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <!-- Pagination -->
+  <div class="flex items-center justify-between px-5 py-4 border-t border-[var(--morgi-border)]">
+    <p class="text-sm text-[var(--morgi-muted)]">Showing {{ applications|length }} of {{ total_count|intcomma }}</p>
+    <div class="flex gap-1">
+      <button class="w-8 h-8 rounded-lg border border-[var(--morgi-border)] flex items-center justify-center hover:bg-[var(--morgi-border)]"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+      <button class="w-8 h-8 rounded-lg bg-[#0077B6] text-white flex items-center justify-center">1</button>
+      <button class="w-8 h-8 rounded-lg border border-[var(--morgi-border)] flex items-center justify-center hover:bg-[var(--morgi-border)]">2</button>
+      <button class="w-8 h-8 rounded-lg border border-[var(--morgi-border)] flex items-center justify-center hover:bg-[var(--morgi-border)]">3</button>
+      <button class="w-8 h-8 rounded-lg border border-[var(--morgi-border)] flex items-center justify-center hover:bg-[var(--morgi-border)]"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+  // Simple client-side filter - search + status
+  const search = document.getElementById('searchInput');
+  const statusF = document.getElementById('statusFilter');
+  const rows = document.querySelectorAll('#appTable tr');
+  function filter() {
+    const q = search.value.toLowerCase();
+    const s = statusF.value.toLowerCase();
+    rows.forEach(r => {
+      const name = r.dataset.name;
+      const st = r.dataset.status;
+      const matchQ = !q || name.includes(q);
+      const matchS = !s || st === s;
+      r.style.display = (matchQ && matchS) ? '' : 'none';
+    });
+  }
+  if (search) search.addEventListener('input', filter);
+  if (statusF) statusF.addEventListener('change', filter);
+</script>
+{% endblock %}

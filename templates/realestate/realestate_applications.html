@@ -1,0 +1,65 @@
+{% extends 'realestate/realestate_base.html' %}
+{% load humanize %}
+{% block title %}All Applications - Corona{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h3 class="page-title">
+    <span class="page-title-icon bg-gradient-primary text-white me-2"><i class="mdi mdi-file-document"></i></span> All Mortgage Applications
+  </h3>
+  <nav aria-label="breadcrumb">
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item active" aria-current="page">Real Estate / Applications <span class="badge badge-outline-primary ms-2">{{ applications|length }}</span></li>
+    </ul>
+  </nav>
+</div>
+
+<div class="row">
+  <div class="col-12 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="card-title">Applications</h4>
+        <p class="card-description">All loan requests linked to properties — real data</p>
+        <div class="table-responsive">
+          <table class="table table-dark">
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>Property</th>
+                <th>Amount</th>
+                <th>Bank</th>
+                <th>AI Score</th>
+                <th>Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for app in applications %}
+              <tr>
+                <td>
+                  <div class="d-flex align-items-center">
+                    {% if app.customer.profile_image %}<img src="{{ app.customer.profile_image.url }}" alt="{{ app.customer.get_full_name }}" style="width:36px; height:36px; border-radius:50%; object-fit:cover; border:2px solid #0077B6; margin-right:8px;">{% else %}<div class="rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 36px; height: 36px; background: #0077B6 !important; color: white; font-weight: bold;">{{ app.customer.initials|default:"C" }}</div>{% endif %}
+                    <span>{{ app.customer.get_full_name|default:"Buyer" }}</span>
+                  </div>
+                </td>
+                <td>
+                  <div>{{ app.property.title|truncatechars:25 }}</div>
+                  <small class="text-muted">{{ app.property.location|truncatechars:20 }}</small>
+                </td>
+                <td class="font-weight-bold">TZS {{ app.loan_amount|intcomma }}</td>
+                <td><small>{{ app.bank.get_full_name|default:"—" }}</small></td>
+                <td><span class="badge {% if app.risk_score <= 40 %}badge-outline-success{% elif app.risk_score <= 70 %}badge-outline-warning{% else %}badge-outline-danger{% endif %}">{{ app.affordability_score|floatformat:0 }}/100</span></td>
+                <td><span class="badge {% if app.status == 'approved' %}badge-outline-success{% elif app.status == 'pending' %}badge-outline-warning{% elif app.status == 'rejected' %}badge-outline-danger{% else %}badge-outline-primary{% endif %}">{{ app.get_status_display }}</span></td>
+                <td class="text-muted">{{ app.created_at|date:"d M Y" }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="7" class="text-center text-muted py-4">No applications yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

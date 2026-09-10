@@ -1,0 +1,18 @@
+/* My Contracts */
+.contract-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06);
+  border: 1px solid #eef2f7;
+  overflow: hidden;
+}
+.contract-card-header { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; }
+.contract-card-header h6 { font-weight: 700; color: #0A2B4E; margin: 0; }
+.contract-card-body { padding: 16px 20px; }
+.status-draft { background:#E9ECEF;color:#6C757D; }
+.status-pending_signature { background:#FFF3CD;color:#856404; }
+.status-signed { background:#D4EDDA;color:#155724; }
+.status-executed { background:#CCE5FF;color:#004085; }
+.signature-badge { padding:4px 8px;border-radius:12px;font-size:11px;font-weight:600; }
+.sig-signed { background:#D4EDDA;color:#155724; }
+.sig-pending { background:#FFF3CD;color:#856404; }

@@ -1,0 +1,158 @@
+{% extends 'bank/bank_base.html' %}
+{% block title %}Settings - MorgiHome Bank{% endblock %}
+{% block page_title %}Settings{% endblock %}
+{% block breadcrumb %}Bank / Settings{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold">Settings</h1>
+    <p class="text-sm text-[var(--morgi-muted)] mt-1">Manage your bank profile and preferences</p>
+  </div>
+
+  {% if messages %}
+  <div class="space-y-2 mb-6">
+    {% for message in messages %}
+    <div class="p-4 rounded-lg text-sm font-medium {% if message.tags == 'success' %}bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800{% elif message.tags == 'error' %}bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800{% else %}bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800{% endif %}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-1">
+      <div class="morgi-card p-6">
+        <h3 class="font-semibold mb-3">Profile</h3>
+        <div class="flex items-center gap-3">
+          {% if request.user.is_authenticated and request.user.profile_image %}<img src="{{ request.user.profile_image.url }}" alt="bank logo" class="w-14 h-14 rounded-full object-cover flex-shrink-0" style="border:2px solid #0077B6;">{% else %}<div class="w-14 h-14 rounded-full flex items-center justify-center text-white text-xl font-bold flex-shrink-0" style="background: linear-gradient(135deg, #0077B6, #0A2B4E);">{% if request.user.is_authenticated %}{{ request.user.initials|default:"B" }}{% else %}B{% endif %}</div>{% endif %}
+          <div class="min-w-0">
+            <p class="font-semibold truncate">{% if request.user.is_authenticated %}{{ request.user.get_full_name|default:request.user.email }}{% else %}Bank{% endif %}</p>
+            <p class="text-sm text-[var(--morgi-muted)] truncate">{% if request.user.is_authenticated %}{{ request.user.email }}{% else %}-{% endif %}</p>
+            <span class="inline-flex mt-1 px-2 py-0.5 rounded-full text-xs {% if request.user.is_authenticated and request.user.is_verified %}bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300{% else %}bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300{% endif %}">{% if request.user.is_authenticated and request.user.is_verified %}Verified{% else %}Unverified{% endif %}</span>
+          </div>
+        </div>
+        <div class="mt-4 pt-4 border-t border-[var(--morgi-border)] space-y-2 text-sm">
+          <div class="flex justify-between gap-2"><span class="text-[var(--morgi-muted)]">Role</span><span class="font-medium">Bank</span></div>
+          <div class="flex justify-between gap-2"><span class="text-[var(--morgi-muted)]">Member since</span><span class="font-medium">{% if request.user.is_authenticated %}{{ request.user.date_joined|date:"M Y" }}{% else %}-{% endif %}</span></div>
+          <div class="flex justify-between gap-2"><span class="text-[var(--morgi-muted)]">Status</span><span class="font-medium text-emerald-600">Active</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="lg:col-span-2 space-y-6">
+      <form method="post" action="{% url 'bank_settings' %}" class="morgi-card p-6 lg:p-8">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_profile">
+        <h3 class="font-semibold mb-5">Bank Information</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div>
+            <label class="text-xs font-semibold uppercase tracking-wide text-[var(--morgi-muted)]">Bank Name</label>
+            <input type="text" name="bank_name" value="{% if request.user.is_authenticated %}{{ request.user.get_full_name|default:request.user.email }}{% endif %}" class="morgi-input w-full rounded-lg px-4 py-3 mt-2 text-sm" required>
+          </div>
+          <div>
+            <label class="text-xs font-semibold uppercase tracking-wide text-[var(--morgi-muted)]">Email</label>
+            <input type="email" name="email" value="{% if request.user.is_authenticated %}{{ request.user.email }}{% endif %}" class="morgi-input w-full rounded-lg px-4 py-3 mt-2 text-sm" required>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="text-xs font-semibold uppercase tracking-wide text-[var(--morgi-muted)]">Phone</label>
+            <input type="text" name="phone" value="{% if request.user.is_authenticated %}{{ request.user.phone_number|default:'' }}{% endif %}" class="morgi-input w-full rounded-lg px-4 py-3 mt-2 text-sm" placeholder="+255 ...">
+          </div>
+        </div>
+        <button type="submit" class="mt-5 btn-primary px-6 py-3 rounded-lg text-sm font-semibold">Save Changes</button>
+      </form>
+
+      <form method="post" action="{% url 'bank_settings' %}" class="morgi-card p-6 lg:p-8">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_terms">
+        <h3 class="font-semibold mb-1">Loan Terms</h3>
+        <p class="text-xs text-[var(--morgi-muted)] mb-5">These are shown live to mortgage applicants on Bank Requirements — what you save here is exactly what they see.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div>
+            <label class="text-xs font-semibold uppercase tracking-wide text-[var(--morgi-muted)]">Interest Rate (% per year)</label>
+            <input type="number" step="0.01" min="0" name="interest_rate" value="{% if request.user.is_authenticated %}{{ request.user.interest_rate|default:'' }}{% endif %}" class="morgi-input w-full rounded-lg px-4 py-3 mt-2 text-sm" placeholder="e.g. 12.50">
+            <p class="text-[11px] text-[var(--morgi-muted)] mt-1">Percent per year — not the fee.</p>
+          </div>
+          <div>
+            <label class="text-xs font-semibold uppercase tracking-wide text-[var(--morgi-muted)]">Processing Fee (TZS amount)</label>
+            <input type="number" step="0.01" min="0" name="processing_fee" value="{% if request.user.is_authenticated %}{{ request.user.processing_fee|default:'' }}{% endif %}" class="morgi-input w-full rounded-lg px-4 py-3 mt-2 text-sm" placeholder="e.g. 500000">
+            <p class="text-[11px] text-[var(--morgi-muted)] mt-1">One-time fee in shillings — applicants see it on Bank Requirements.</p>
+          </div>
+          <div>
+            <label class="text-xs font-semibold uppercase tracking-wide text-[var(--morgi-muted)]">Min Loan (TZS)</label>
+            <input type="number" step="0.01" min="0" name="min_loan_amount" value="{% if request.user.is_authenticated %}{{ request.user.min_loan_amount|default:'' }}{% endif %}" class="morgi-input w-full rounded-lg px-4 py-3 mt-2 text-sm" placeholder="e.g. 5000000">
+          </div>
+          <div>
+            <label class="text-xs font-semibold uppercase tracking-wide text-[var(--morgi-muted)]">Max Loan (TZS)</label>
+            <input type="number" step="0.01" min="0" name="max_loan_amount" value="{% if request.user.is_authenticated %}{{ request.user.max_loan_amount|default:'' }}{% endif %}" class="morgi-input w-full rounded-lg px-4 py-3 mt-2 text-sm" placeholder="e.g. 500000000">
+          </div>
+          <div class="sm:col-span-2">
+            <label class="text-xs font-semibold uppercase tracking-wide text-[var(--morgi-muted)]">Requirements</label>
+            <textarea name="bank_requirements" rows="3" class="morgi-input w-full rounded-lg px-4 py-3 mt-2 text-sm" placeholder="e.g. Valid ID, Pay Slip, Bank Statement, Tax Clearance">{% if request.user.is_authenticated %}{{ request.user.bank_requirements|default:'' }}{% endif %}</textarea>
+          </div>
+        </div>
+        <button type="submit" class="mt-5 btn-primary px-6 py-3 rounded-lg text-sm font-semibold">Save Loan Terms</button>
+      </form>
+
+      <div class="morgi-card p-6 lg:p-8">
+        <h3 class="font-semibold mb-5">Preferences</h3>
+        <div class="space-y-5">
+          <form method="post" action="{% url 'bank_settings' %}" class="flex items-center justify-between gap-6 py-1">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="notify">
+            <div><p class="text-sm font-medium">Email Notifications</p><p class="text-xs text-[var(--morgi-muted)] mt-0.5">Receive updates for new applications</p></div>
+            <label class="inline-flex cursor-pointer items-center flex-shrink-0">
+              <input type="checkbox" name="notify_email" value="on" class="sr-only" {% if request.user.is_authenticated and request.user.notify_email %}checked{% endif %} onchange="this.form.submit()">
+              <span class="toggle-switch"></span>
+            </label>
+          </form>
+          <div class="flex items-center justify-between gap-6 py-1 border-t border-[var(--morgi-border)] pt-5">
+            <div><p class="text-sm font-medium">Dark Mode</p><p class="text-xs text-[var(--morgi-muted)] mt-0.5">Switch theme (choice is remembered)</p></div>
+            <label class="inline-flex cursor-pointer items-center flex-shrink-0">
+              <input type="checkbox" id="darkModePref" class="sr-only">
+              <span class="toggle-switch"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="morgi-card p-6 lg:p-8 border-red-200 dark:border-red-800">
+        <h3 class="font-semibold text-red-600 dark:text-red-400 mb-2">Danger Zone</h3>
+        <p class="text-sm text-[var(--morgi-muted)] mb-4">Deactivating will suspend loan approvals and log you out immediately.</p>
+        <button onclick="document.getElementById('deactivateModal').classList.remove('hidden')" class="px-5 py-2.5 rounded-lg border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-950/30">Deactivate Account</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Deactivate confirm modal -->
+<div id="deactivateModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+  <div class="morgi-card w-full max-w-md p-6">
+    <h3 class="font-bold text-lg text-red-600">Deactivate Account?</h3>
+    <p class="text-sm text-[var(--morgi-muted)] mt-1">This suspends all loan approvals. Type <strong>DEACTIVATE</strong> to confirm.</p>
+    <form method="post" action="{% url 'bank_deactivate' %}" class="mt-4 space-y-3">
+      {% csrf_token %}
+      <input type="text" name="confirm" placeholder="Type DEACTIVATE" class="morgi-input w-full rounded-lg px-3 py-2.5 text-sm" required>
+      <div class="flex gap-2">
+        <button type="button" onclick="document.getElementById('deactivateModal').classList.add('hidden')" class="flex-1 btn-secondary py-2.5 rounded-lg text-sm font-medium">Cancel</button>
+        <button type="submit" class="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700">Deactivate</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+  // Dark mode toggle stays in sync with the header theme (localStorage)
+  (function(){
+    const box = document.getElementById('darkModePref');
+    if(!box) return;
+    function current(){ return document.documentElement.classList.contains('dark'); }
+    box.checked = current();
+    // Follow theme changes (header toggle)
+    new MutationObserver(function(){ box.checked = current(); }).observe(document.documentElement, {attributes: true, attributeFilter: ['class']});
+    box.addEventListener('change', function(){
+      const btn = document.getElementById('theme-toggle');
+      if(btn && ((box.checked && !current()) || (!box.checked && current()))) btn.click();
+    });
+  })();
+</script>
+{% endblock %}

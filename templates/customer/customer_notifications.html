@@ -1,0 +1,101 @@
+{% extends 'customer/customer_base.html' %}
+{% block title %}Notifications - MorgiHome{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <h4 class="card-title mb-0" style="font-weight:700;">Notifications</h4>
+          <div class="d-flex gap-2">
+            <button onclick="markAllRead()" class="btn btn-sm btn-outline-secondary" style="border-radius:20px; font-size:12px; {% if not notifications %}opacity:0.4; pointer-events:none;{% endif %}"><i class="mdi mdi-check-all"></i> Mark all as read</button>
+            <span class="badge bg-primary" style="border-radius:20px; padding:6px 12px;" id="newCount">{% if notifications %}{{ notifications|length }} total{% else %}0 total{% endif %}</span>
+          </div>
+        </div>
+        <p class="text-muted" style="font-size:13px;">In-app notifications only • No email{% if notifications %} • {{ notifications|length }} notification{{ notifications|length|pluralize }}{% endif %}</p>
+        <div class="list-group mt-4" id="notifList">
+          {% if notifications %}
+            {% for n in notifications %}
+            <div class="list-group-item notif-item" data-id="{{ n.id }}" style="background:#191c24; border:1px solid #2c2e33; border-radius:8px; margin-bottom:8px; padding:14px;">
+              <div class="d-flex gap-3 align-items-start">
+                <div style="width:42px; height:42px; border-radius:50%; background:rgba(0,119,182,0.15); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="{{ n.icon }}" style="color:#0077B6;"></i></div>
+                <div class="flex-fill">
+                  <h6 class="mb-1" style="font-size:13px; font-weight:700;">{{ n.title }}</h6>
+                  <p class="text-muted mb-1" style="font-size:12px;">{{ n.message }}</p>
+                  <small class="text-muted" style="font-size:11px;"><i class="mdi mdi-clock-outline"></i> {{ n.time }}</small>
+                </div>
+                <div class="d-flex flex-column gap-2 align-items-end">
+                  {% if not n.read %}<span class="notif-dot" style="width:10px; height:10px; border-radius:50%; background:#0077B6; display:block;"></span>{% endif %}
+                  <button onclick="markRead(this)" class="btn btn-sm" style="font-size:11px; padding:2px 8px; background:#2c2e33; color:#fff; border:1px solid #444; border-radius:20px;">Mark read</button>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="text-center py-5" style="background:#191c24; border:1px solid #2c2e33; border-radius:12px;">
+              <div style="width:64px; height:64px; border-radius:50%; background:#2c2e33; display:flex; align-items:center; justify-content:center; margin:0 auto;"><i class="mdi mdi-bell-off-outline" style="font-size:28px; color:#6c7293;"></i></div>
+              <h5 class="mt-3" style="font-weight:700;">No notifications</h5>
+              <p class="text-muted" style="font-size:13px;">You have no notifications yet. When you receive updates about your applications, they will appear here.</p>
+            </div>
+          {% endif %}
+        </div>
+
+        {% if is_paginated %}
+        <nav class="mt-4">
+          <ul class="pagination justify-content-center" style="gap:4px;">
+            {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}" style="background:#2c2e33; border-color:#444; color:#fff; border-radius:6px;"><i class="mdi mdi-chevron-left"></i></a></li>
+            {% endif %}
+            {% for num in page_obj.paginator.page_range %}
+              {% if num == page_obj.number %}
+              <li class="page-item active"><span class="page-link" style="background:#0077B6; border-color:#0077B6; border-radius:6px;">{{ num }}</span></li>
+              {% elif num <= page_obj.number|add:2 and num >= page_obj.number|add:-2 %}
+              <li class="page-item"><a class="page-link" href="?page={{ num }}" style="background:#2c2e33; border-color:#444; color:#fff; border-radius:6px;">{{ num }}</a></li>
+              {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}" style="background:#2c2e33; border-color:#444; color:#fff; border-radius:6px;"><i class="mdi mdi-chevron-right"></i></a></li>
+            {% endif %}
+          </ul>
+        </nav>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+function getCookie(name){
+  var v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+  return v ? v.pop() : '';
+}
+function persistRead(){
+  // Save read state on the server so the bell number clears and STAYS cleared.
+  fetch('/api/auth/notifications/', {method:'POST', credentials:'same-origin', headers:{'X-CSRFToken': getCookie('csrftoken')}}).catch(function(){});
+  var badge = document.getElementById('custNotifCount');
+  if(badge){ badge.style.display='none'; }
+  var total = document.getElementById('newCount');
+  if(total){ total.textContent = '0 total'; }
+}
+function markRead(btn){
+  var item = btn.closest('.notif-item');
+  var dot = item.querySelector('.notif-dot');
+  if(dot) dot.style.display='none';
+  btn.textContent='Read ✓';
+  btn.disabled=true;
+  btn.style.opacity='0.6';
+  persistRead();
+}
+function markAllRead(){
+  if(!document.querySelectorAll('.notif-item').length){ Swal.fire({icon:'info', title:'No notifications', text:'There are no notifications to mark as read', timer:4000, showConfirmButton:false, toast:true, position:'top-end'}); return; }
+  document.querySelectorAll('.notif-dot').forEach(d=>d.style.display='none');
+  document.querySelectorAll('.notif-item button').forEach(b=>{ b.textContent='Read ✓'; b.disabled=true; b.style.opacity='0.6'; });
+  persistRead();
+  Swal.fire({icon:'success', title:'All marked as read', timer:4000, showConfirmButton:false, toast:true, position:'top-end'});
+}
+</script>
+{% endblock %}

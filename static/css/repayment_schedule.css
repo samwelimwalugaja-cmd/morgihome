@@ -1,0 +1,5 @@
+/* Repayment Schedule */
+.status-paid { color: #28A745; font-weight: 600; }
+.status-pending { color: #FFC107; font-weight: 600; }
+.status-overdue { color: #DC3545; font-weight: 600; }
+.table th { font-size: 12px; text-transform: uppercase; color: #64748b; }

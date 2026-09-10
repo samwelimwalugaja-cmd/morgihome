@@ -1,0 +1,390 @@
+================================================================================
+PHASE 4: MORTGAGE MANAGEMENT + AI FEATURES
+================================================================================
+
+KABLA YA KUANZA: Hakikisha Phase 3 imekamilika (Properties CRUD inafanya kazi).
+
+================================================================================
+KAZI ZA PHASE HII (TEKELEZA MOJA KWA MOJA)
+================================================================================
+
+--- KAZI 4.1: Unda Model ya MortgageApplication ---
+TEKELEZA:
+1. Nenda kwenye mortgages/models.py
+2. Weka code hii:
+
+from django.db import models
+from django.conf import settings
+from properties.models import Property
+
+class MortgageApplication(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Inasubiri'),
+        ('document_verification', 'Ukaguzi wa Nyaraka'),
+        ('valuation', 'Tathmini ya Nyumba'),
+        ('credit_assessment', 'Tathmini ya Mikopo'),
+        ('approved', 'Imeidhinishwa'),
+        ('rejected', 'Imekataliwa'),
+        ('disbursed', 'Fedha Zimetolewa'),
+    )
+    
+    customer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, limit_choices_to={'role': 'customer'}, related_name='mortgage_applications')
+    property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name='mortgage_applications')
+    
+    loan_amount = models.DecimalField(max_digits=15, decimal_places=2)
+    down_payment = models.DecimalField(max_digits=15, decimal_places=2)
+    repayment_period = models.IntegerField(help_text="Muda wa marejesho kwa miezi")
+    
+    monthly_income = models.DecimalField(max_digits=15, decimal_places=2)
+    monthly_expenses = models.DecimalField(max_digits=15, decimal_places=2)
+    employment_status = models.CharField(max_length=50, blank=True, null=True)
+    
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='pending')
+    
+    # AI Features - Zitahesabiwa kiotomatiki
+    affordability_score = models.FloatField(null=True, blank=True, help_text="Alama ya uwezo wa kulipa (0-100)")
+    risk_score = models.FloatField(null=True, blank=True, help_text="Alama ya hatari (0-100, juu = hatari kubwa)")
+    monthly_installment = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+    dti_ratio = models.FloatField(null=True, blank=True, help_text="Debt-to-Income Ratio")
+    
+    documents = models.FileField(upload_to='mortgage_documents/', blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.customer.username} - {self.property.title} - {self.loan_amount} TZS"
+
+--- KAZI 4.2: Unda Model ya RepaymentSchedule ---
+TEKELEZA:
+1. Ongeza kwenye mortgages/models.py (chini ya MortgageApplication):
+
+class RepaymentSchedule(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Inasubiri'),
+        ('paid', 'Imelipwa'),
+        ('overdue', 'Imechelewa'),
+    )
+    
+    mortgage = models.ForeignKey(MortgageApplication, on_delete=models.CASCADE, related_name='repayment_schedule')
+    installment_number = models.IntegerField()
+    due_date = models.DateField()
+    amount_due = models.DecimalField(max_digits=15, decimal_places=2)
+    amount_paid = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    balance_remaining = models.DecimalField(max_digits=15, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    payment_date = models.DateField(null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.mortgage} - Instalment #{self.installment_number}"
+
+--- KAZI 4.3: Unda AI Functions ---
+TEKELEZA:
+1. Unda faili: mortgages/ai_utils.py
+2. Weka code hii:
+
+import math
+from decimal import Decimal
+
+def calculate_monthly_installment(loan_amount, annual_interest_rate, months):
+    """
+    Hesabu installment ya kila mwezi kwa kutumia formula ya annuity.
+    annual_interest_rate: kwa mfano 0.12 kwa 12%
+    """
+    monthly_rate = annual_interest_rate / 12
+    if monthly_rate == 0:
+        return loan_amount / months
+    installment = loan_amount * (monthly_rate * (1 + monthly_rate) ** months) / ((1 + monthly_rate) ** months - 1)
+    return installment
+
+def calculate_affordability(monthly_income, monthly_expenses, monthly_installment):
+    """
+    Hesabu uwezo wa mkopaji kulipa.
+    Inarudi: affordability_score (0-100), dti_ratio
+    """
+    disposable_income = monthly_income - monthly_expenses
+    dti_ratio = (monthly_installment / monthly_income) * 100 if monthly_income > 0 else 100
+    
+    if disposable_income <= 0:
+        return 0, dti_ratio
+    
+    # Affordability = uwezo wa kulipa installment
+    if monthly_installment <= 0:
+        return 100, dti_ratio
+    
+    ratio = (disposable_income / monthly_installment) * 100
+    affordability_score = min(100, ratio)  # Max 100
+    return affordability_score, dti_ratio
+
+def calculate_risk_score(affordability_score, employment_status, credit_history='unknown'):
+    """
+    Hesabu hatari ya mkopaji.
+    affordability_score: 0-100 (juu = salama)
+    employment_status: 'employed', 'self_employed', 'business', 'unemployed'
+    """
+    risk_score = 100 - affordability_score  # Affordability ya juu = risk ya chini
+    
+    # Adjust kulingana na ajira
+    employment_factors = {
+        'employed': -10,
+        'self_employed': 0,
+        'business': 5,
+        'unemployed': 30,
+        None: 0
+    }
+    risk_score += employment_factors.get(employment_status, 0)
+    
+    # Credit history factor (placeholder)
+    if credit_history == 'good':
+        risk_score -= 15
+    elif credit_history == 'bad':
+        risk_score += 25
+    
+    # Ensure risk_score is between 0 and 100
+    risk_score = max(0, min(100, risk_score))
+    return risk_score
+
+def generate_repayment_schedule(mortgage):
+    """
+    Tengeneza repayment schedule baada ya mortgage kuidhinishwa.
+    """
+    annual_interest_rate = 0.12  # 12% interest (placeholder - inabadilishwa baadae)
+    months = mortgage.repayment_period
+    loan_amount = float(mortgage.loan_amount)
+    
+    monthly_installment = calculate_monthly_installment(loan_amount, annual_interest_rate, months)
+    
+    schedules = []
+    balance = loan_amount
+    
+    for i in range(1, months + 1):
+        interest = balance * (annual_interest_rate / 12)
+        principal = monthly_installment - interest
+        balance -= principal
+        
+        if balance < 0:
+            balance = 0
+        
+        schedule = {
+            'installment_number': i,
+            'amount_due': monthly_installment,
+            'balance_remaining': balance,
+        }
+        schedules.append(schedule)
+    
+    return schedules, monthly_installment
+
+--- KAZI 4.4: Unda Serializers ---
+TEKELEZA:
+1. Nenda kwenye mortgages/serializers.py
+2. Weka code hii:
+
+from rest_framework import serializers
+from .models import MortgageApplication, RepaymentSchedule
+from properties.serializers import PropertySerializer
+
+class MortgageApplicationSerializer(serializers.ModelSerializer):
+    customer_name = serializers.SerializerMethodField()
+    property_details = PropertySerializer(source='property', read_only=True)
+    monthly_installment_display = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = MortgageApplication
+        fields = ['id', 'customer', 'customer_name', 'property', 'property_details', 
+                 'loan_amount', 'down_payment', 'repayment_period', 
+                 'monthly_income', 'monthly_expenses', 'employment_status',
+                 'status', 'affordability_score', 'risk_score', 
+                 'monthly_installment', 'dti_ratio', 'documents', 'notes',
+                 'created_at', 'updated_at', 'monthly_installment_display']
+        read_only_fields = ['affordability_score', 'risk_score', 'monthly_installment', 
+                           'dti_ratio', 'created_at', 'updated_at']
+    
+    def get_customer_name(self, obj):
+        return obj.customer.username if obj.customer else None
+    
+    def get_monthly_installment_display(self, obj):
+        if obj.monthly_installment:
+            return f"{obj.monthly_installment:,.2f} TZS"
+        return None
+
+class RepaymentScheduleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RepaymentSchedule
+        fields = '__all__'
+
+--- KAZI 4.5: Unda Views ---
+TEKELEZA:
+1. Nenda kwenye mortgages/views.py
+2. Weka code hii:
+
+from rest_framework import viewsets, permissions, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from django.db import transaction
+from .models import MortgageApplication, RepaymentSchedule
+from .serializers import MortgageApplicationSerializer, RepaymentScheduleSerializer
+from .ai_utils import calculate_affordability, calculate_risk_score, calculate_monthly_installment, generate_repayment_schedule
+from accounts.permissions import IsCustomer, IsBank
+
+class MortgageApplicationViewSet(viewsets.ModelViewSet):
+    queryset = MortgageApplication.objects.all()
+    serializer_class = MortgageApplicationSerializer
+    
+    def get_permissions(self):
+        if self.action in ['create']:
+            permission_classes = [permissions.IsAuthenticated, IsCustomer]
+        elif self.action in ['approve', 'reject']:
+            permission_classes = [permissions.IsAuthenticated, IsBank]
+        else:
+            permission_classes = [permissions.IsAuthenticated]
+        return [permission() for permission in permission_classes]
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'customer':
+            return MortgageApplication.objects.filter(customer=user)
+        elif user.role in ['bank', 'realestate']:
+            return MortgageApplication.objects.all()
+        elif user.role == 'seller':
+            return MortgageApplication.objects.filter(property__seller=user)
+        return MortgageApplication.objects.none()
+    
+    def perform_create(self, serializer):
+        with transaction.atomic():
+            # Hesabu monthly installment
+            annual_interest_rate = 0.12  # 12% placeholder
+            loan_amount = float(serializer.validated_data.get('loan_amount', 0))
+            months = serializer.validated_data.get('repayment_period', 0)
+            
+            monthly_installment = calculate_monthly_installment(loan_amount, annual_interest_rate, months)
+            
+            # Hesabu affordability
+            monthly_income = float(serializer.validated_data.get('monthly_income', 0))
+            monthly_expenses = float(serializer.validated_data.get('monthly_expenses', 0))
+            affordability_score, dti_ratio = calculate_affordability(monthly_income, monthly_expenses, monthly_installment)
+            
+            # Hesabu risk score
+            employment_status = serializer.validated_data.get('employment_status')
+            risk_score = calculate_risk_score(affordability_score, employment_status)
+            
+            # Hifadhi
+            mortgage = serializer.save(
+                customer=self.request.user,
+                monthly_installment=monthly_installment,
+                affordability_score=affordability_score,
+                risk_score=risk_score,
+                dti_ratio=dti_ratio
+            )
+    
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        mortgage = self.get_object()
+        if mortgage.status != 'pending':
+            return Response({'error': 'Application is not pending'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        mortgage.status = 'approved'
+        mortgage.save()
+        
+        # Generate repayment schedule
+        schedules, monthly_installment = generate_repayment_schedule(mortgage)
+        for schedule in schedules:
+            RepaymentSchedule.objects.create(
+                mortgage=mortgage,
+                installment_number=schedule['installment_number'],
+                due_date=request.data.get('due_date') or '2025-01-01',  # Placeholder
+                amount_due=schedule['amount_due'],
+                balance_remaining=schedule['balance_remaining']
+            )
+        
+        return Response({'status': 'approved', 'message': 'Mortgage approved successfully'})
+    
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        mortgage = self.get_object()
+        if mortgage.status == 'approved' or mortgage.status == 'disbursed':
+            return Response({'error': 'Cannot reject approved or disbursed application'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        mortgage.status = 'rejected'
+        mortgage.save()
+        return Response({'status': 'rejected', 'message': 'Mortgage rejected'})
+    
+    @action(detail=True, methods=['get'])
+    def repayment_schedule(self, request, pk=None):
+        mortgage = self.get_object()
+        schedules = RepaymentSchedule.objects.filter(mortgage=mortgage).order_by('installment_number')
+        serializer = RepaymentScheduleSerializer(schedules, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['get'])
+    def affordability(self, request, pk=None):
+        mortgage = self.get_object()
+        return Response({
+            'affordability_score': mortgage.affordability_score,
+            'risk_score': mortgage.risk_score,
+            'dti_ratio': mortgage.dti_ratio,
+            'monthly_installment': mortgage.monthly_installment,
+            'status': mortgage.status
+        })
+
+--- KAZI 4.6: Unda URLs ---
+TEKELEZA:
+1. Nenda kwenye mortgages/urls.py
+2. Weka code hii:
+
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import MortgageApplicationViewSet
+
+router = DefaultRouter()
+router.register(r'mortgages', MortgageApplicationViewSet, basename='mortgage')
+
+urlpatterns = [
+    path('', include(router.urls)),
+]
+
+3. Nenda kwenye morgihome_backend/urls.py
+4. Ongeza path hii:
+   path('api/', include('mortgages.urls')),
+
+--- KAZI 4.7: Weka app kwenye INSTALLED_APPS ---
+TEKELEZA:
+1. Nenda kwenye morgihome_backend/settings.py
+2. Hakikisha 'mortgages' ipo kwenye INSTALLED_APPS
+
+--- KAZI 4.8: Endesha Migrations ---
+TEKELEZA:
+python manage.py makemigrations
+python manage.py migrate
+
+--- KAZI 4.9: Test ---
+TEKELEZA:
+1. Endesha server: python manage.py runserver
+2. Unda mortgage application kupitia API:
+   POST /api/mortgages/
+   {
+       "property": 1,
+       "loan_amount": 50000000,
+       "down_payment": 10000000,
+       "repayment_period": 240,
+       "monthly_income": 2000000,
+       "monthly_expenses": 800000,
+       "employment_status": "employed"
+   }
+3. Angalia response ina affordability_score, risk_score
+4. Approve mortgage: POST /api/mortgages/1/approve/
+5. Angalia repayment schedule: GET /api/mortgages/1/repayment_schedule/
+
+================================================================================
+TATIZO: "KAMA KITU KIKIKWAMA, USIENDELEE"
+================================================================================
+Kama unapata error yoyote, SIMAMA na unipe error hiyo.
+Nitasoma error na kukupa suluhisho kabla ya kuendelea.
+
+================================================================================
+BAADA YA KUKAMILISHA PHASE 4
+================================================================================
+NITAKUAMBIA: "PHASE 4 IMESHA. TUNAENDELEA PHASE 5"
+USIENDELEE HADI NIKUAMBIE.
+
+================================================================================

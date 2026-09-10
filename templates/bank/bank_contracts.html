@@ -1,0 +1,53 @@
+{% extends 'bank/bank_base.html' %}
+{% load humanize %}
+{% block title %}Contracts - MorgiHome Bank{% endblock %}
+{% block page_title %}Contracts{% endblock %}
+{% block breadcrumb %}Bank / Contracts{% endblock %}
+
+{% block content %}
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+  <div>
+    <h1 class="text-xl font-bold">Loan Contracts</h1>
+    <p class="text-sm text-[var(--morgi-muted)]">{{ total_count|intcomma }} contracts • {{ executed_count|intcomma }} executed</p>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+  <div class="morgi-card p-4 flex items-center gap-4"><div class="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600"><i data-lucide="file-check" class="w-5 h-5"></i></div><div><p class="text-xs text-[var(--morgi-muted)]">Active (Signed/Executed)</p><p class="text-xl font-bold">{{ active_count|intcomma }}</p></div></div>
+  <div class="morgi-card p-4 flex items-center gap-4"><div class="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600"><i data-lucide="clock" class="w-5 h-5"></i></div><div><p class="text-xs text-[var(--morgi-muted)]">Pending Signature</p><p class="text-xl font-bold">{{ pending_count|intcomma }}</p></div></div>
+  <div class="morgi-card p-4 flex items-center gap-4"><div class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300"><i data-lucide="archive" class="w-5 h-5"></i></div><div><p class="text-xs text-[var(--morgi-muted)]">Total</p><p class="text-xl font-bold">{{ total_count|intcomma }}</p></div></div>
+</div>
+
+<div class="morgi-card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full morgi-table">
+      <thead>
+        <tr class="text-left">
+          <th class="px-5 py-3">Contract</th>
+          <th class="px-5 py-3">Customer</th>
+          <th class="px-5 py-3">Amount</th>
+          <th class="px-5 py-3">Date</th>
+          <th class="px-5 py-3">Monthly Payment</th>
+          <th class="px-5 py-3">Status</th>
+          <th class="px-5 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="text-sm">
+        {% for c in contracts %}
+        <tr>
+          <td class="px-5 py-4"><p class="font-mono font-semibold">#{{ c.ref }}</p><p class="text-xs text-[var(--morgi-muted)]">{{ c.app_ref }} • {{ c.property_name|truncatechars:25 }}</p></td>
+          <td class="px-5 py-4"><div class="flex items-center gap-2">{% if c.photo %}<img src="{{ c.photo }}" alt="{{ c.customer }}" class="w-8 h-8 rounded-full object-cover flex-shrink-0" style="border:2px solid #0077B6;">{% else %}<div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style="background: linear-gradient(135deg, #0077B6, #0A2B4E);">{{ c.initials|default:"-" }}</div>{% endif %}<span class="font-medium">{{ c.customer }}</span></div></td>
+          <td class="px-5 py-4 font-semibold">TZS {{ c.amount|floatformat:0|intcomma }}</td>
+          <td class="px-5 py-4 text-[var(--morgi-muted)]">{{ c.date }}</td>
+          <td class="px-5 py-4">TZS {{ c.monthly|floatformat:0|intcomma }}</td>
+          <td class="px-5 py-4"><span class="px-2.5 py-1 rounded-full text-xs font-semibold border {% if c.status == 'executed' %}bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300{% elif c.status == 'signed' %}bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300{% elif c.status == 'pending_signature' %}bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300{% else %}bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300{% endif %}">{{ c.status_display }}</span></td>
+          <td class="px-5 py-4"><div class="flex gap-1 justify-end"><a href="{{ c.link }}" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--morgi-border)]" title="View"><i data-lucide="eye" class="w-4 h-4"></i></a></div></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="px-5 py-12 text-center text-[var(--morgi-muted)]">No contracts yet. Contracts will appear here once created.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

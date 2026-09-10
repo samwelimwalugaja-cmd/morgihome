@@ -1,0 +1,41 @@
+================================================================================
+PROJECT: MorgiHome - MAELEZO YA JUMLA
+================================================================================
+
+Hii ni platform ya usimamizi wa mikopo ya nyumba (mortgage) na mali isiyohamishika (real estate).
+
+TEKNOLOJIA:
+- Backend: Django (Python)
+- Web Frontend: HTML, CSS, Bootstrap (Template: https://bootstrapmade.com/demo/Resi/)
+- Mobile App: Flutter (Template: https://doctor-nu-two.vercel.app/)
+- Database: PostgreSQL (au SQLite kwa sasa)
+- Authentication: JWT (djangorestframework-simplejwt)
+
+WATUMIAJI (ROLES) - WATU 5:
+1. Customer (Mteja/Mkopaji)
+2. Seller (Muuza nyumba)
+3. Bank (Benki)
+4. Real Estate Company (Kampuni ya Mali Isiyohamishika)
+5. Lawyer (Wakili)
+
+RANGI ZA KAMPUNI:
+- Blue Bahari (Primary): #0077B6
+- Dark Blue (Secondary): #0A2B4E
+- White (Background): #FFFFFF
+
+LENGO: Kuunda mfumo salama, wa kitaalamu, na wa kisasa unaowaunganisha wateja, wauzaji, benki, kampuni za mali isiyohamishika, na wakili katika mchakato mmoja wa kidijitali.
+
+================================================================================
+MFUMO WA PHASES:
+================================================================================
+Phase 1: Mazingira (Environment) na Authentication
+Phase 2: Website Frontend (Landing Page) - Template ya Resi
+Phase 3: Real Estate (Properties) - CRUD
+Phase 4: Mortgage Management + AI Features
+Phase 5: Lawyer & Contract Management
+Phase 6: API Development (Django REST Framework)
+Phase 7: Mobile App (Flutter) - Template ya Doctor
+
+================================================================================
+KILA PHASE INA FAILI YAKE MAALUM KATIKA FOLDER HII YA phases/
+================================================================================

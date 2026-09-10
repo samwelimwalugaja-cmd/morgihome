@@ -1,0 +1,49 @@
+{% extends 'bank/bank_base.html' %}
+{% block title %}Notifications - MorgiHome Bank{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+{% block breadcrumb %}Bank / Notifications{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <div class="flex items-center justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-xl font-bold">Notifications</h1>
+      <p class="text-sm text-[var(--morgi-muted)]">{% if unread %}{{ unread }} unread{% else %}You're all caught up{% endif %} • stored, they never disappear</p>
+    </div>
+    {% if notifications %}
+    <form method="post" action="{% url 'bank_notifications_read' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn-secondary px-4 py-2 rounded-lg text-sm font-medium">Mark all as read</button>
+    </form>
+    {% endif %}
+  </div>
+
+  {% if notifications %}
+  <div class="space-y-3">
+    {% for n in notifications %}
+    <a href="{{ n.link|default:'#' }}" class="morgi-card p-4 flex items-start gap-4 hover:shadow-md transition-shadow">
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 {% if n.color == 'emerald' %}bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600{% elif n.color == 'amber' %}bg-amber-100 dark:bg-amber-900/30 text-amber-600{% elif n.color == 'red' %}bg-red-100 dark:bg-red-900/30 text-red-600{% else %}text-white{% endif %}" {% if n.color == 'blue' %}style="background:#0077B6"{% endif %}>
+        <i data-lucide="{% if n.icon == 'circle-check' %}circle-check{% elif n.icon == 'triangle-alert' %}triangle-alert{% else %}file-text{% endif %}" class="w-5 h-5"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2">
+          <p class="font-semibold text-sm">{{ n.title }}</p>
+          {% if not n.read %}<span class="w-2 h-2 rounded-full bg-[#0077B6]"></span>{% endif %}
+        </div>
+        <p class="text-sm text-[var(--morgi-muted)] mt-0.5">{{ n.message }}</p>
+        <p class="text-xs text-[var(--morgi-muted)] mt-1">{{ n.time }}</p>
+      </div>
+      <i data-lucide="chevron-right" class="w-4 h-4 text-[var(--morgi-muted)] flex-shrink-0 mt-1"></i>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="morgi-card p-12 text-center">
+    <div class="w-16 h-16 rounded-full bg-[var(--morgi-border)] flex items-center justify-center mx-auto"><i data-lucide="bell-off" class="w-8 h-8 text-[var(--morgi-muted)]"></i></div>
+    <h3 class="font-semibold mt-4">No notifications</h3>
+    <p class="text-sm text-[var(--morgi-muted)] mt-1">You're all caught up. New applications, approvals and overdue payments will appear here.</p>
+    <a href="{% url 'bank_applications' %}" class="mt-4 inline-flex btn-primary px-5 py-2.5 rounded-lg text-sm font-medium">View Applications</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

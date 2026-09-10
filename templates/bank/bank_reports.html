@@ -1,0 +1,88 @@
+{% extends 'bank/bank_base.html' %}
+{% load humanize %}
+{% block title %}Reports - MorgiHome Bank{% endblock %}
+{% block page_title %}Reports{% endblock %}
+{% block breadcrumb %}Bank / Reports{% endblock %}
+
+{% block content %}
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+  <div>
+    <h1 class="text-xl font-bold">Bank Reports</h1>
+    <p class="text-sm text-[var(--morgi-muted)]">Live summaries generated from your database • {{ generated_on }}</p>
+  </div>
+</div>
+
+<!-- Report Cards (REAL DATA) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+  {% for rc in report_cards %}
+  <div class="morgi-card p-5">
+    <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style="background:#0077B611; color:#0077B6"><i data-lucide="file-text" class="w-5 h-5"></i></div>
+    <h3 class="font-semibold">{{ rc.name }}</h3>
+    <p class="text-sm text-[var(--morgi-muted)] mt-1">{{ rc.desc }}</p>
+    <p class="text-xs font-semibold mt-3" style="color:#0077B6">{{ rc.meta }}</p>
+  </div>
+  {% empty %}
+  <p class="text-sm text-[var(--morgi-muted)]">No data yet.</p>
+  {% endfor %}
+</div>
+
+<!-- Custom Report Builder -->
+<div class="morgi-card p-5 lg:p-6 mb-6">
+  <h3 class="font-semibold mb-4 flex items-center gap-2"><i data-lucide="sliders-horizontal" class="w-4 h-4" style="color:#0077B6"></i> Build Custom Reports</h3>
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div>
+      <label class="text-xs font-semibold uppercase tracking-wide text-[var(--morgi-muted)]">Report Type</label>
+      <select class="morgi-input w-full rounded-lg px-3 py-2.5 mt-1.5 text-sm">
+        <option>Applications</option>
+        <option>Contracts</option>
+        <option>Repayments</option>
+        <option>AI Risk</option>
+      </select>
+    </div>
+    <div>
+      <label class="text-xs font-semibold uppercase tracking-wide text-[var(--morgi-muted)]">From</label>
+      <input type="date" value="2026-08-01" class="morgi-input w-full rounded-lg px-3 py-2.5 mt-1.5 text-sm">
+    </div>
+    <div>
+      <label class="text-xs font-semibold uppercase tracking-wide text-[var(--morgi-muted)]">To</label>
+      <input type="date" value="2026-09-03" class="morgi-input w-full rounded-lg px-3 py-2.5 mt-1.5 text-sm">
+    </div>
+    <div class="flex items-end">
+      <button class="w-full btn-primary py-2.5 rounded-lg text-sm font-semibold">Generate Report</button>
+    </div>
+  </div>
+</div>
+
+<!-- Monthly Breakdown (REAL DATA) -->
+<div class="morgi-card overflow-hidden">
+  <div class="p-5 border-b border-[var(--morgi-border)]">
+    <h3 class="font-semibold">Last 6 Months Breakdown</h3>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full morgi-table">
+      <thead>
+        <tr>
+          <th class="px-5 py-3 text-left">Month</th>
+          <th class="px-5 py-3 text-left">Applications</th>
+          <th class="px-5 py-3 text-left">Approved</th>
+          <th class="px-5 py-3 text-left">Disbursed</th>
+          <th class="px-5 py-3 text-left">Disbursed Amount</th>
+        </tr>
+      </thead>
+      <tbody class="text-sm">
+        {% for m in monthly %}
+        <tr>
+          <td class="px-5 py-4 font-medium">{{ m.label }}</td>
+          <td class="px-5 py-4">{{ m.applications|intcomma }}</td>
+          <td class="px-5 py-4">{{ m.approved|intcomma }}</td>
+          <td class="px-5 py-4">{{ m.disbursed|intcomma }}</td>
+          <td class="px-5 py-4 font-semibold">TZS {{ m.disbursed_amount|floatformat:0|intcomma }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="px-5 py-12 text-center text-[var(--morgi-muted)]">No data yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

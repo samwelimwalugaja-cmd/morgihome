@@ -1,0 +1,30 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="{% static 'images/favicon.ico' %}?v=4" rel="icon" sizes="48x48">
+    <link href="{% static 'images/favicon-32x32.png' %}?v=4" rel="icon" type="image/png" sizes="32x32">
+    <link href="{% static 'images/favicon-16x16.png' %}?v=4" rel="icon" type="image/png" sizes="16x16">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Locked - MorgiHome</title>
+    <meta http-equiv="refresh" content="300;url=/login/">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0A2B4E; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .lockout-container { text-align: center; padding: 40px; max-width: 500px; }
+        .lockout-container h1 { font-size: 2em; margin-bottom: 20px; color: #0077B6; }
+        .lockout-container p { font-size: 1.1em; margin-bottom: 15px; line-height: 1.6; }
+        .lockout-container .timer { font-size: 1.3em; color: #0077B6; font-weight: bold; margin: 20px 0; }
+        .lockout-container a { color: #0077B6; text-decoration: none; }
+        .lockout-container a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="lockout-container">
+        <h1>Account Locked</h1>
+        <p>Too many failed login attempts. Your account has been temporarily locked for security purposes.</p>
+        <p>Please try again after <span class="timer">5 minutes</span>.</p>
+        <p>You will be redirected automatically. <a href="/login/">Go to login</a></p>
+    </div>
+</body>
+</html>

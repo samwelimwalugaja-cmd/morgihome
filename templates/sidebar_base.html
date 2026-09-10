@@ -1,0 +1,92 @@
+{# Sidebar Base Template - Auto switch based on user.role #}
+{# Usage: {% extends 'sidebar_base.html' %} or set base_template variable in view #}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>{% block title %}MorgiHome{% endblock %}</title>
+  <link href="{% static 'images/favicon.ico' %}?v=4" rel="icon" sizes="48x48">
+  <link href="{% static 'images/favicon-32x32.png' %}?v=4" rel="icon" type="image/png" sizes="32x32">
+  <link href="{% static 'images/favicon-16x16.png' %}?v=4" rel="icon" type="image/png" sizes="16x16">
+  <link href="{% static 'images/apple-touch-icon.png' %}?v=4" rel="apple-touch-icon" type="image/png">
+  <link rel="stylesheet" href="{% static 'corona/vendors/mdi/css/materialdesignicons.min.css' %}">
+  <link rel="stylesheet" href="{% static 'corona/vendors/css/vendor.bundle.base.css' %}">
+  <link rel="stylesheet" href="{% static 'corona/css/style.css' %}">
+  <style>
+    html, body { background:#000 !important; }
+    .sidebar { position:fixed !important; height:100vh !important; width:243px !important; top:0; left:0; z-index:1030; display:flex !important; flex-direction:column !important; overflow:hidden !important; background:#0A2B4E !important; }
+    .sidebar .nav { flex:1 1 auto !important; overflow-y:auto !important; padding:8px 0 16px 0 !important; }
+    .morgi-brand { display:flex; align-items:center; gap:10px; padding:14px 16px; background:#0A2B4E; border-bottom:1px solid rgba(255,255,255,0.1); }
+    .morgi-brand .brand-icon { width:32px; height:32px; background:#0077B6; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#fff; }
+    .morgi-brand .brand-text { font-weight:800; color:#fff; }
+    .sidebar .nav .nav-link { color:rgba(255,255,255,0.85) !important; }
+    .sidebar .nav .nav-item.active > .nav-link { background:#0077B6 !important; color:#fff !important; }
+    .page-body-wrapper { margin-left:243px !important; width:calc(100% - 243px) !important; background:#000 !important; min-height:100vh !important; }
+    .content-wrapper { background:#000 !important; padding:20px !important; }
+    @media (max-width: 991px) { .sidebar { transform:translateX(-100%); } .sidebar.active { transform:translateX(0); } .page-body-wrapper { margin-left:0 !important; width:100% !important; } }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <div class="container-scroller">
+    <nav class="sidebar sidebar-offcanvas" id="sidebar">
+      <div class="morgi-brand">
+        <div class="brand-icon"><i class="mdi mdi-home-city"></i></div>
+        <div><div class="brand-text">MorgiHome</div><div class="brand-sub" style="font-size:9px; color:rgba(255,255,255,0.7); letter-spacing:1px;">{% if user.role == 'seller' %}SELLER PORTAL{% elif user.role == 'realestate' %}REAL ESTATE PORTAL{% else %}MORTGAGE PORTAL{% endif %}</div></div>
+      </div>
+      <ul class="nav">
+        <li class="nav-item profile">
+          <div class="profile-desc">
+            <div class="profile-pic">
+              {% if user.profile_image %}<img class="img-xs rounded-circle" src="{{ user.profile_image.url }}" alt="">{% else %}<div class="img-xs rounded-circle d-flex align-items-center justify-content-center text-white" style="width:38px; height:38px; background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%); font-weight:700;">{{ user.initials|default:"M" }}</div>{% endif %}
+            </div>
+            <div class="profile-name">
+              <h5 class="mb-0" style="color:#fff;">{{ user.get_full_name|default:user.email }}</h5>
+              <span style="color:rgba(255,255,255,0.7);">{{ user.get_role_display }}</span>
+            </div>
+          </div>
+        </li>
+
+        {% if user.role == 'seller' %}
+        {# Seller Links #}
+        <li class="nav-item nav-category"><span class="nav-link">Seller Menu</span></li>
+        <li class="nav-item menu-items {% if request.path == '/seller/dashboard/' %}active{% endif %}"><a class="nav-link" href="/seller/dashboard/"><span class="menu-icon"><i class="mdi mdi-speedometer"></i></span><span class="menu-title">Dashboard</span></a></li>
+        <li class="nav-item menu-items"><a class="nav-link" data-bs-toggle="collapse" href="#sellerProps"><span class="menu-icon"><i class="mdi mdi-home"></i></span><span class="menu-title">My Properties</span><i class="menu-arrow"></i></a><div class="collapse" id="sellerProps"><ul class="nav flex-column sub-menu"><li class="nav-item"><a class="nav-link" href="/seller/properties/">All My Properties</a></li><li class="nav-item"><a class="nav-link" href="/seller/properties/add/">Add Property</a></li><li class="nav-item"><a class="nav-link" href="/seller/properties/">Edit Property</a></li></ul></div></li>
+        <li class="nav-item menu-items {% if '/seller/buyers' in request.path %}active{% endif %}"><a class="nav-link" href="/seller/buyers/"><span class="menu-icon"><i class="mdi mdi-account-group"></i></span><span class="menu-title">Interested Buyers</span></a></li>
+        <li class="nav-item menu-items {% if '/seller/contracts' in request.path %}active{% endif %}"><a class="nav-link" href="/seller/contracts/"><span class="menu-icon"><i class="mdi mdi-file-document-box"></i></span><span class="menu-title">My Contracts</span></a></li>
+        <li class="nav-item menu-items {% if '/seller/sales' in request.path %}active{% endif %}"><a class="nav-link" href="/seller/sales/"><span class="menu-icon"><i class="mdi mdi-cash-multiple"></i></span><span class="menu-title">Sales</span></a></li>
+        {% elif user.role == 'realestate' %}
+        {# Real Estate Links #}
+        <li class="nav-item nav-category"><span class="nav-link">Real Estate Menu</span></li>
+        <li class="nav-item menu-items {% if request.path == '/realestate/dashboard/' %}active{% endif %}"><a class="nav-link" href="/realestate/dashboard/"><span class="menu-icon"><i class="mdi mdi-speedometer"></i></span><span class="menu-title">Dashboard</span></a></li>
+        <li class="nav-item menu-items"><a class="nav-link" data-bs-toggle="collapse" href="#reProps"><span class="menu-icon"><i class="mdi mdi-home"></i></span><span class="menu-title">Properties</span><i class="menu-arrow"></i></a><div class="collapse" id="reProps"><ul class="nav flex-column sub-menu"><li class="nav-item"><a class="nav-link" href="/realestate/properties/">All Properties</a></li><li class="nav-item"><a class="nav-link" href="/realestate/properties/add/">Add Property</a></li><li class="nav-item"><a class="nav-link" href="/realestate/properties/">Edit Property</a></li></ul></div></li>
+        <li class="nav-item menu-items"><a class="nav-link" data-bs-toggle="collapse" href="#reBuyers"><span class="menu-icon"><i class="mdi mdi-account-group"></i></span><span class="menu-title">Buyers</span><i class="menu-arrow"></i></a><div class="collapse" id="reBuyers"><ul class="nav flex-column sub-menu"><li class="nav-item"><a class="nav-link" href="/realestate/buyers/">All Buyers</a></li><li class="nav-item"><a class="nav-link" href="/realestate/applications/">Interested Buyers</a></li></ul></div></li>
+        <li class="nav-item menu-items {% if '/realestate/contracts' in request.path %}active{% endif %}"><a class="nav-link" href="/realestate/contracts/"><span class="menu-icon"><i class="mdi mdi-file-document-box"></i></span><span class="menu-title">Contracts</span></a></li>
+        <li class="nav-item menu-items {% if '/realestate/banks' in request.path %}active{% endif %}"><a class="nav-link" href="/realestate/banks/"><span class="menu-icon"><i class="mdi mdi-bank"></i></span><span class="menu-title">Partner Banks</span></a></li>
+        <li class="nav-item menu-items {% if '/realestate/reports' in request.path %}active{% endif %}"><a class="nav-link" href="/realestate/reports/"><span class="menu-icon"><i class="mdi mdi-chart-bar"></i></span><span class="menu-title">Reports</span></a></li>
+        {% else %}
+        {# Customer Links #}
+        <li class="nav-item nav-category"><span class="nav-link">Customer Menu</span></li>
+        <li class="nav-item menu-items {% if '/customer/dashboard' in request.path %}active{% endif %}"><a class="nav-link" href="/customer/dashboard/"><span class="menu-icon"><i class="mdi mdi-speedometer"></i></span><span class="menu-title">Dashboard</span></a></li>
+        <li class="nav-item menu-items {% if '/customer/properties' in request.path %}active{% endif %}"><a class="nav-link" href="/customer/properties/"><span class="menu-icon"><i class="mdi mdi-home"></i></span><span class="menu-title">Properties</span></a></li>
+        <li class="nav-item menu-items {% if '/customer/applications' in request.path %}active{% endif %}"><a class="nav-link" href="/customer/applications/"><span class="menu-icon"><i class="mdi mdi-file-document"></i></span><span class="menu-title">My Applications</span></a></li>
+        <li class="nav-item menu-items {% if '/customer/contracts' in request.path %}active{% endif %}"><a class="nav-link" href="/customer/contracts/"><span class="menu-icon"><i class="mdi mdi-file-document-box"></i></span><span class="menu-title">Contracts</span></a></li>
+        {% endif %}
+
+        <li class="nav-item nav-category"><span class="nav-link">System</span></li>
+        <li class="nav-item menu-items {% if '/profile' in request.path %}active{% endif %}"><a class="nav-link" href="/profile/"><span class="menu-icon"><i class="mdi mdi-account"></i></span><span class="menu-title">Profile</span></a></li>
+        <li class="nav-item menu-items"><a class="nav-link" href="#" onclick="localStorage.clear(); sessionStorage.clear(); window.location.replace('/login/'); return false;"><span class="menu-icon"><i class="mdi mdi-logout"></i></span><span class="menu-title">Logout</span></a></li>
+      </ul>
+      <div style="padding:12px 16px; border-top:1px solid rgba(255,255,255,0.1); text-align:center;"><p style="font-size:11px; color:rgba(255,255,255,0.6); margin:0;">MorgiHome v1.0</p></div>
+    </nav>
+    <div class="container-fluid page-body-wrapper">
+      <nav class="navbar p-0 fixed-top d-flex flex-row"><div class="navbar-menu-wrapper flex-grow d-flex align-items-stretch"><button class="navbar-toggler align-self-center" type="button" data-toggle="minimize"><span class="mdi mdi-menu"></span></button><ul class="navbar-nav navbar-nav-right"><li class="nav-item dropdown"><a class="nav-link" id="profileDropdown" href="#" data-bs-toggle="dropdown"><div class="navbar-profile">{% if user.profile_image %}<img class="img-xs rounded-circle" src="{{ user.profile_image.url }}" alt="">{% else %}<div class="img-xs rounded-circle d-flex align-items-center justify-content-center text-white me-2" style="width:32px; height:32px; background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%); font-weight:700;">{{ user.initials|default:"M" }}</div>{% endif %}<p class="mb-0 d-none d-sm-block navbar-profile-name">{{ user.get_full_name|default:user.email }}</p></div></a><div class="dropdown-menu dropdown-menu-end navbar-dropdown preview-list" aria-labelledby="profileDropdown"><a class="dropdown-item preview-item" href="/profile/"><div class="preview-thumbnail"><div class="preview-icon bg-dark rounded-circle"><i class="mdi mdi-account-outline text-success"></i></div></div><div class="preview-item-content"><p class="preview-subject mb-1">Profile</p></div></a><div class="dropdown-divider"></div><a class="dropdown-item preview-item" href="#" onclick="localStorage.clear(); window.location.replace('/login/'); return false;"><div class="preview-thumbnail"><div class="preview-icon bg-dark rounded-circle"><i class="mdi mdi-logout text-danger"></i></div></div><div class="preview-item-content"><p class="preview-subject mb-1">Log out</p></div></a></div></li></ul></div></nav>
+      <div class="main-panel"><div class="content-wrapper">{% block content %}{% endblock %}</div><footer class="footer"><div class="d-sm-flex justify-content-center justify-content-sm-between"><span class="text-muted">Copyright © 2026 <a href="/">MorgiHome</a></span><span class="text-muted">MorgiHome v1.0</span></div></footer></div>
+    </div>
+  </div>
+  <script src="{% static 'corona/vendors/js/vendor.bundle.base.js' %}"></script><script src="{% static 'corona/js/off-canvas.js' %}"></script><script src="{% static 'corona/js/misc.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,99 @@
+================================================================================
+PHASE 2: WEBSITE FRONTEND (LANDING PAGE) - TEMPLATE YA RESI
+================================================================================
+
+KABLA YA KUANZA: Hakikisha uko kwenye folder C:\morgihome na Phase 1 imekamilika.
+
+LINK YA TEMPLATE: https://bootstrapmade.com/demo/Resi/
+
+================================================================================
+KAZI ZA PHASE HII (TEKELEZA MOJA KWA MOJA)
+================================================================================
+
+--- KAZI 2.1: Pakua Template ---
+TEKELEZA:
+1. Nenda kwenye: https://bootstrapmade.com/demo/Resi/
+2. Pakua template (bonyeza "Download").
+3. Fungua faili iliyopakuliwa (ZIP).
+4. Nakili yaliyomo kwenye folder ya: backend/static/
+
+--- KAZI 2.2: Unda Folder za Static na Templates ---
+TEKELEZA:
+1. Nenda kwenye backend/static/
+2. Hakikisha una folders: css/, js/, images/, vendors/
+3. Unda folder: backend/templates/
+4. Unda faili: backend/templates/index.html
+
+--- KAZI 2.3: Badilisha Content ya Landing Page ---
+TEKELEZA:
+1. Fungua backend/templates/index.html
+2. Badilisha maandishi yafuatayo:
+   - Jina la kampuni: "MorgiHome"
+   - Hero Section: "Kupata Nyumba na Mikopo kwa Urahisi"
+   - Subtitle: "Platform ya kisasa ya kusimamia mikopo ya nyumba na mali isiyohamishika"
+3. Badilisha Navigation:
+   - Home | Properties | Mortgages | About | Contact | Login/Signup
+
+--- KAZI 2.4: Badilisha Rangi ---
+TEKELEZA:
+1. Fungua backend/static/css/style.css
+2. Badilisha rangi kuwa za MorgiHome:
+   - Primary Color: #0077B6 (Blue Bahari)
+   - Secondary Color: #0A2B4E (Dark Blue)
+   - Background: #FFFFFF (White)
+3. Hakikisha buttons zote ni za Blue Bahari
+4. Hakikisha header na footer ni Dark Blue
+
+--- KAZI 2.5: Unganisha na Django ---
+TEKELEZA:
+1. Nenda kwenye morgihome_backend/settings.py
+2. Hakikisha TEMPLATES ina:
+   TEMPLATES = [
+       {
+           'BACKEND': 'django.template.backends.django.DjangoTemplates',
+           'DIRS': [BASE_DIR / 'templates'],  # Hii ni muhimu!
+           'APP_DIRS': True,
+           ...
+       },
+   ]
+3. Hakikisha STATICFILES_DIRS iko:
+   STATICFILES_DIRS = [BASE_DIR / 'static']
+
+--- KAZI 2.6: Unda URLs kwa Landing Page ---
+TEKELEZA:
+1. Nenda kwenye morgihome_backend/urls.py
+2. Weka:
+   from django.contrib import admin
+   from django.urls import path, include
+   from django.views.generic import TemplateView
+
+   urlpatterns = [
+       path('admin/', admin.site.urls),
+       path('', TemplateView.as_view(template_name='index.html'), name='home'),
+       path('api/auth/', include('accounts.urls')),
+   ]
+
+--- KAZI 2.7: Test Website ---
+TEKELEZA:
+1. Endesha server: python manage.py runserver
+2. Fungua browser: http://127.0.0.1:8000/
+3. Hakikisha inaonekana vizuri (landing page inaonekana)
+
+--- KAZI 2.8: Hakikisha Ina-responsive ---
+TEKELEZA:
+1. Punguza ukubwa wa browser kwa simu (mobile view)
+2. Hakikisha inaonekana vizuri
+3. Hakikisha menu inafanya kazi (hamburger menu)
+
+================================================================================
+TATIZO: "KAMA KITU KIKIKWAMA, USIENDELEE"
+================================================================================
+Kama unapata error yoyote, SIMAMA na unipe error hiyo.
+Nitasoma error na kukupa suluhisho kabla ya kuendelea.
+
+================================================================================
+BAADA YA KUKAMILISHA PHASE 2
+================================================================================
+NITAKUAMBIA: "PHASE 2 IMESHA. TUNAENDELEA PHASE 3"
+USIENDELEE HADI NIKUAMBIE.
+================================================================================
