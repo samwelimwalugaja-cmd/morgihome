@@ -36,9 +36,9 @@
 </style>
 </head>
 <body>
-<header id="header" class="header d-flex align-items-center fixed-top" style="background: #181b28;">
+<header id="header" class="header d-flex align-items-center fixed-top mh-bg-dark">
   <div class="container position-relative d-flex align-items-center justify-content-between">
-    <a href="{% url 'home' %}" class="logo d-flex align-items-center"><img src="{% static 'images/morgihome-official-logo.png' %}" alt="MorgiHome" style="max-height:44px; width:auto;"></a>
+    <a href="{% url 'home' %}" class="logo d-flex align-items-center"><img src="{% static 'images/morgihome-official-logo.png' %}" alt="MorgiHome" class="mh-logo-nav"></a>
     <nav id="navmenu" class="navmenu">
       <ul>
         <li><a href="/">Home</a></li>
@@ -71,24 +71,24 @@
   </div>
 </header>
 
-<main class="main" style="padding-top:90px;">
+<main class="main mh-hero-pad">
   <!-- Page Title -->
-  <section class="page-title" style="padding:50px 0 30px; background: var(--background-color);">
+  <section class="page-title mh-section-pad">
     <div class="container text-center" data-aos="fade-up">
-      <h1 style="font-weight:800; color:#eeeff7;"><i class="bi bi-houses me-2" style="color:var(--accent-color)"></i> Browse Properties</h1>
-      <p style="color:#8f95ab; max-width:640px; margin:10px auto 0;">Discover your dream home • Browse verified listings • No dashboard here, this is the public website</p>
+      <h1 class="mh-title-800"><i class="bi bi-houses me-2 mh-accent-text"></i> Browse Properties</h1>
+      <p class="mh-center-640">Discover your dream home • Browse verified listings • No dashboard here, this is the public website</p>
       <div class="mt-3 d-flex justify-content-center gap-2">
-        <a href="/" class="btn btn-outline-light" style="border-radius:50px; padding:8px 20px; border-color:rgba(255,255,255,0.2); color:#e5e6ea;"><i class="bi bi-house me-1"></i> Home</a>
-        <a href="{% url 'signup_page' %}" class="btn btn-primary" style="background:var(--accent-color); border:none; border-radius:50px; padding:8px 20px; font-weight:600;">Apply for Mortgage</a>
+        <a href="/" class="btn btn-outline-light mh-filter-pill"><i class="bi bi-house me-1"></i> Home</a>
+        <a href="{% url 'signup_page' %}" class="btn btn-primary mh-filter-pill-active">Apply for Mortgage</a>
       </div>
     </div>
   </section>
 
-  <section class="section" style="padding-top:20px;">
+  <section class="section mh-pad-20">
     <div class="container" data-aos="fade-up">
       <!-- Filters -->
       <div class="properties-filter-card p-4 mb-4">
-        <h6 class="mb-3" style="font-weight:700; color:#eeeff7;"><i class="bi bi-funnel me-2" style="color:var(--accent-color)"></i> Filters & Search</h6>
+        <h6 class="mb-3 mh-title-light"><i class="bi bi-funnel me-2 mh-accent-text"></i> Filters & Search</h6>
         <div class="row g-3">
           <div class="col-md-4"><label class="form-label">Search</label><div class="input-group"><span class="input-group-text"><i class="bi bi-search"></i></span><input type="text" id="propSearchInput" class="form-control" placeholder="Search title, location..."></div></div>
           <div class="col-md-2"><label class="form-label">Type</label><select id="propTypeFilter" class="form-select"><option value="all">All Types</option><option value="house">House</option><option value="apartment">Apartment</option><option value="land">Land</option><option value="commercial">Commercial</option></select></div>
@@ -97,10 +97,10 @@
           <div class="col-md-2"><label class="form-label">Sort By</label><select id="propSort" class="form-select"><option value="newest">Newest</option><option value="price_low">Price Low→High</option><option value="price_high">Price High→Low</option><option value="popular">Popular</option></select></div>
           <div class="col-md-3"><label class="form-label">Min Price (TZS)</label><input type="number" id="propMinPrice" class="form-control" placeholder="0"></div>
           <div class="col-md-3"><label class="form-label">Max Price (TZS)</label><input type="number" id="propMaxPrice" class="form-control" placeholder="500M"></div>
-          <div class="col-md-6 d-flex align-items-end gap-2"><button id="propApplyFilters" class="btn btn-primary" style="background:var(--accent-color); border-color:var(--accent-color); border-radius:10px; padding:8px 20px; font-weight:600;"><i class="bi bi-check-lg me-1"></i> Apply</button><button id="propClearFilters" class="btn btn-outline-light" style="border-radius:10px; padding:8px 20px; border-color:rgba(255,255,255,0.2);">Clear</button>
+          <div class="col-md-6 d-flex align-items-end gap-2"><button id="propApplyFilters" class="btn btn-primary mh-btn-accent"><i class="bi bi-check-lg me-1"></i> Apply</button><button id="propClearFilters" class="btn btn-outline-light mh-filter-pill">Clear</button>
             <div class="ms-auto d-flex gap-2">
-              <button class="btn btn-sm" id="gridViewBtn" style="background:var(--accent-color); color:#fff; border-radius:8px;"><i class="bi bi-grid"></i> Grid</button>
-              <button class="btn btn-sm btn-outline-light" id="listViewBtn" style="border-radius:8px;"><i class="bi bi-list"></i> List</button>
+              <button class="btn btn-sm mh-btn-accent" id="gridViewBtn"><i class="bi bi-grid"></i> Grid</button>
+              <button class="btn btn-sm btn-outline-light mh-round-8" id="listViewBtn"><i class="bi bi-list"></i> List</button>
             </div>
           </div>
         </div>
@@ -108,21 +108,21 @@
 
       <!-- Stats -->
       <div class="row g-3 mb-4 text-center">
-        <div class="col-6 col-md-3"><div class="p-3 stat-card-dark" style="background:linear-gradient(135deg,#0077B6 0%,#00a8e8 100%); color:#fff;"><div class="small" style="opacity:.9">Total Properties</div><h3 id="statTotal" class="mb-0" style="font-weight:800; color:#fff;">—</h3></div></div>
-        <div class="col-6 col-md-3"><div class="p-3 stat-card-dark" style="background:var(--surface-color); border:1px solid rgba(255,255,255,0.08);"><div class="small" style="color:#8f95ab;">Available</div><h3 id="statAvailable" style="color:#10b981; font-weight:800;">—</h3></div></div>
-        <div class="col-6 col-md-3"><div class="p-3 stat-card-dark" style="background:var(--surface-color); border:1px solid rgba(255,255,255,0.08);"><div class="small" style="color:#8f95ab;">Sold</div><h3 id="statSold" style="color:#ef4444; font-weight:800;">—</h3></div></div>
-        <div class="col-6 col-md-3"><div class="p-3 stat-card-dark" style="background:var(--surface-color); border:1px solid rgba(255,255,255,0.08);"><div class="small" style="color:#8f95ab;">Under Review</div><h3 id="statReview" style="color:#f59e0b; font-weight:800;">—</h3></div></div>
+        <div class="col-6 col-md-3"><div class="p-3 stat-card-dark mh-gradient-btn"><div class="small mh-opacity-9">Total Properties</div><h3 id="statTotal" class="mb-0 mh-title-800-white">—</h3></div></div>
+        <div class="col-6 col-md-3"><div class="p-3 stat-card-dark mh-card-12"><div class="small mh-muted">Available</div><h3 id="statAvailable" class="mh-price-green">—</h3></div></div>
+        <div class="col-6 col-md-3"><div class="p-3 stat-card-dark mh-card-12"><div class="small mh-muted">Sold</div><h3 id="statSold" class="mh-price-red">—</h3></div></div>
+        <div class="col-6 col-md-3"><div class="p-3 stat-card-dark mh-card-12"><div class="small mh-muted">Under Review</div><h3 id="statReview" class="mh-price-amber">—</h3></div></div>
       </div>
 
       <!-- Properties Grid -->
       <div id="propertiesContainer" class="row g-4">
-        <div class="col-12 text-center py-5"><div class="spinner-border" style="color:var(--accent-color);"></div><p class="mt-2" style="color:#8f95ab;">Loading properties...</p></div>
+        <div class="col-12 text-center py-5"><div class="spinner-border mh-accent-text"></div><p class="mt-2 mh-muted">Loading properties...</p></div>
       </div>
 
       <!-- Pagination -->
-      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-4 p-3" style="background:var(--surface-color); border:1px solid rgba(255,255,255,0.08); border-radius:12px;">
-        <span style="color:#8f95ab; font-size:13px;" id="propPaginationInfo">Showing 0 of 0 properties</span>
-        <nav><ul class="pagination pagination-sm mb-0" id="propPagination" style="--bs-pagination-bg: var(--surface-color); --bs-pagination-color:#e5e6ea; --bs-pagination-border-color: rgba(255,255,255,0.1);"></ul></nav>
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-4 p-3 mh-card-12">
+        <span class="mh-small-13" id="propPaginationInfo">Showing 0 of 0 properties</span>
+        <nav><ul class="pagination pagination-sm mb-0 mh-pagination" id="propPagination"></ul></nav>
       </div>
     </div>
   </section>
@@ -201,32 +201,32 @@
 <div id="preloader"></div>
 
 <!-- Property Detail Modal -->
-<div class="modal fade modal-web" id="propDetailModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content" style="border-radius:16px; overflow:hidden;">
-  <div class="modal-header"><h5 class="modal-title" id="propModalTitle" style="font-weight:800; color:#fff;">Property Details</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-  <div class="modal-body p-0" style="background: var(--surface-color);">
-    <div id="propModalLoading" class="text-center py-5"><div class="spinner-border" style="color:var(--accent-color);"></div><p class="mt-2" style="color:#8f95ab;">Loading...</p></div>
+<div class="modal fade modal-web" id="propDetailModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content mh-round-16">
+  <div class="modal-header"><h5 class="modal-title mh-title-800-white" id="propModalTitle">Property Details</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body p-0 mh-bg-surface">
+    <div id="propModalLoading" class="text-center py-5"><div class="spinner-border mh-accent-text"></div><p class="mt-2 mh-muted">Loading...</p></div>
     <div id="propModalContent" class="d-none">
-      <div style="position:relative"><img id="propModalCover" src="" style="width:100%;height:320px;object-fit:cover" alt="Property"><div id="propModalThumbs" class="d-flex gap-2 p-2" style="overflow-x:auto;background:#0e1022;"></div></div>
+      <div class="mh-pos-rel"><img id="propModalCover" src="" class="mh-img-cover-320" alt="Property"><div id="propModalThumbs" class="d-flex gap-2 p-2 mh-thumb-strip"></div></div>
       <div class="p-4">
         <div class="d-flex justify-content-between flex-wrap gap-2 mb-3">
-          <div><h4 id="propModalName" style="font-weight:800; color:#eeeff7;"></h4><p id="propModalLocation" style="color:#8f95ab;" class="small mb-0"><i class="bi bi-geo-alt me-1"></i> Location</p></div>
-          <div class="text-end"><div id="propModalPrice" style="font-weight:800; color:#2dd4bf; font-size:22px;">TZS 0</div><span id="propModalType" class="badge" style="background:rgba(255,255,255,0.1); color:#e5e6ea; border:1px solid rgba(255,255,255,0.15);">House</span> <span id="propModalStatus" class="badge bg-success">Available</span></div>
+          <div><h4 id="propModalName" class="mh-title-800"></h4><p id="propModalLocation" class="mh-muted small mb-0"><i class="bi bi-geo-alt me-1"></i> Location</p></div>
+          <div class="text-end"><div id="propModalPrice" class="mh-price-teal">TZS 0</div><span id="propModalType" class="badge mh-chip">House</span> <span id="propModalStatus" class="badge bg-success">Available</span></div>
         </div>
-        <div class="row g-2 mb-3" style="font-size:13px">
-          <div class="col-6 col-md-3"><div class="border rounded p-2 text-center" style="border-color:rgba(255,255,255,0.12)!important; background:#1e2133;"><i class="bi bi-door-open" style="color:var(--accent-color)"></i><br><strong id="propModalBeds" style="color:#fff;">3</strong><br><small style="color:#8f95ab;">Beds</small></div></div>
-          <div class="col-6 col-md-3"><div class="border rounded p-2 text-center" style="border-color:rgba(255,255,255,0.12)!important; background:#1e2133;"><i class="bi bi-droplet" style="color:var(--accent-color)"></i><br><strong id="propModalBaths" style="color:#fff;">2</strong><br><small style="color:#8f95ab;">Baths</small></div></div>
-          <div class="col-6 col-md-3"><div class="border rounded p-2 text-center" style="border-color:rgba(255,255,255,0.12)!important; background:#1e2133;"><i class="bi bi-bounding-box" style="color:var(--accent-color)"></i><br><strong id="propModalArea" style="color:#fff;">250 sqm</strong><br><small style="color:#8f95ab;">Area</small></div></div>
-          <div class="col-6 col-md-3"><div class="border rounded p-2 text-center" style="border-color:rgba(255,255,255,0.12)!important; background:#1e2133;"><i class="bi bi-hash" style="color:var(--accent-color)"></i><br><strong id="propModalNapa" style="color:#fff;">-</strong><br><small style="color:#8f95ab;">Code</small></div></div>
+        <div class="row g-2 mb-3 mh-small-13">
+          <div class="col-6 col-md-3"><div class="border rounded p-2 text-center calc-input"><i class="bi bi-door-open mh-accent-text"></i><br><strong id="propModalBeds" class="mh-title-white">3</strong><br><small class="mh-muted">Beds</small></div></div>
+          <div class="col-6 col-md-3"><div class="border rounded p-2 text-center calc-input"><i class="bi bi-droplet mh-accent-text"></i><br><strong id="propModalBaths" class="mh-title-white">2</strong><br><small class="mh-muted">Baths</small></div></div>
+          <div class="col-6 col-md-3"><div class="border rounded p-2 text-center calc-input"><i class="bi bi-bounding-box mh-accent-text"></i><br><strong id="propModalArea" class="mh-title-white">250 sqm</strong><br><small class="mh-muted">Area</small></div></div>
+          <div class="col-6 col-md-3"><div class="border rounded p-2 text-center calc-input"><i class="bi bi-hash mh-accent-text"></i><br><strong id="propModalNapa" class="mh-title-white">-</strong><br><small class="mh-muted">Code</small></div></div>
         </div>
-        <p id="propModalDesc" style="color:#8f95ab; line-height:1.6;" class="small"></p>
-        <div class="card mt-3" style="border:1px solid rgba(255,255,255,0.08); background:#1e2133; border-radius:12px;"><div class="card-body p-3">
+        <p id="propModalDesc" class="mh-line-16 small"></p>
+        <div class="card mt-3 mh-card-12"><div class="card-body p-3">
           <div class="d-flex align-items-center gap-3">
-            <div id="propModalSellerAvatar" style="width:48px;height:48px;border-radius:50%;background:var(--accent-color);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;">S</div>
-            <div><div id="propModalSellerName" style="font-weight:700; color:#eeeff7;">Seller</div><small id="propModalSellerVerified" class="badge" style="font-size:10px; background:rgba(255,255,255,0.1); color:#e5e6ea; border:1px solid rgba(255,255,255,0.15);">Not Verified</small><br><small style="color:#8f95ab;" id="propModalSellerEmail">email</small> • <small style="color:#8f95ab;" id="propModalSellerPhone">phone</small></div>
+            <div id="propModalSellerAvatar" class="mh-avatar-48-accent">S</div>
+            <div><div id="propModalSellerName" class="mh-title-light">Seller</div><small id="propModalSellerVerified" class="badge mh-chip">Not Verified</small><br><small class="mh-muted" id="propModalSellerEmail">email</small> • <small class="mh-muted" id="propModalSellerPhone">phone</small></div>
           </div>
           <div class="d-grid gap-2 mt-3">
-            <button class="btn btn-outline-light" id="propModalContactBtn" style="border-radius:10px;"><i class="bi bi-chat-dots me-2"></i> Contact Seller</button>
-            <a id="propModalApplyBtn" href="#" class="btn btn-primary" style="background:var(--accent-color); border-color:var(--accent-color); border-radius:10px; font-weight:600;"><i class="bi bi-bank me-2"></i> Apply Mortgage</a>
+            <button class="btn btn-outline-light mh-round-10" id="propModalContactBtn"><i class="bi bi-chat-dots me-2"></i> Contact Seller</button>
+            <a id="propModalApplyBtn" href="#" class="btn btn-primary mh-btn-accent"><i class="bi bi-bank me-2"></i> Apply Mortgage</a>
           </div>
         </div></div>
       </div>
@@ -236,11 +236,11 @@
 </div></div></div>
 
 <!-- Contact Choice Modal -->
-<div class="modal fade modal-web" id="propContactModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:16px"><div class="modal-header border-0"><h5 class="modal-title" style="font-weight:800; color:#fff;">Contact Seller</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body text-center" style="background: var(--surface-color); border-radius:0 0 16px 16px;">
-  <p style="color:#8f95ab;" class="small">Choose contact method</p>
+<div class="modal fade modal-web" id="propContactModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content mh-round-16"><div class="modal-header border-0"><h5 class="modal-title mh-title-800-white">Contact Seller</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body text-center mh-card-surface">
+  <p class="mh-muted small">Choose contact method</p>
   <div class="d-grid gap-3">
-    <a id="propContactEmail" href="#" class="btn btn-lg btn-outline-light d-flex align-items-center justify-content-center gap-2" style="border-radius:12px;"><i class="bi bi-envelope" style="font-size:20px"></i> <span><strong>Email</strong><br><small id="propContactEmailText" style="color:#8f95ab;">email</small></span></a>
-    <a id="propContactPhone" href="#" class="btn btn-lg btn-primary d-flex align-items-center justify-content-center gap-2" style="background:var(--accent-color); border-color:var(--accent-color); border-radius:12px;"><i class="bi bi-telephone" style="font-size:20px"></i> <span><strong>Phone Call</strong><br><small id="propContactPhoneText">phone</small></span></a>
+    <a id="propContactEmail" href="#" class="btn btn-lg btn-outline-light d-flex align-items-center justify-content-center gap-2 mh-round-12"><i class="bi bi-envelope mh-icon-20"></i> <span><strong>Email</strong><br><small id="propContactEmailText" class="mh-muted">email</small></span></a>
+    <a id="propContactPhone" href="#" class="btn btn-lg btn-primary d-flex align-items-center justify-content-center gap-2 mh-btn-accent"><i class="bi bi-telephone mh-icon-20"></i> <span><strong>Phone Call</strong><br><small id="propContactPhoneText">phone</small></span></a>
   </div>
 </div></div></div></div>
 

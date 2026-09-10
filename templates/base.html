@@ -32,15 +32,15 @@
   </style>
   {% block extra_head %}{% endblock %}
 </head>
-<body class="h-full antialiased bg-background text-foreground __variable_489c90 __variable_508d3e" style="background: var(--morgi-bg, #fbfbfc); color: var(--morgi-text, #0f172a);">
+<body class="h-full antialiased bg-background text-foreground __variable_489c90 __variable_508d3e mh-base-body">
   <div class="flex h-screen overflow-hidden" data-slot="app-wrapper">
     <!-- Sidebar - Desktop - Apex Dashboard style (DashboardPack) - EXACT layout, only data changed -->
-    <aside id="sidebar" data-slot="sidebar" class="hidden lg:flex w-[260px] flex-col shrink-0 overflow-y-auto border-r border-sidebar-border bg-sidebar text-sidebar-foreground" style="background: var(--morgi-sidebar, #f8fafc);">
-      <div class="h-[64px] flex items-center gap-3 px-6 border-b border-sidebar-border shrink-0" style="border-color: var(--morgi-border, #e2e8f0);">
-        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary" style="background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%);"><i data-lucide="zap" class="h-4 w-4 text-primary-foreground" style="color:white"></i></div>
+    <aside id="sidebar" data-slot="sidebar" class="hidden lg:flex w-[260px] flex-col shrink-0 overflow-y-auto border-r border-sidebar-border bg-sidebar text-sidebar-foreground mh-base-sidebar">
+      <div class="h-[64px] flex items-center gap-3 px-6 border-b border-sidebar-border shrink-0 mh-base-border">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary mh-gradient-bar"><i data-lucide="zap" class="h-4 w-4 text-primary-foreground mh-title-white"></i></div>
         <div>
           <h1 class="font-bold text-[15px] leading-none tracking-tight">MorgiHome</h1>
-          <p class="text-xs text-muted-foreground" style="color: var(--morgi-muted, #64748b);">{% block portal_name %}Portal{% endblock %}</p>
+          <p class="text-xs text-muted-foreground mh-base-muted">{% block portal_name %}Portal{% endblock %}</p>
         </div>
       </div>
       <nav class="flex-1 px-3 py-4 space-y-6 overflow-y-auto" data-slot="sidebar-nav">
@@ -53,13 +53,13 @@
           </ul>
         </div>
       </nav>
-      <div class="border-t border-sidebar-border p-3" style="border-color: var(--morgi-border, #e2e8f0);">
+      <div class="border-t border-sidebar-border p-3 mh-base-border">
         <div class="flex items-center gap-2">
           <a href="{% url 'profile_page' %}" class="flex flex-1 items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-sidebar-accent/50">
             {% if user.profile_image %}
               <img src="{{ user.profile_image.url }}" alt="{{ user.get_full_name }}" class="h-8 w-8 shrink-0 rounded-full object-cover">
             {% else %}
-              <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sidebar-primary/80 to-sidebar-primary text-[11px] font-bold text-sidebar-primary-foreground" style="background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%);">{{ user.initials|default:"M" }}</div>
+              <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sidebar-primary/80 to-sidebar-primary text-[11px] font-bold text-sidebar-primary-foreground mh-gradient-bar">{{ user.initials|default:"M" }}</div>
             {% endif %}
             <div class="flex flex-1 flex-col min-w-0">
               <span class="text-sm font-medium text-sidebar-foreground truncate">{{ user.get_full_name|default:"User" }}</span>
@@ -73,10 +73,10 @@
 
     <!-- Mobile Sidebar -->
     <div id="mobile-overlay" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden"></div>
-    <aside id="mobile-sidebar" data-slot="sidebar" class="fixed inset-y-0 left-0 w-[280px] z-50 transform -translate-x-full transition-transform duration-200 lg:hidden flex flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border" style="background: var(--morgi-sidebar, #f8fafc);">
+    <aside id="mobile-sidebar" data-slot="sidebar" class="fixed inset-y-0 left-0 w-[280px] z-50 transform -translate-x-full transition-transform duration-200 lg:hidden flex flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border mh-base-sidebar">
       <div class="h-[64px] flex items-center justify-between px-6 border-b border-sidebar-border">
         <div class="flex items-center gap-3">
-          <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary" style="background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%);"><i data-lucide="zap" class="h-4 w-4 text-white"></i></div>
+          <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary mh-gradient-bar"><i data-lucide="zap" class="h-4 w-4 text-white"></i></div>
           <span class="font-bold">MorgiHome</span>
         </div>
         <button id="close-sidebar" class="flex h-7 w-7 items-center justify-center rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent"><i data-lucide="x" class="h-4 w-4"></i></button>
@@ -93,11 +93,11 @@
     <div class="flex flex-1 flex-col min-w-0 overflow-hidden" data-slot="app-content">
       <!-- Header - Apex style -->
       <div data-slot="app-header" class="sticky top-0 z-30">
-        <header class="flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-xl sm:px-6" style="background: var(--morgi-card, #fff);">
+        <header class="flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-xl sm:px-6 mh-base-card">
           <div class="flex items-center gap-3">
             <button id="open-sidebar" aria-label="Open menu" class="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground lg:hidden"><i data-lucide="menu" class="h-5 w-5"></i></button>
             <div data-slot="app-brand-inline" class="hidden items-center gap-2.5 lg:flex">
-              <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary" style="background: #0077B6;"><i data-lucide="zap" class="h-4 w-4 text-primary-foreground" style="color:white"></i></div>
+              <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary mh-gradient-bar"><i data-lucide="zap" class="h-4 w-4 text-primary-foreground mh-title-white"></i></div>
               <span class="text-sm font-bold tracking-tight">Apex</span>
               <div class="mx-1 h-6 w-px bg-border"></div>
             </div>
@@ -119,7 +119,7 @@
               {% if user.profile_image %}
                 <img src="{{ user.profile_image.url }}" alt="avatar" class="w-8 h-8 rounded-full object-cover">
               {% else %}
-                <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary" style="background: #0077B611; color:#0077B6;">{{ user.initials|default:"M" }}</div>
+                <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary mh-chip-accent">{{ user.initials|default:"M" }}</div>
               {% endif %}
               <div class="hidden lg:block text-left">
                 <p class="text-sm font-medium leading-none">{{ user.get_full_name|default:"User" }}</p>
@@ -137,7 +137,7 @@
           </div>
         </nav>
       </div>
-      <main id="main-content" class="min-w-0 flex-1 overflow-y-auto p-4 sm:p-6" style="background: #fbfbfc;" data-slot="app-main">
+      <main id="main-content" class="min-w-0 flex-1 overflow-y-auto p-4 sm:p-6 mh-base-light" data-slot="app-main">
         {% block content %}{% endblock %}
       </main>
       <footer class="border-t border-border bg-card px-6 py-3 text-center text-xs text-muted-foreground hidden lg:block">
@@ -147,7 +147,7 @@
   </div>
 
   <!-- Feedback Button - Exact as DashboardPack Apex (bottom right) -->
-  <button id="feedbackBtn" class="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-lg hover:bg-primary/90 transition-all duration-200 hover:scale-105" style="background: #0077B6; color: white;" aria-label="Feedback">
+  <button id="feedbackBtn" class="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-lg hover:bg-primary/90 transition-all duration-200 hover:scale-105 mh-gradient-bar" aria-label="Feedback">
     <i data-lucide="message-circle" class="h-4 w-4"></i>
     <span>Feedback</span>
   </button>
@@ -161,7 +161,7 @@
       <textarea placeholder="Tell us what you think..." class="morgi-input w-full rounded-lg p-3 text-sm min-h-[100px]"></textarea>
       <div class="mt-4 flex justify-end gap-2">
         <button onclick="document.getElementById('feedbackModal').classList.add('hidden'); document.getElementById('feedbackModal').classList.remove('flex');" class="btn-secondary px-4 py-2 rounded-lg text-sm">Cancel</button>
-        <button onclick="document.getElementById('feedbackModal').classList.add('hidden'); document.getElementById('feedbackModal').classList.remove('flex'); if(window.showToast) showToast('Thank you for your feedback!','success'); else alert('Thank you for your feedback!');" class="btn-primary px-4 py-2 rounded-lg text-sm" style="background:#0077B6; color:white;">Send</button>
+        <button onclick="document.getElementById('feedbackModal').classList.add('hidden'); document.getElementById('feedbackModal').classList.remove('flex'); if(window.showToast) showToast('Thank you for your feedback!','success'); else alert('Thank you for your feedback!');" class="btn-primary px-4 py-2 rounded-lg text-sm mh-gradient-bar">Send</button>
       </div>
     </div>
   </div>

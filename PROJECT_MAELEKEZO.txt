@@ -83,7 +83,6 @@ WATUMIAJI (ROLES) - WATU 5
 2. Seller (Muuza nyumba)
 3. Bank (Benki)
 4. Real Estate Company (Kampuni ya Mali Isiyohamishika)
-5. Lawyer (Wakili)
 
 ================================================================================
 PHASE 1: MAZINGIRA (SETUP) NA AUTHENTICATION
@@ -389,4 +388,5 @@ NIDHAMU ZA UKANISHO KWA PRODUCTION:
 - Hakikisha django-csp version ya 4.0+ iko installed
 
 
-template for customer/seller/realestate company is https://dashboardpack.com/live-demo-preview/?livedemo=391333
+template for customer/seller/realestate company is c,
+template for bank ni https://themewagon.github.io/shadcn-admin/

@@ -68,7 +68,7 @@
         <form id="signup-form" class="auth-form">
           {% csrf_token %}
           <div class="field" id="field-first_name">
-            <label class="field-label" for="first_name">First Name <span class="field-help" style="display:inline">*</span></label>
+            <label class="field-label" for="first_name">First Name <span class="field-help mh-inline">*</span></label>
             <div class="input-icon">
               <span class="ico"><i class="bi bi-person"></i></span>
               <input id="first_name" class="input" type="text" placeholder="John" autocomplete="given-name" required>
@@ -77,7 +77,7 @@
           </div>
 
           <div class="field" id="field-last_name">
-            <label class="field-label" for="last_name">Last Name <span class="field-help" style="display:inline">*</span></label>
+            <label class="field-label" for="last_name">Last Name <span class="field-help mh-inline">*</span></label>
             <div class="input-icon">
               <span class="ico"><i class="bi bi-person-fill"></i></span>
               <input id="last_name" class="input" type="text" placeholder="Doe" autocomplete="family-name" required>
@@ -86,7 +86,7 @@
           </div>
 
           <div class="field" id="field-email">
-            <label class="field-label" for="email">Email Address <span class="field-help" style="display:inline">*</span></label>
+            <label class="field-label" for="email">Email Address <span class="field-help mh-inline">*</span></label>
             <div class="input-icon">
               <span class="ico"><i class="bi bi-envelope"></i></span>
               <input id="email" class="input" type="email" placeholder="john.doe@example.com" autocomplete="email" required>
@@ -95,7 +95,7 @@
           </div>
 
           <div class="field" id="field-phone_number">
-            <label class="field-label" for="phone_number">Phone Number <span class="field-help" style="display:inline">*</span></label>
+            <label class="field-label" for="phone_number">Phone Number <span class="field-help mh-inline">*</span></label>
             <div class="input-icon">
               <span class="ico"><i class="bi bi-telephone"></i></span>
               <input id="phone_number" class="input" type="text" placeholder="+255 712 345 678" autocomplete="tel" required>
@@ -104,7 +104,7 @@
           </div>
 
           <div class="field" id="field-role">
-            <label class="field-label" for="role">I am a: <span class="field-help" style="display:inline">*</span></label>
+            <label class="field-label" for="role">I am a: <span class="field-help mh-inline">*</span></label>
             <div class="input-icon select-wrap">
               <span class="ico"><i class="bi bi-person-badge"></i></span>
               <select id="role" class="input" required>
@@ -117,7 +117,7 @@
           </div>
 
           <div class="field" id="field-password">
-            <label class="field-label" for="password">Password <span class="field-help" style="display:inline">*</span></label>
+            <label class="field-label" for="password">Password <span class="field-help mh-inline">*</span></label>
             <div class="input-icon has-eye">
               <span class="ico"><i class="bi bi-lock"></i></span>
               <input id="password" class="input" type="password" placeholder="At least 8 characters" autocomplete="new-password" required minlength="8">
@@ -127,7 +127,7 @@
           </div>
 
           <div class="field" id="field-confirm_password">
-            <label class="field-label" for="confirm_password">Confirm Password <span class="field-help" style="display:inline">*</span></label>
+            <label class="field-label" for="confirm_password">Confirm Password <span class="field-help mh-inline">*</span></label>
             <div class="input-icon has-eye">
               <span class="ico"><i class="bi bi-lock-fill"></i></span>
               <input id="confirm_password" class="input" type="password" placeholder="Confirm your password" autocomplete="new-password" required minlength="8">
@@ -149,7 +149,7 @@
         <div class="auth-divider">or sign up with</div>
 
         <div class="social-row single">
-          <a class="social-btn" href="#" aria-label="Sign up with Google" style="grid-column: 1 / -1; max-width: 320px; margin: 0 auto; width: 100%;">
+          <a class="social-btn mh-login-wrap" href="#" aria-label="Sign up with Google">
             <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22 12.2c0-.7-.06-1.4-.18-2.04H12v3.86h5.62a4.81 4.81 0 0 1-2.08 3.16v2.62h3.36C20.85 17.96 22 15.36 22 12.2z"></path><path fill="#34A853" d="M12 22c2.7 0 4.96-.9 6.62-2.4l-3.36-2.62c-.94.62-2.12.98-3.26.98-2.5 0-4.62-1.7-5.38-3.96H3.16v2.7A10 10 0 0 0 12 22z"></path><path fill="#FBBC05" d="M6.62 13.98a6 6 0 0 1 0-3.96V7.32H3.16a10 10 0 0 0 0 9.36z"></path><path fill="#EA4335" d="M12 6.04c1.46 0 2.78.5 3.82 1.5l2.86-2.86A10 10 0 0 0 12 2 10 10 0 0 0 3.16 7.32l3.46 2.7C7.38 7.74 9.5 6.04 12 6.04z"></path></svg>
             Continue with Google
           </a>

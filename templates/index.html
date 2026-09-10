@@ -88,9 +88,9 @@
     <section id="hero" class="hero section">
 
       <div class="hero-bg-slideshow" aria-hidden="true">
-        <div class="hero-bg-slide active" style="background-image: url('{% static 'images/hero/slide-1-contracts.jpg' %}');"></div>
-        <div class="hero-bg-slide" style="background-image: url('{% static 'images/hero/slide-2-housemodel.jpg' %}');"></div>
-        <div class="hero-bg-slide" style="background-image: url('{% static 'images/hero/slide-3-agency.jpg' %}');"></div>
+        <div class="hero-bg-slide active mh-hero-slide mh-hero-1"></div>
+        <div class="hero-bg-slide mh-hero-slide mh-hero-2"></div>
+        <div class="hero-bg-slide mh-hero-slide mh-hero-3"></div>
       </div>
 
       <div class="container" data-aos="fade-up" data-aos-delay="100">
@@ -109,22 +109,22 @@
           </div>
           <!-- Mortgage Calculator Widget -->
           <div class="col-lg-5 offset-lg-1" data-aos="fade-left" data-aos-delay="200">
-            <div class="card" style="background: rgba(24,27,40,0.92); backdrop-filter: blur(10px); border:1px solid rgba(255,255,255,0.12); border-radius:16px; box-shadow:0 20px 50px rgba(0,0,0,0.35); overflow:hidden;">
+            <div class="card mortgage-calculator-card">
               <div class="card-body p-4">
-                <h5 class="mb-1" style="color:#fff; font-weight:700;"><i class="bi bi-calculator" style="color:var(--accent-color);"></i> Mortgage Calculator</h5>
-                <p style="font-size:13px; color: #8f95ab; margin-bottom:16px;">Estimate your monthly payment in seconds</p>
+                <h5 class="mb-1 calc-title"><i class="bi bi-calculator mh-accent-text"></i> Mortgage Calculator</h5>
+                <p class="calc-sub">Estimate your monthly payment in seconds</p>
                 <div class="mb-3">
-                  <label style="font-size:12px; color:#8f95ab; font-weight:600;">Loan Amount (TZS)</label>
-                  <input type="number" id="calcAmount" class="form-control" placeholder="50000000" value="50000000" style="background:#1e2133; border-color:rgba(255,255,255,0.1); color:#fff;">
+                  <label class="calc-label">Loan Amount (TZS)</label>
+                  <input type="number" id="calcAmount" class="form-control calc-input" placeholder="50000000" value="50000000">
                 </div>
                 <div class="row g-2 mb-3">
                   <div class="col-6">
-                    <label style="font-size:12px; color:#8f95ab; font-weight:600;">Interest %</label>
-                    <input type="number" id="calcRate" class="form-control" value="12" step="0.5" style="background:#1e2133; border-color:rgba(255,255,255,0.1); color:#fff;">
+                    <label class="calc-label">Interest %</label>
+                    <input type="number" id="calcRate" class="form-control calc-input" value="12" step="0.5">
                   </div>
                   <div class="col-6">
-                    <label style="font-size:12px; color:#8f95ab; font-weight:600;">Years</label>
-                    <select id="calcYears" class="form-control" style="background:#1e2133; border-color:rgba(255,255,255,0.1); color:#fff;">
+                    <label class="calc-label">Years</label>
+                    <select id="calcYears" class="form-control calc-input">
                       <option value="5">5 years</option>
                       <option value="10">10 years</option>
                       <option value="15" selected>15 years</option>
@@ -134,13 +134,13 @@
                     </select>
                   </div>
                 </div>
-                <button onclick="calcMortgage()" class="btn btn-primary w-100" style="background:var(--accent-color); border:none; border-radius:8px; padding:10px; font-weight:600;">Calculate</button>
-                <div id="calcResult" class="mt-3 p-3 text-center" style="background:rgba(0,119,182,0.12); border:1px solid rgba(0,119,182,0.25); border-radius:10px; display:none;">
-                  <div style="font-size:12px; color:#8f95ab;">Monthly Payment</div>
-                  <div id="calcMonthly" style="font-size:22px; font-weight:800; color:#fff;">—</div>
-                  <div id="calcTotal" style="font-size:11px; color:#8f95ab;"></div>
+                <button onclick="calcMortgage()" class="btn btn-primary w-100 calc-btn">Calculate</button>
+                <div id="calcResult" class="mt-3 p-3 text-center calc-result-box">
+                  <div class="calc-result-label">Monthly Payment</div>
+                  <div id="calcMonthly" class="calc-result-value">—</div>
+                  <div id="calcTotal" class="calc-result-total"></div>
                 </div>
-                <div class="text-center mt-2"><a href="{% url 'signup_page' %}" style="font-size:12px; color:var(--accent-color); font-weight:600;">Apply now →</a></div>
+                <div class="text-center mt-2"><a href="{% url 'signup_page' %}" class="calc-apply-link">Apply now →</a></div>
               </div>
             </div>
           </div>
@@ -256,7 +256,7 @@
     </section><!-- /About Section -->
 
     <!-- How It Works Section -->
-    <section id="how-it-works" class="section" style="background: var(--surface-color);">
+    <section id="how-it-works" class="section mh-bg-surface">
       <div class="container section-title" data-aos="fade-up">
         <h2>How It Works</h2>
         <p>From application to keys in 5 simple steps</p>
@@ -264,44 +264,44 @@
       <div class="container" data-aos="fade-up" data-aos-delay="100">
         <div class="row gy-4">
           <div class="col-lg-2 col-md-4 col-6" data-aos="fade-up" data-aos-delay="100">
-            <div class="text-center p-3" style="background: var(--background-color); border:1px solid rgba(255,255,255,0.08); border-radius:16px; height:100%;">
-              <div class="mx-auto mb-3 d-flex align-items-center justify-content-center" style="width:56px; height:56px; border-radius:50%; background: var(--accent-color); color:#fff; font-weight:800; font-size:20px;">1</div>
-              <h6 style="font-weight:700;">Apply for Mortgage</h6>
-              <p style="font-size:13px; color: #8f95ab;">Submit your application in minutes</p>
+            <div class="text-center p-3 mh-card">
+              <div class="mx-auto mb-3 d-flex align-items-center justify-content-center mh-icon-circle">1</div>
+              <h6 class="mh-bold">Apply for Mortgage</h6>
+              <p class="mh-desc-13">Submit your application in minutes</p>
             </div>
           </div>
           <div class="col-lg-2 col-md-4 col-6" data-aos="fade-up" data-aos-delay="150">
-            <div class="text-center p-3" style="background: var(--background-color); border:1px solid rgba(255,255,255,0.08); border-radius:16px; height:100%;">
-              <div class="mx-auto mb-3 d-flex align-items-center justify-content-center" style="width:56px; height:56px; border-radius:50%; background: var(--accent-color); color:#fff; font-weight:800; font-size:20px;">2</div>
-              <h6 style="font-weight:700;">Bank Reviews</h6>
-              <p style="font-size:13px; color: #8f95ab;">Partner bank checks your documents</p>
+            <div class="text-center p-3 mh-card">
+              <div class="mx-auto mb-3 d-flex align-items-center justify-content-center mh-icon-circle">2</div>
+              <h6 class="mh-bold">Bank Reviews</h6>
+              <p class="mh-desc-13">Partner bank checks your documents</p>
             </div>
           </div>
           <div class="col-lg-2 col-md-4 col-6" data-aos="fade-up" data-aos-delay="200">
-            <div class="text-center p-3" style="background: var(--background-color); border:1px solid rgba(255,255,255,0.08); border-radius:16px; height:100%;">
-              <div class="mx-auto mb-3 d-flex align-items-center justify-content-center" style="width:56px; height:56px; border-radius:50%; background: var(--accent-color); color:#fff; font-weight:800; font-size:20px;">3</div>
-              <h6 style="font-weight:700;">Property Valuation</h6>
-              <p style="font-size:13px; color: #8f95ab;">Licensed valuers inspect the home</p>
+            <div class="text-center p-3 mh-card">
+              <div class="mx-auto mb-3 d-flex align-items-center justify-content-center mh-icon-circle">3</div>
+              <h6 class="mh-bold">Property Valuation</h6>
+              <p class="mh-desc-13">Licensed valuers inspect the home</p>
             </div>
           </div>
           <div class="col-lg-2 col-md-4 col-6" data-aos="fade-up" data-aos-delay="250">
-            <div class="text-center p-3" style="background: var(--background-color); border:1px solid rgba(255,255,255,0.08); border-radius:16px; height:100%;">
-              <div class="mx-auto mb-3 d-flex align-items-center justify-content-center" style="width:56px; height:56px; border-radius:50%; background: var(--accent-color); color:#fff; font-weight:800; font-size:20px;">4</div>
-              <h6 style="font-weight:700;">Approval</h6>
-              <p style="font-size:13px; color: #8f95ab;">Get approved within 5-14 days</p>
+            <div class="text-center p-3 mh-card">
+              <div class="mx-auto mb-3 d-flex align-items-center justify-content-center mh-icon-circle">4</div>
+              <h6 class="mh-bold">Approval</h6>
+              <p class="mh-desc-13">Get approved within 5-14 days</p>
             </div>
           </div>
           <div class="col-lg-2 col-md-4 col-6" data-aos="fade-up" data-aos-delay="300">
-            <div class="text-center p-3" style="background: var(--background-color); border:1px solid rgba(255,255,255,0.08); border-radius:16px; height:100%; border:2px solid var(--accent-color);">
-              <div class="mx-auto mb-3 d-flex align-items-center justify-content-center" style="width:56px; height:56px; border-radius:50%; background: var(--accent-color); color:#fff; font-weight:800; font-size:20px;">5</div>
-              <h6 style="font-weight:700;">Sign & Get Keys</h6>
-              <p style="font-size:13px; color: #8f95ab;">Sign contract and own your home</p>
+            <div class="text-center p-3 mh-card-featured">
+              <div class="mx-auto mb-3 d-flex align-items-center justify-content-center mh-icon-circle">5</div>
+              <h6 class="mh-bold">Sign & Get Keys</h6>
+              <p class="mh-desc-13">Sign contract and own your home</p>
             </div>
           </div>
           <div class="col-lg-2 col-md-4 col-12" data-aos="fade-up" data-aos-delay="350">
             <div class="d-flex flex-column justify-content-center align-items-center h-100 p-3 text-center">
-              <a href="{% url 'signup_page' %}" class="btn btn-primary" style="background:var(--accent-color); border:none; border-radius:50px; padding:12px 28px; font-weight:600;">Start Now <i class="bi bi-arrow-right ms-1"></i></a>
-              <small style="color:#8f95ab; margin-top:10px;">Free to start</small>
+              <a href="{% url 'signup_page' %}" class="btn btn-primary calc-cta-pill">Start Now <i class="bi bi-arrow-right ms-1"></i></a>
+              <small class="calc-note">Free to start</small>
             </div>
           </div>
         </div>
@@ -320,8 +320,8 @@
 
         <div class="row gy-4">
           <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="100">
-            <div class="service-item" style="flex-direction:column; text-align:center; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:28px; background: var(--surface-color);">
-              <div class="service-icon mx-auto" style="width:56px; height:56px; background: rgba(0,119,182,0.12); border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:16px;"><i class="bi bi-house-heart" style="font-size:26px; color:var(--accent-color);"></i></div>
+            <div class="service-item mh-card-center">
+              <div class="service-icon mx-auto mh-icon-badge"><i class="bi bi-house-heart mh-icon-26-accent"></i></div>
               <div class="service-content">
                 <h4><a href="{% url 'signup_page' %}">Home Mortgages</a></h4>
                 <p>Get pre-approved and compare mortgage offers from our partner banks.</p>
@@ -330,8 +330,8 @@
             </div>
           </div>
           <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="150">
-            <div class="service-item" style="flex-direction:column; text-align:center; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:28px; background: var(--surface-color);">
-              <div class="service-icon mx-auto" style="width:56px; height:56px; background: rgba(0,119,182,0.12); border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:16px;"><i class="bi bi-search" style="font-size:26px; color:var(--accent-color);"></i></div>
+            <div class="service-item mh-card-center">
+              <div class="service-icon mx-auto mh-icon-badge"><i class="bi bi-search mh-icon-26-accent"></i></div>
               <div class="service-content">
                 <h4><a href="/properties/">Property Search & Sales</a></h4>
                 <p>Browse verified homes, apartments and commercial properties.</p>
@@ -340,8 +340,8 @@
             </div>
           </div>
           <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="200">
-            <div class="service-item" style="flex-direction:column; text-align:center; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:28px; background: var(--surface-color);">
-              <div class="service-icon mx-auto" style="width:56px; height:56px; background: rgba(0,119,182,0.12); border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:16px;"><i class="bi bi-file-earmark-text" style="font-size:26px; color:var(--accent-color);"></i></div>
+            <div class="service-item mh-card-center">
+              <div class="service-icon mx-auto mh-icon-badge"><i class="bi bi-file-earmark-text mh-icon-26-accent"></i></div>
               <div class="service-content">
                 <h4><a href="#contact">Legal & Contract Services</a></h4>
                 <p>Licensed lawyers review every contract to protect your interests.</p>
@@ -350,8 +350,8 @@
             </div>
           </div>
           <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="250">
-            <div class="service-item" style="flex-direction:column; text-align:center; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:28px; background: var(--surface-color);">
-              <div class="service-icon mx-auto" style="width:56px; height:56px; background: rgba(0,119,182,0.12); border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:16px;"><i class="bi bi-graph-up-arrow" style="font-size:26px; color:var(--accent-color);"></i></div>
+            <div class="service-item mh-card-center">
+              <div class="service-icon mx-auto mh-icon-badge"><i class="bi bi-graph-up-arrow mh-icon-26-accent"></i></div>
               <div class="service-content">
                 <h4><a href="#how-it-works">Mortgage Management</a></h4>
                 <p>Track repayments and balances from a single dashboard.</p>
@@ -378,7 +378,7 @@
     </section><!-- /Services Section -->
 
     <!-- Bank Partners Section -->
-    <section id="banks" class="section" style="background: var(--surface-color);">
+    <section id="banks" class="section mh-bg-surface">
       <div class="container section-title" data-aos="fade-up">
         <h2>Trusted Bank Partners</h2>
         <p>We partner with Tanzania's leading banks for the best mortgage rates</p>
@@ -387,73 +387,73 @@
         <div class="row g-3 align-items-stretch">
           <!-- CRDB - Green #007A33 -->
           <div class="col-6 col-md-4 col-lg-2">
-            <div class="p-3 text-center h-100 d-flex flex-column align-items-center justify-content-center" style="background: var(--background-color); border:1px solid rgba(0,122,51,0.25); border-radius:12px; transition: all .3s;">
-              <div style="height:42px; display:flex; align-items:center; justify-content:center; gap:6px;">
-                <span style="width:28px;height:28px;border-radius:50%;background:#007A33;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:11px;">CR</span>
-                <span style="font-weight:800; color:#007A33; font-size:18px; letter-spacing:-0.5px;">CRDB</span>
+            <div class="p-3 text-center h-100 d-flex flex-column align-items-center justify-content-center mh-bank-card mh-bank-card--green">
+              <div class="mh-review-row">
+                <span class="mh-bank-badge mh-bank-badge--green">CR</span>
+                <span class="mh-bank-name mh-bank-name--green">CRDB</span>
               </div>
-              <small style="color:#8f95ab; font-weight:600;">12% p.a. • Jijenge</small>
-              <small style="color:#6c7293; font-size:10px; margin-top:2px;">CRDB Bank PLC</small>
+              <small class="mh-muted">12% p.a. • Jijenge</small>
+              <small class="mh-muted-tiny">CRDB Bank PLC</small>
             </div>
           </div>
           <!-- NMB - Orange #F37021 / Deep Blue -->
           <div class="col-6 col-md-4 col-lg-2">
-            <div class="p-3 text-center h-100 d-flex flex-column align-items-center justify-content-center" style="background: var(--background-color); border:1px solid rgba(243,112,33,0.25); border-radius:12px;">
-              <div style="height:42px; display:flex; align-items:center; justify-content:center; gap:6px;">
-                <span style="width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,#F37021 0%,#FF8C42 100%);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:11px;">N</span>
-                <span style="font-weight:800; color:#F37021; font-size:18px; letter-spacing:-0.5px;">NMB</span>
+            <div class="p-3 text-center h-100 d-flex flex-column align-items-center justify-content-center mh-bank-card mh-bank-card--orange">
+              <div class="mh-review-row">
+                <span class="mh-bank-badge mh-bank-badge--orange">N</span>
+                <span class="mh-bank-name mh-bank-name--orange">NMB</span>
               </div>
-              <small style="color:#8f95ab; font-weight:600;">13% p.a.</small>
-              <small style="color:#6c7293; font-size:10px; margin-top:2px;">NMB Bank PLC</small>
+              <small class="mh-muted">13% p.a.</small>
+              <small class="mh-muted-tiny">NMB Bank PLC</small>
             </div>
           </div>
           <!-- NCBA - Teal/Green #00A651 -->
           <div class="col-6 col-md-4 col-lg-2">
-            <div class="p-3 text-center h-100 d-flex flex-column align-items-center justify-content-center" style="background: var(--background-color); border:1px solid rgba(0,166,81,0.35); border-radius:12px; position:relative;">
-              <span style="position:absolute; top:6px; right:6px; background:#00A651; color:#fff; font-size:9px; font-weight:700; padding:2px 6px; border-radius:20px;">★ Lowest</span>
-              <div style="height:42px; display:flex; align-items:center; justify-content:center; gap:6px;">
-                <span style="width:28px;height:28px;border-radius:50%;background:#00A651;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:10px;">NC</span>
-                <span style="font-weight:800; color:#00A651; font-size:18px; letter-spacing:-0.5px;">NCBA</span>
+            <div class="p-3 text-center h-100 d-flex flex-column align-items-center justify-content-center mh-bank-card mh-bank-card--teal">
+              <span class="mh-bank-ribbon">★ Lowest</span>
+              <div class="mh-review-row">
+                <span class="mh-bank-badge mh-bank-badge--teal">NC</span>
+                <span class="mh-bank-name mh-bank-name--teal">NCBA</span>
               </div>
-              <small style="color:#00A651; font-weight:700;">11.5% p.a.</small>
-              <small style="color:#6c7293; font-size:10px; margin-top:2px;">NCBA Bank Tanzania</small>
+              <small class="mh-bank-check">11.5% p.a.</small>
+              <small class="mh-muted-tiny">NCBA Bank Tanzania</small>
             </div>
           </div>
           <!-- NBC - Navy #00205B + Gold lion -->
           <div class="col-6 col-md-4 col-lg-2">
-            <div class="p-3 text-center h-100 d-flex flex-column align-items-center justify-content-center" style="background: var(--background-color); border:1px solid rgba(0,32,91,0.2); border-radius:12px;">
-              <div style="height:42px; display:flex; align-items:center; justify-content:center; gap:6px;">
-                <span style="width:28px;height:28px;border-radius:50%;background:#00205B;display:flex;align-items:center;justify-content:center;color:#FFC72C;font-weight:800;font-size:11px; border:1px solid #FFC72C;">N</span>
-                <span style="font-weight:800; color:#00205B; font-size:18px; letter-spacing:-0.5px; background:#fff; padding:0 4px; border-radius:4px;">NBC</span>
+            <div class="p-3 text-center h-100 d-flex flex-column align-items-center justify-content-center mh-bank-card mh-bank-card--navy">
+              <div class="mh-review-row">
+                <span class="mh-bank-badge mh-bank-badge--navy">N</span>
+                <span class="mh-bank-name mh-bank-name--navy">NBC</span>
               </div>
-              <small style="color:#8f95ab; font-weight:600;">12.5% p.a.</small>
-              <small style="color:#6c7293; font-size:10px; margin-top:2px;">National Bank of Commerce</small>
+              <small class="mh-muted">12.5% p.a.</small>
+              <small class="mh-muted-tiny">National Bank of Commerce</small>
             </div>
           </div>
           <!-- TCB - Royal Blue #003DA5 + Red accent -->
           <div class="col-6 col-md-4 col-lg-2">
-            <div class="p-3 text-center h-100 d-flex flex-column align-items-center justify-content-center" style="background: var(--background-color); border:1px solid rgba(0,61,165,0.2); border-radius:12px;">
-              <div style="height:42px; display:flex; align-items:center; justify-content:center; gap:6px;">
-                <span style="width:28px;height:28px;border-radius:6px;background:#003DA5;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:11px; border-bottom:2px solid #E30613;">TC</span>
-                <span style="font-weight:800; color:#003DA5; font-size:18px; letter-spacing:-0.5px;">TCB</span>
+            <div class="p-3 text-center h-100 d-flex flex-column align-items-center justify-content-center mh-bank-card mh-bank-card--blue">
+              <div class="mh-review-row">
+                <span class="mh-bank-badge mh-bank-badge--blue">TC</span>
+                <span class="mh-bank-name mh-bank-name--blue">TCB</span>
               </div>
-              <small style="color:#8f95ab; font-weight:600;">14% p.a.</small>
-              <small style="color:#6c7293; font-size:10px; margin-top:2px;">Tanzania Commercial Bank</small>
+              <small class="mh-muted">14% p.a.</small>
+              <small class="mh-muted-tiny">Tanzania Commercial Bank</small>
             </div>
           </div>
           <!-- Azania Bank - Deep Blue #002E6D + Orange #F26522 -->
           <div class="col-6 col-md-4 col-lg-2">
-            <div class="p-3 text-center h-100 d-flex flex-column align-items-center justify-content-center" style="background: var(--background-color); border:1px solid rgba(0,46,109,0.2); border-radius:12px;">
-              <div style="height:42px; display:flex; align-items:center; justify-content:center; gap:6px;">
-                <span style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#002E6D 0%,#0047AB 100%);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:11px; border:1px solid #F26522;">A</span>
-                <span style="font-weight:800; color:#002E6D; font-size:15px; letter-spacing:-0.5px;">Azania</span>
+            <div class="p-3 text-center h-100 d-flex flex-column align-items-center justify-content-center mh-bank-card mh-bank-card--royal">
+              <div class="mh-review-row">
+                <span class="mh-bank-badge mh-bank-badge--royal">A</span>
+                <span class="mh-bank-name mh-bank-name--royal">Azania</span>
               </div>
-              <small style="color:#8f95ab; font-weight:600;">15% p.a.</small>
-              <small style="color:#6c7293; font-size:10px; margin-top:2px;">Azania Bank Ltd</small>
+              <small class="mh-muted">15% p.a.</small>
+              <small class="mh-muted-tiny">Azania Bank Ltd</small>
             </div>
           </div>
         </div>
-        <p class="text-center mt-4" style="color:#6c7293; font-size:11px;"><i class="bi bi-shield-check me-1"></i> All banks are licensed by Bank of Tanzania (BOT) • Rates indicative, subject to bank approval</p>
+        <p class="text-center mt-4 mh-muted-caption"><i class="bi bi-shield-check me-1"></i> All banks are licensed by Bank of Tanzania (BOT) • Rates indicative, subject to bank approval</p>
       </div>
     </section><!-- /Bank Partners -->
 
@@ -466,37 +466,37 @@
       <div class="container" data-aos="fade-up" data-aos-delay="100">
         <div class="row gy-4">
           <div class="col-lg-4" data-aos="fade-up" data-aos-delay="100">
-            <div class="card" style="background: var(--surface-color); border:1px solid rgba(255,255,255,0.08); border-radius:16px; height:100%;">
+            <div class="card mh-card-surface">
               <div class="card-body p-4">
-                <div class="mb-3" style="color:#fbbf24;"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i> 5.0</div>
-                <p style="font-style:italic; color:#e5e6ea;">"MorgiHome made buying my home easy — approval in 9 days and the lawyer handled everything."</p>
+                <div class="mb-3 mh-star"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i> 5.0</div>
+                <p class="mh-quote">"MorgiHome made buying my home easy — approval in 9 days and the lawyer handled everything."</p>
                 <div class="d-flex align-items-center gap-3 mt-3">
-                  <img src="{% static 'images/person/person-f-3.webp' %}" style="width:44px; height:44px; border-radius:50%; object-fit:cover;">
-                  <div><strong>Janeth Mushi</strong><br><small style="color:#8f95ab;">Homeowner, Dar es Salaam</small></div>
+                  <img src="{% static 'images/person/person-f-3.webp' %}" class="mh-avatar-44">
+                  <div><strong>Janeth Mushi</strong><br><small class="mh-muted">Homeowner, Dar es Salaam</small></div>
                 </div>
               </div>
             </div>
           </div>
           <div class="col-lg-4" data-aos="fade-up" data-aos-delay="150">
-            <div class="card" style="background: var(--surface-color); border:1px solid rgba(255,255,255,0.08); border-radius:16px; height:100%;">
+            <div class="card mh-card-surface">
               <div class="card-body p-4">
-                <div class="mb-3" style="color:#fbbf24;"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i> 5.0</div>
-                <p style="font-style:italic; color:#e5e6ea;">"I compared 3 banks in one place and saved 1.5% on interest. Calculator is very accurate."</p>
+                <div class="mb-3 mh-star"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i> 5.0</div>
+                <p class="mh-quote">"I compared 3 banks in one place and saved 1.5% on interest. Calculator is very accurate."</p>
                 <div class="d-flex align-items-center gap-3 mt-3">
-                  <img src="{% static 'images/person/person-m-5.webp' %}" style="width:44px; height:44px; border-radius:50%; object-fit:cover;">
-                  <div><strong>Rashid Komba</strong><br><small style="color:#8f95ab;">Entrepreneur, Arusha</small></div>
+                  <img src="{% static 'images/person/person-m-5.webp' %}" class="mh-avatar-44">
+                  <div><strong>Rashid Komba</strong><br><small class="mh-muted">Entrepreneur, Arusha</small></div>
                 </div>
               </div>
             </div>
           </div>
           <div class="col-lg-4" data-aos="fade-up" data-aos-delay="200">
-            <div class="card" style="background: var(--surface-color); border:1px solid rgba(255,255,255,0.08); border-radius:16px; height:100%;">
+            <div class="card mh-card-surface">
               <div class="card-body p-4">
-                <div class="mb-3" style="color:#fbbf24;"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-half"></i> 4.8</div>
-                <p style="font-style:italic; color:#e5e6ea;">"Property was verified and contract was clear. I got the keys without any stress."</p>
+                <div class="mb-3 mh-star"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-half"></i> 4.8</div>
+                <p class="mh-quote">"Property was verified and contract was clear. I got the keys without any stress."</p>
                 <div class="d-flex align-items-center gap-3 mt-3">
-                  <img src="{% static 'images/person/person-f-8.webp' %}" style="width:44px; height:44px; border-radius:50%; object-fit:cover;">
-                  <div><strong>Neema Sanga</strong><br><small style="color:#8f95ab;">Teacher, Dodoma</small></div>
+                  <img src="{% static 'images/person/person-f-8.webp' %}" class="mh-avatar-44">
+                  <div><strong>Neema Sanga</strong><br><small class="mh-muted">Teacher, Dodoma</small></div>
                 </div>
               </div>
             </div>

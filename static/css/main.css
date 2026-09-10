@@ -5210,3 +5210,153 @@ section[id] {
 .starter-section {
   /* Add your styles here */
 }
+
+/* ============================================================
+   MorgiHome Website Utilities (replaces inline styles)
+   Palette: Blue Bahari #0077B6, Dark Blue #0A2B4E, White #FFFFFF,
+   Muted #8f95ab, Surface #181b28 / #1e2133
+   ============================================================ */
+
+/* Text helpers */
+.mh-muted { color: #8f95ab; }
+.mh-muted-sm { color: #8f95ab; font-size: 12px; }
+.mh-muted-xs { color: #8f95ab; font-size: 11px; }
+.mh-muted-tiny { color: #6c7293; font-size: 10px; margin-top: 2px; }
+.mh-muted-caption { color: #6c7293; font-size: 11px; }
+.mh-accent-text { color: var(--accent-color); }
+.mh-accent-sm { color: var(--accent-color); font-size: 12px; font-weight: 600; }
+.mh-bold { font-weight: 700; }
+.mh-title-white { color: #fff; font-weight: 700; }
+.mh-title-light { color: #eeeff7; font-weight: 700; }
+.mh-title-800 { font-weight: 800; color: #eeeff7; }
+.mh-title-800-white { font-weight: 800; color: #fff; }
+.mh-title-800-28 { font-weight: 800; color: #eeeff7; font-size: 28px; }
+.mh-quote { font-style: italic; color: #e5e6ea; }
+.mh-body-light { color: #e5e6ea; }
+.mh-star { color: #fbbf24; }
+.mh-desc-13 { font-size: 13px; color: #8f95ab; }
+.mh-label-sm { font-size: 12px; color: #8f95ab; font-weight: 600; }
+.mh-center-640 { color: #8f95ab; max-width: 640px; margin: 10px auto 0; }
+.mh-line-16 { color: #8f95ab; line-height: 1.6; }
+.mh-line-17-box { color: #8f95ab; line-height: 1.7; background: #1e2133; padding: 14px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.06); }
+.mh-small-13 { color: #8f95ab; font-size: 13px; }
+.mh-icon-20 { font-size: 20px; }
+.mh-icon-20-accent { font-size: 20px; color: var(--accent-color); }
+.mh-icon-24-accent { font-size: 24px; color: var(--accent-color); }
+.mh-icon-26-accent { font-size: 26px; color: var(--accent-color); }
+.mh-icon-32-accent { font-size: 32px; color: var(--accent-color); }
+.mh-icon-star-48 { font-size: 48px; color: #cbd5e0; }
+.mh-brand-blue { color: #0077B6; }
+
+/* Backgrounds / cards */
+.mh-bg-surface { background: var(--surface-color); }
+.mh-bg-dark { background: #181b28; }
+.mh-card { background: var(--background-color); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; height: 100%; }
+.mh-card-featured { background: var(--background-color); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; height: 100%; border: 2px solid var(--accent-color); }
+.mh-card-surface { background: var(--surface-color); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; height: 100%; }
+.mh-card-center { flex-direction: column; text-align: center; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 28px; background: var(--surface-color); }
+.mh-card-12 { background: var(--surface-color); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; }
+.mh-card-12-pad { background: var(--surface-color); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; }
+.mh-chip { background: rgba(255, 255, 255, 0.08); color: #e5e6ea; border: 1px solid rgba(255, 255, 255, 0.12); }
+.mh-chip-accent { background: rgba(0, 119, 182, 0.15); color: var(--accent-color); border: 1px solid rgba(0, 119, 182, 0.3); }
+.mh-filter-pill { border-radius: 50px; padding: 8px 20px; border-color: rgba(255, 255, 255, 0.2); color: #e5e6ea; }
+.mh-filter-pill-active { background: var(--accent-color); border: none; border-radius: 50px; padding: 8px 20px; font-weight: 600; }
+
+/* Icon badges */
+.mh-icon-badge { width: 56px; height: 56px; background: rgba(0, 119, 182, 0.12); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+.mh-icon-circle { width: 56px; height: 56px; border-radius: 50%; background: var(--accent-color); color: #fff; font-weight: 800; font-size: 20px; }
+.mh-avatar-44 { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+.mh-avatar-48-accent { width: 48px; height: 48px; border-radius: 50%; background: var(--accent-color); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+.mh-avatar-56-faint { width: 56px; height: 56px; border-radius: 50%; background: rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; }
+.mh-review-row { height: 42px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+
+/* Mortgage calculator (MorgiHome gradient) */
+.mortgage-calculator-card { background: linear-gradient(135deg, rgba(10, 43, 78, 0.95), rgba(0, 119, 182, 0.85)); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 16px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35); overflow: hidden; color: #FFFFFF; }
+.calc-title { color: #FFFFFF; font-weight: 700; }
+.calc-sub { font-size: 13px; color: #8f95ab; margin-bottom: 16px; }
+.calc-label { font-size: 12px; color: #8f95ab; font-weight: 600; }
+.calc-input { width: 100%; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; color: #FFFFFF; padding: 10px 14px; }
+.calc-input::placeholder { color: #8f95ab; }
+.calc-input option { color: #0A2B4E; }
+.calc-btn { background: var(--accent-color); border: none; border-radius: 8px; padding: 10px; font-weight: 600; }
+.calc-result-box { background: rgba(0, 119, 182, 0.12); border: 1px solid rgba(0, 119, 182, 0.25); border-radius: 10px; display: none; }
+.calc-result-label { font-size: 12px; color: #8f95ab; }
+.calc-result-value { font-size: 22px; font-weight: 800; color: #fff; }
+.calc-result-total { font-size: 11px; color: #8f95ab; }
+.calc-apply-link { font-size: 12px; color: var(--accent-color); font-weight: 600; }
+.calc-cta-pill { background: var(--accent-color); border: none; border-radius: 50px; padding: 12px 28px; font-weight: 600; }
+.calc-note { color: #8f95ab; margin-top: 10px; }
+
+/* Bank cards (keep each bank brand color via modifier, layout in class) */
+.mh-bank-card { background: var(--background-color); border-radius: 12px; transition: all 0.3s; }
+.mh-bank-badge { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 11px; }
+.mh-bank-badge--green { background: #007A33; }
+.mh-bank-badge--orange { background: linear-gradient(135deg, #F37021 0%, #FF8C42 100%); border-radius: 6px; }
+.mh-bank-badge--teal { background: #00A651; font-size: 10px; }
+.mh-bank-badge--navy { background: #00205B; color: #FFC72C; border: 1px solid #FFC72C; }
+.mh-bank-badge--blue { background: #003DA5; border-radius: 6px; border-bottom: 2px solid #E30613; }
+.mh-bank-badge--royal { background: linear-gradient(135deg, #002E6D 0%, #0047AB 100%); border: 1px solid #F26522; }
+.mh-bank-name { font-weight: 800; font-size: 18px; letter-spacing: -0.5px; }
+.mh-bank-name--green { color: #007A33; }
+.mh-bank-name--orange { color: #F37021; }
+.mh-bank-name--teal { color: #00A651; }
+.mh-bank-name--navy { color: #00205B; background: #fff; padding: 0 4px; border-radius: 4px; }
+.mh-bank-name--blue { color: #003DA5; }
+.mh-bank-name--royal { color: #002E6D; font-size: 15px; }
+.mh-bank-ribbon { position: absolute; top: 6px; right: 6px; background: #00A651; color: #fff; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 20px; }
+.mh-bank-check { color: #00A651; font-weight: 700; }
+.mh-bank-card--green { border: 1px solid rgba(0, 122, 51, 0.25); }
+.mh-bank-card--orange { border: 1px solid rgba(243, 112, 33, 0.25); }
+.mh-bank-card--teal { border: 1px solid rgba(0, 166, 81, 0.35); position: relative; }
+.mh-bank-card--navy { border: 1px solid rgba(0, 32, 91, 0.2); }
+.mh-bank-card--blue { border: 1px solid rgba(0, 61, 165, 0.2); }
+.mh-bank-card--royal { border: 1px solid rgba(0, 46, 109, 0.2); }
+
+/* Website sections / misc */
+.mh-section-pad { padding: 50px 0 30px; background: var(--background-color); }
+.mh-section-pad-2 { padding: 30px 0 20px; background: var(--background-color); }
+.mh-section-faq { padding: 60px 0 40px; background: var(--background-color); }
+.mh-hero-slide { background-size: cover; background-position: center; }
+.mh-logo-nav { max-height: 44px; width: auto; }
+.mh-footer-note { font-size: 48px; color: #cbd5e0; }
+.mh-bank-aside { border-left: 4px solid #0077B6; }
+.mh-opacity-9 { opacity: 0.9; }
+.mh-round-8 { border-radius: 8px; }
+.mh-round-10 { border-radius: 10px; }
+.mh-round-12 { border-radius: 12px; }
+.mh-round-16 { border-radius: 16px; overflow: hidden; }
+.mh-img-cover-320 { width: 100%; height: 320px; object-fit: cover; }
+.mh-detail-hero { height: 420px; background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%); display: flex; align-items: center; justify-content: center; flex-direction: column; }
+.mh-detail-hero-icon { font-size: 64px; color: #fff; }
+.mh-detail-hero-sub { color: rgba(255, 255, 255, 0.7); margin-top: 10px; }
+.mh-thumb-strip { overflow-x: auto; background: #0e1022; }
+.mh-price-teal { font-weight: 800; color: #2dd4bf; font-size: 22px; }
+.mh-price-green { color: #10b981; font-weight: 800; }
+.mh-price-red { color: #ef4444; font-weight: 800; }
+.mh-price-amber { color: #f59e0b; font-weight: 800; }
+.mh-doc-empty { height: 160px; background: #0e1022; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.06); }
+.mh-gradient-btn { background: linear-gradient(135deg, #0077B6 0%, #00a8e8 100%); color: #fff; }
+.mh-gradient-bar { background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%); }
+.mh-login-wrap { grid-column: 1 / -1; max-width: 320px; margin: 0 auto; width: 100%; }
+.mh-faq-cta { background: var(--accent-color); border: none; border-radius: 50px; padding: 10px 28px; font-weight: 600; }
+.mh-faq-pill { border-radius: 50px; padding: 10px 24px; }
+.mh-faq-pill-active { background: var(--accent-color); border: none; border-radius: 50px; padding: 10px 24px; }
+.mh-inline { display: inline; }
+.mh-hero-pad { padding-top: 90px; }
+.mh-pad-20 { padding-top: 20px; }
+.mh-pad-30 { padding-top: 30px; }
+.mh-pos-rel { position: relative; }
+.mh-small-13 { color: #8f95ab; font-size: 13px; }
+.mh-avail-yes { color: #7CFF7C; }
+.mh-avail-partial { color: #FFD700; }
+.mh-base-body { background: var(--morgi-bg, #fbfbfc); color: var(--morgi-text, #0f172a); }
+.mh-base-muted { color: var(--morgi-muted, #64748b); }
+.mh-base-card { background: var(--morgi-card, #fff); }
+.mh-base-light { background: #fbfbfc; }
+.mh-base-sidebar { background: var(--morgi-sidebar, #f8fafc); }
+.mh-base-border { border-color: var(--morgi-border, #e2e8f0); }
+.mh-pagination { --bs-pagination-bg: var(--surface-color); --bs-pagination-color: #e5e6ea; --bs-pagination-border-color: rgba(255, 255, 255, 0.1); }
+.mh-hero-1 { background-image: url('../images/hero/slide-1-contracts.jpg'); }
+.mh-hero-2 { background-image: url('../images/hero/slide-2-housemodel.jpg'); }
+.mh-hero-3 { background-image: url('../images/hero/slide-3-agency.jpg'); }
+
