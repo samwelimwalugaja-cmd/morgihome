@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
-import '../utils/session.dart';
 import '../utils/snackbar.dart';
 
 /// Banks parity with web: real data, logo, no Apply for non-customer.
