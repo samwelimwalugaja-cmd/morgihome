@@ -1215,18 +1215,29 @@ class RealEstateBanksView(NoCacheMixin, TemplateView):
         from mortgages.models import MortgageApplication
         import re as _re
         banks = list(User.objects.filter(role='bank', is_active=True).order_by('first_name'))
+        user = self.request.user
+        own_apps = None
+        if user.is_authenticated and getattr(user, 'role', '') == 'realestate':
+            own_apps = MortgageApplication.objects.filter(property__seller=user)
         for b in banks:
             raw = (b.bank_requirements or '')
             b.req_list = [p.strip(' .') for p in _re.split(r'[,\n;]+', raw) if p.strip(' .')][:6]
             try:
-                b.apps_count = MortgageApplication.objects.filter(bank=b).count()
+                if own_apps is not None:
+                    b.apps_count = own_apps.filter(bank=b).count()
+                else:
+                    b.apps_count = MortgageApplication.objects.filter(bank=b).count()
             except Exception:
                 b.apps_count = 0
         ctx['banks'] = banks
+        try:
+            apps_total = own_apps.count() if own_apps is not None else MortgageApplication.objects.filter(bank__role='bank').count()
+        except Exception:
+            apps_total = 0
         ctx['stats'] = {
             'total': User.objects.filter(role='bank').count(),
             'active': User.objects.filter(role='bank', is_verified=True).count(),
-            'applications': MortgageApplication.objects.filter(bank__role='bank').count(),
+            'applications': apps_total,
         }
         return ctx
 
