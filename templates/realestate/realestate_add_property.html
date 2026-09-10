@@ -44,7 +44,7 @@
   <nav aria-label="breadcrumb">
     <ul class="breadcrumb">
       <li class="breadcrumb-item"><a href="/realestate/properties/">My Properties</a></li>
-      <li class="breadcrumb-item active" aria-current="page">Add {% if category == 'plot' %}Plot{% else %}House{% endif %}</li>
+      <li class="breadcrumb-item active" aria-current="page">Add {{ category|title|default:'House' }}</li>
     </ul>
   </nav>
 </div>
@@ -55,9 +55,11 @@
     <div class="card">
       <div class="card-body">
         <h4 class="card-title">Choose Property Type</h4>
-        <p class="card-description">Select whether you are adding a House or a Plot</p>
-        <div class="d-flex gap-3">
+        <p class="card-description">Select the property category you are adding</p>
+        <div class="d-flex gap-3 flex-wrap">
           <a href="?category=house" class="btn {% if category == 'house' or not category %}btn-primary{% else %}btn-outline-primary{% endif %}" style="{% if category == 'house' or not category %}background:#0077B6; border-color:#0077B6;{% endif %}"><i class="mdi mdi-home"></i> House</a>
+          <a href="?category=apartment" class="btn {% if category == 'apartment' %}btn-primary{% else %}btn-outline-primary{% endif %}" style="{% if category == 'apartment' %}background:#0077B6; border-color:#0077B6;{% endif %}"><i class="mdi mdi-city-variant"></i> Apartment</a>
+          <a href="?category=commercial" class="btn {% if category == 'commercial' %}btn-primary{% else %}btn-outline-primary{% endif %}" style="{% if category == 'commercial' %}background:#0077B6; border-color:#0077B6;{% endif %}"><i class="mdi mdi-domain"></i> Commercial</a>
           <a href="?category=plot" class="btn {% if category == 'plot' %}btn-primary{% else %}btn-outline-primary{% endif %}" style="{% if category == 'plot' %}background:#0077B6; border-color:#0077B6;{% endif %}"><i class="mdi mdi-map"></i> Plot</a>
         </div>
       </div>
@@ -67,7 +69,8 @@
 
 <form method="post" enctype="multipart/form-data" class="forms-sample">
   {% csrf_token %}
-  <input type="hidden" name="property_category" value="{{ category|default:'house' }}">
+  <input type="hidden" name="property_category" value="{% if category == 'plot' %}plot{% else %}house{% endif %}">
+  <input type="hidden" name="building_type" value="{{ category|default:'house' }}">
 
   {% if category == 'plot' %}
   <!-- ==================== PLOT FORM (20 fields, 5 sections) ==================== -->
@@ -289,8 +292,9 @@
               <div class="form-group">
                 <label>Property Type <span class="text-danger">*</span></label>
                 <select name="property_type" class="form-control" required>
-                  <option value="house">House</option>
-                  <option value="apartment">Apartment</option>
+                  <option value="house" {% if category == 'house' or not category %}selected{% endif %}>House</option>
+                  <option value="apartment" {% if category == 'apartment' %}selected{% endif %}>Apartment</option>
+                  <option value="commercial" {% if category == 'commercial' %}selected{% endif %}>Commercial</option>
                   <option value="townhouse">Townhouse</option>
                   <option value="villa">Villa</option>
                   <option value="bungalow">Bungalow</option>

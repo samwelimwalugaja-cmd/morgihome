@@ -1041,8 +1041,9 @@ class RealEstateAddPropertyView(NoCacheMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         from accounts.models import User
         ctx['sellers'] = User.objects.filter(role='seller')
-        # category from query param ?category=house/plot, default house
-        ctx['category'] = self.request.GET.get('category', 'house')
+        # category: house / apartment / commercial / plot (kama seller)
+        cat = self.request.GET.get('category', 'house')
+        ctx['category'] = cat if cat in ['house', 'apartment', 'commercial', 'plot'] else 'house'
         return ctx
 
     def post(self, request, *args, **kwargs):
@@ -1056,6 +1057,13 @@ class RealEstateAddPropertyView(NoCacheMixin, TemplateView):
         data = request.POST
         files = request.FILES
         category = data.get('property_category', 'house')
+        if category not in ['house', 'plot']:
+            category = 'house'
+        # building subtype (house / apartment / commercial) kutoka toggle
+        building = data.get('building_type', '')
+        if building not in ['house', 'apartment', 'commercial']:
+            building = data.get('property_type', 'house')
+        valid_types = ['house', 'apartment', 'townhouse', 'villa', 'bungalow', 'duplex', 'commercial']
         # Common
         title = data.get('title', '').strip()
         description = data.get('description', '').strip()
@@ -1084,7 +1092,7 @@ class RealEstateAddPropertyView(NoCacheMixin, TemplateView):
                 location=location,
                 area=area or 0,
                 property_category=category,
-                property_type=data.get('property_type', 'house') if category == 'house' else 'land',
+                property_type=(data.get('property_type') if data.get('property_type') in valid_types else building) if category == 'house' else 'land',
                 status=data.get('status', 'available'),
                 seller=seller,
                 # House
