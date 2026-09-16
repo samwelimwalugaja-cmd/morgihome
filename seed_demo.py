@@ -42,23 +42,23 @@ def get_bank(email_hint):
     if bank is None:
         bank = User.objects.filter(role='bank').first()
     if bank is None:
-        raise SystemExit('Hakuna bank account kwenye DB. Fungua bank account kwanza (admin au signup).')
+        raise SystemExit('No bank account in DB. Please create a bank account first (admin or signup).')
     return bank
 
 
 def clean_demo():
-    """Futa data zote za demo (emails za *.demo@morgihome.test + properties zao)."""
+    """Delete all demo data (emails ending with *.demo@morgihome.test and their properties)."""
     demo_users = list(User.objects.filter(email__endswith='.demo@morgihome.test'))
     demo_ids = [u.id for u in demo_users]
     MortgageApplication.objects.filter(customer_id__in=demo_ids).delete()
     Contract.objects.filter(customer_id__in=demo_ids).delete()
     Property.objects.filter(title__startswith='[DEMO]').delete()
     User.objects.filter(id__in=demo_ids).delete()
-    print(f'Demo data imefutwa ({len(demo_ids)} users).')
+    print(f'Demo data deleted ({len(demo_ids)} users).')
 
 
 def backdate(obj, days_ago):
-    """Weka created_at nyuma ili chart ya miezi ionekane (auto_now_add inazungukwa)."""
+    """Move created_at backwards so monthly chart shows data (bypasses auto_now_add)."""
     dt = timezone.now() - timedelta(days=days_ago)
     type(obj).objects.filter(id=obj.id).update(created_at=dt, updated_at=dt)
     obj.refresh_from_db()

@@ -90,60 +90,167 @@
           <div class="row g-3">
             <div class="col-md-6">
               <label class="form-label" style="font-weight:600">Loan Amount (TZS) <span class="text-danger">*</span></label>
-              <input type="number" id="maLoanAmount" name="loan_amount" class="form-control" style="border-radius:10px" placeholder="50,000,000" required min="1000000" step="100000">
-              <small class="text-muted">Example: 50,000,000</small>
+              <input type="number" id="maLoanAmount" name="loan_amount" class="form-control" style="border-radius:10px" placeholder="50,000,000" required min="1000000" step="100000" oninput="if(typeof updateDownPayment==='function') updateDownPayment()" onkeyup="if(typeof updateDownPayment==='function') updateDownPayment()" onchange="if(typeof updateDownPayment==='function') updateDownPayment()">
+              <small class="text-muted">Example: 50,000,000 — Down payment auto 10%</small>
             </div>
             <div class="col-md-6">
-              <label class="form-label" style="font-weight:600">Down Payment (TZS) <span class="text-danger">*</span></label>
-              <input type="number" id="maDownPayment" name="down_payment" class="form-control" style="border-radius:10px" placeholder="10,000,000" required min="0" step="100000">
-              <small class="text-muted">Example: 10,000,000</small>
+              <label class="form-label" style="font-weight:600">Down Payment (TZS) <span class="text-muted">(auto 10%)</span></label>
+              <input type="number" id="maDownPayment" name="down_payment" class="form-control" style="border-radius:10px; background:#f8fafc;" placeholder="" readonly>
+              <small class="text-muted" id="maDownHint">10% of loan amount — will calculate as you type</small>
+<script>
+(function(){
+  function fbDown(){
+    var loanEl=document.getElementById('maLoanAmount');
+    var downEl=document.getElementById('maDownPayment');
+    var hint=document.getElementById('maDownHint');
+    if(!loanEl||!downEl) return;
+    var loan=parseFloat(String(loanEl.value).replace(/,/g,''))||0;
+    if(loan>0){
+      var down=Math.round(loan*0.10);
+      downEl.value=String(down);
+      if(hint) hint.textContent='TZS '+down.toLocaleString()+' (10% of TZS '+loan.toLocaleString()+')';
+    } else {
+      downEl.value='';
+      if(hint) hint.textContent='10% of loan amount — will calculate as you type';
+    }
+  }
+  var lo=document.getElementById('maLoanAmount');
+  if(lo){ lo.addEventListener('input', fbDown); lo.addEventListener('keyup', fbDown); lo.addEventListener('change', fbDown); }
+  document.addEventListener('DOMContentLoaded', function(){ var l=document.getElementById('maLoanAmount'); if(l){ l.addEventListener('input', fbDown); fbDown(); } var t=0; var it=setInterval(function(){ fbDown(); if(++t>50) clearInterval(it); },300); });
+  window.updateDownPayment = fbDown;
+})();
+</script>
             </div>
             <div class="col-md-6">
               <label class="form-label" style="font-weight:600">Repayment Period (Months) <span class="text-danger">*</span></label>
               <select id="maRepaymentPeriod" name="repayment_period" class="form-select" style="border-radius:10px" required>
-                <option value="">-- Select Period --</option>
-                <option value="12">12 months (1 year)</option>
-                <option value="24">24 months (2 years)</option>
-                <option value="36">36 months (3 years)</option>
-                <option value="48">48 months (4 years)</option>
-                <option value="60">60 months (5 years)</option>
-                <option value="72">72 months (6 years)</option>
-                <option value="84">84 months (7 years)</option>
-                <option value="96">96 months (8 years)</option>
-                <option value="108">108 months (9 years)</option>
-                <option value="120">120 months (10 years)</option>
-                <option value="180">180 months (15 years)</option>
-                <option value="240" selected>240 months (20 years)</option>
-                <option value="300">300 months (25 years)</option>
-                <option value="360">360 months (30 years)</option>
+                <option value="">-- Select Bank first --</option>
               </select>
+              <small class="text-muted" id="maPeriodHint">Select a bank first — repayment period will be auto-filled based on the bank's policy (max years). You may choose less than the max; exceeding the max will show a warning.</small>
+            </div>
+            <div class="col-md-6">
+              <div id="maBankMaxInfo" class="alert alert-info py-2 px-3 d-none" style="font-size:12px;"></div>
             </div>
           </div>
           <div class="d-flex justify-content-between mt-4"><button type="button" class="btn btn-outline-secondary wizard-prev" data-prev="2" style="border-radius:10px">Back</button><button type="button" class="btn btn-primary wizard-next" data-next="4" style="background:#0077B6;border-color:#0077B6;border-radius:10px">Next <i class="bi bi-arrow-right ms-1"></i></button></div>
         </div>
 
         <div id="wizardStep4" class="wizard-step d-none">
-          <h6 style="color:#0A2B4E;font-weight:700"><span class="badge me-2" style="background:#0077B6">4</span> Financial Details</h6>
+          <h6 style="color:#0A2B4E;font-weight:700"><span class="badge me-2" style="background:#0077B6">4</span> Financial & Personal Details</h6>
           <div class="row g-3">
+            <!-- Employment Status first to control conditional fields -->
             <div class="col-md-6">
-              <label class="form-label" style="font-weight:600">Monthly Income (TZS) <span class="text-danger">*</span></label>
-              <input type="number" id="maMonthlyIncome" name="monthly_income" class="form-control" style="border-radius:10px" placeholder="2,000,000" required min="0" step="10000">
-              <small class="text-muted">Example: 2,000,000</small>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label" style="font-weight:600">Monthly Expenses (TZS) <span class="text-danger">*</span></label>
-              <input type="number" id="maMonthlyExpenses" name="monthly_expenses" class="form-control" style="border-radius:10px" placeholder="800,000" required min="0" step="10000">
-              <small class="text-muted">Example: 800,000</small>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label" style="font-weight:600">Employment Status <span class="text-danger">*</span></label>
+              <label class="form-label" style="font-weight:600">Employment / Business Status <span class="text-danger">*</span></label>
               <select id="maEmploymentStatus" name="employment_status" class="form-select" style="border-radius:10px" required>
                 <option value="">-- Select --</option>
                 <option value="employed">Employed</option>
-                <option value="self_employed">Self-Employed</option>
                 <option value="business_owner">Business Owner</option>
+                <option value="self_employed">Self-Employed</option>
                 <option value="unemployed">Unemployed</option>
               </select>
+            </div>
+            <!-- Employee fields -->
+            <div id="maEmployeeFields" class="col-12 d-none">
+              <div class="row g-3 p-3 rounded" style="background:rgba(0,119,182,0.04); border:1px solid rgba(0,119,182,0.15);">
+                <div class="col-12"><small class="fw-bold" style="color:#0077B6;">Employee Details (only if Employed)</small></div>
+                <div class="col-md-6">
+                  <label class="form-label">Gross Monthly Income (TZS) <span class="text-danger">*</span></label>
+                  <input type="number" id="maMonthlyIncome" name="monthly_income" class="form-control" style="border-radius:10px" placeholder="2,000,000" min="0" step="10000">
+                  <small class="text-muted">Gross salary before deductions</small>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Monthly Expenses (TZS) <span class="text-danger">*</span></label>
+                  <input type="number" id="maMonthlyExpensesEmp" name="monthly_expenses_emp" class="form-control" style="border-radius:10px" placeholder="800,000" min="0" step="10000">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Employer Name</label>
+                  <input type="text" id="maEmployerName" name="employer_name" class="form-control" style="border-radius:10px" placeholder="e.g. CRDB, Serikali">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Job Title</label>
+                  <input type="text" id="maJobTitle" name="job_title" class="form-control" style="border-radius:10px" placeholder="e.g. Accountant">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Years Employed</label>
+                  <input type="number" id="maYearsEmployed" name="years_employed" class="form-control" style="border-radius:10px" placeholder="2" min="0">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Contract Type</label>
+                  <select id="maContractType" name="contract_type" class="form-select" style="border-radius:10px">
+                    <option value="">-- Select --</option>
+                    <option value="permanent">Permanent</option>
+                    <option value="contract">Contract</option>
+                    <option value="temporary">Temporary</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <!-- Business fields -->
+            <div id="maBusinessFields" class="col-12 d-none">
+              <div class="row g-3 p-3 rounded" style="background:rgba(27,122,67,0.04); border:1px solid rgba(27,122,67,0.15);">
+                <div class="col-12"><small class="fw-bold" style="color:#1B7A43;">Business Details (only if Business Owner / Self-Employed)</small></div>
+                <div class="col-md-6">
+                  <label class="form-label">Average Annual Income (TZS) <span class="text-danger">*</span></label>
+                  <input type="number" id="maAnnualIncome" name="annual_income" class="form-control" style="border-radius:10px" placeholder="24,000,000" min="0" step="10000">
+                  <small class="text-muted">Average annual income — not monthly</small>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Business Type <span class="text-danger">*</span></label>
+                  <select id="maBusinessType" name="business_type" class="form-select" style="border-radius:10px">
+                    <option value="">-- Select --</option>
+                    <option value="wholesale">Wholesale</option>
+                    <option value="retail">Retail</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Business Registration Number <span class="text-danger">*</span></label>
+                  <input type="text" id="maBusinessRegNo" name="business_registration_number" class="form-control" style="border-radius:10px" placeholder="BRL-2024-001234 or LIC-DSM-2024-005678">
+                  <small class="text-muted">BRELA: BRL-2024-001234 | Halmashauri: LIC-DSM-2024-005678</small>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Business Name</label>
+                  <input type="text" id="maBusinessName" name="business_name" class="form-control" style="border-radius:10px" placeholder="e.g. Juma Retail Shop">
+                </div>
+              </div>
+            </div>
+            <!-- Hidden actual monthly_income/expenses that JS will sync to for backend -->
+            <input type="hidden" id="maMonthlyIncomeHidden" name="monthly_income">
+            <input type="hidden" id="maMonthlyExpensesHidden" name="monthly_expenses">
+
+            <!-- Personal / NIDA / Marriage -->
+            <div class="col-12"><hr class="my-2"><small class="fw-bold" style="color:#0A2B4E;">Personal Information</small></div>
+            <div class="col-md-6">
+              <label class="form-label" style="font-weight:600">Marital Status <span class="text-danger">*</span></label>
+              <select id="maMaritalStatus" name="marital_status" class="form-select" style="border-radius:10px" required>
+                <option value="">-- Select --</option>
+                <option value="single">Single</option>
+                <option value="married">Married</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" style="font-weight:600">Birth Date (DOB) <span class="text-danger">*</span></label>
+              <input type="date" id="maDob" name="dob" class="form-control" style="border-radius:10px" required>
+              <small class="text-muted">Age 18-57 only. Must match NIDA.</small>
+              <div id="maDobError" class="text-danger small d-none"></div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" style="font-weight:600">NIDA Number (20 digits) <span class="text-danger">*</span></label>
+              <input type="text" id="maNidaNumber" name="nida_number" class="form-control" style="border-radius:10px" placeholder="19900101123456789012" maxlength="20" required pattern="\d{20}">
+              <small class="text-muted">First 8 digits = YYYYMMDD of birth (e.g. 1990-01-01 → 19900101...)</small>
+              <div id="maNidaError" class="text-danger small d-none"></div>
+            </div>
+            <div id="maMarriedFields" class="col-12 d-none">
+              <div class="row g-3 p-3 rounded" style="background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.2);">
+                <div class="col-12"><small class="fw-bold" style="color:#f59e0b;">Marriage Details (required if Married)</small></div>
+                <div class="col-md-6">
+                  <label class="form-label">Marriage Certificate Number <span class="text-danger">*</span></label>
+                  <input type="text" id="maMarriageCertNo" name="marriage_certificate_number" class="form-control" style="border-radius:10px" placeholder="MC-2020-001234">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Marriage Certificate Copy (PDF/JPG/PNG) <span class="text-danger">*</span></label>
+                  <input type="file" id="maMarriageCertFile" name="marriage_certificate_file" class="form-control" style="border-radius:10px" accept=".pdf,.jpg,.jpeg,.png">
+                </div>
+              </div>
             </div>
           </div>
           <div class="d-flex justify-content-between mt-4"><button type="button" class="btn btn-outline-secondary wizard-prev" data-prev="3" style="border-radius:10px">Back</button><button type="button" class="btn btn-primary wizard-next" data-next="5" style="background:#0077B6;border-color:#0077B6;border-radius:10px">Next <i class="bi bi-arrow-right ms-1"></i></button></div>
@@ -220,5 +327,5 @@
 </section>
 {% endblock %}
 {% block extra_js %}
-<script src="{% static 'js/mortgage_application_form.js' %}?v=2"></script>
+<script src="{% static 'js/mortgage_application_form.js' %}?v=4"></script>
 {% endblock %}

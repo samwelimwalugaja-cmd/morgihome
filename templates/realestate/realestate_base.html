@@ -224,17 +224,37 @@
     function coronaLogout(){ try{ localStorage.clear(); sessionStorage.clear(); }catch(e){} window.location.replace('/login/'); }
     // Real estate notification bell: REAL data (latest applications on own
     // listings + contract updates). Dot inaonekana hadi user a-mark read.
+    function reAuthHeaders(){
+      var h = {'X-CSRFToken': (function(){ try{ var m=document.cookie.match('(^|;)\\s*csrftoken\\s*=\\s*([^;]+)'); return m?m.pop():''; }catch(e){return '';} })(), 'X-Requested-With': 'XMLHttpRequest'};
+      try{ var t = localStorage.getItem('access') || localStorage.getItem('token'); if(t) h['Authorization'] = 'Bearer ' + t; }catch(e){}
+      return h;
+    }
     function reNotifRefresh(){
       var dot = document.getElementById('reNotifDot');
       var list = document.getElementById('reNotifList');
       var read = false;
       try{ read = localStorage.getItem('re_notif_read') === '1'; }catch(e){}
-      fetch('/api/auth/notifications/realestate/', {credentials:'same-origin'})
+      // Also check server read timestamp
+      try{ var rt = localStorage.getItem('re_notif_read_at'); if(rt && (Date.now() - parseInt(rt)) < 86400000) read = true; }catch(e){}
+      fetch('/api/auth/notifications/realestate/', {credentials:'same-origin', headers: reAuthHeaders()})
         .then(function(r){ if(!r.ok) throw 0; return r.json(); })
         .then(function(data){
           var items = (data && data.notifications) || [];
           var unread = (data && data.unread) || 0;
+          // If recently marked read and no new items after that, hide
+          if(read && unread>0){
+            try{
+              var readAt = parseInt(localStorage.getItem('re_notif_read_at')||localStorage.getItem('re_notif_read')||'0');
+              if(!isNaN(readAt)){
+                var hasNew = items.some(function(it){ try{ return it.time && new Date(it.time) > new Date(readAt); }catch(e){ return false; }});
+                if(!hasNew) unread = 0;
+              }
+            }catch(e){}
+          }
           if(dot) dot.style.display = (read || !unread) ? 'none' : 'block';
+          if(!read && unread) { if(dot) dot.style.display='block'; } else if(read) { if(dot) dot.style.display='none'; }
+          // Ensure unread 0 hides
+          if(!unread) { if(dot) dot.style.display='none'; }
           if(list && items.length){
             var esc = function(s){ var d=document.createElement('div'); d.textContent=(s||''); return d.innerHTML; };
             list.innerHTML = items.slice(0,5).map(function(n){
@@ -248,7 +268,12 @@
         .catch(function(){ if(dot && !read) dot.style.display = 'block'; });
     }
     function reMarkAllRead(){
-      try{ localStorage.setItem('re_notif_read', '1'); }catch(e){}
+      try{ localStorage.setItem('re_notif_read', '1'); localStorage.setItem('re_notif_read_at', Date.now().toString()); }catch(e){}
+      // Persist to server
+      fetch('/api/auth/notifications/realestate/', {method:'POST', credentials:'same-origin', headers: reAuthHeaders()})
+        .then(function(r){ return r.json().catch(function(){return {};}); })
+        .then(function(){ var dot=document.getElementById('reNotifDot'); if(dot) dot.style.display='none'; })
+        .catch(function(){ var dot=document.getElementById('reNotifDot'); if(dot) dot.style.display='none'; });
       reNotifRefresh();
       return false;
     }

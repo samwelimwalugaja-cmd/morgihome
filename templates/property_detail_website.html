@@ -40,7 +40,7 @@
           <ul>
             <li><a href="/properties/?property_type=house">Residential Properties</a></li>
             <li><a href="/properties/?property_type=commercial">Commercial Properties</a></li>
-            <li><a href="/properties/?property_type=land">Land &amp; Plots</a></li>
+            
             <li><a href="/properties/">Featured Properties</a></li>
             <li><a href="/properties/?property_type=apartment">Apartments</a></li>
           </ul>
@@ -129,7 +129,7 @@
           <div class="seller-card mb-4">
             <div class="seller-card-header">
               <div class="d-flex align-items-center gap-3">
-                <div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800">{{ property.seller.initials|default:"S" }}</div>
+                {% if property.seller.profile_image %}<img src="{{ property.seller.profile_image.url }}" alt="{{ property.seller.get_full_name }}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,0.3);flex-shrink:0;">{% else %}<div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;flex-shrink:0;">{{ property.seller.initials|default:"S" }}</div>{% endif %}
                 <div>
                   <div style="font-weight:700">{{ property.seller.get_full_name|default:property.seller.email }}</div>
                   <small style="opacity:.9">{{ property.seller.get_role_display }} • {% if property.seller.is_verified %}<span style="color:#7CFF7C;">Verified ✓</span>{% else %}<span style="color:#FFD700;">Not Verified</span>{% endif %}</small>

@@ -60,7 +60,7 @@
           <a href="?category=house" class="btn {% if category == 'house' or not category %}btn-primary{% else %}btn-outline-primary{% endif %}" style="{% if category == 'house' or not category %}background:#0077B6; border-color:#0077B6;{% endif %}"><i class="mdi mdi-home"></i> House</a>
           <a href="?category=apartment" class="btn {% if category == 'apartment' %}btn-primary{% else %}btn-outline-primary{% endif %}" style="{% if category == 'apartment' %}background:#0077B6; border-color:#0077B6;{% endif %}"><i class="mdi mdi-city-variant"></i> Apartment</a>
           <a href="?category=commercial" class="btn {% if category == 'commercial' %}btn-primary{% else %}btn-outline-primary{% endif %}" style="{% if category == 'commercial' %}background:#0077B6; border-color:#0077B6;{% endif %}"><i class="mdi mdi-domain"></i> Commercial</a>
-          <a href="?category=plot" class="btn {% if category == 'plot' %}btn-primary{% else %}btn-outline-primary{% endif %}" style="{% if category == 'plot' %}background:#0077B6; border-color:#0077B6;{% endif %}"><i class="mdi mdi-map"></i> Plot</a>
+          
         </div>
       </div>
     </div>
@@ -69,210 +69,10 @@
 
 <form method="post" enctype="multipart/form-data" class="forms-sample">
   {% csrf_token %}
-  <input type="hidden" name="property_category" value="{% if category == 'plot' %}plot{% else %}house{% endif %}">
+  <input type="hidden" name="property_category" value="house">
   <input type="hidden" name="building_type" value="{{ category|default:'house' }}">
 
-  {% if category == 'plot' %}
-  <!-- ==================== PLOT FORM (20 fields, 5 sections) ==================== -->
-  <div class="row">
-    <div class="col-12 grid-margin stretch-card">
-      <div class="card">
-        <div class="card-body">
-          <h4 class="card-title">SECTION 1: PLOT INFORMATION (Land Details)</h4>
-          <div class="row">
-            <div class="col-md-6">
-              <div class="form-group">
-                <label>Plot Title <span class="text-danger">*</span></label>
-                <input type="text" name="title" class="form-control" placeholder="Enter plot name" example="Mikocheni Plot 45" required>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="form-group">
-                <label>Price <span class="text-danger">*</span></label>
-                <input type="number" name="price" class="form-control" placeholder="Enter price (TZS)" required>
-              </div>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Plot Description <span class="text-danger">*</span></label>
-            <textarea name="description" class="form-control" rows="3" placeholder="Write plot description..." required></textarea>
-          </div>
-          <div class="row">
-            <div class="col-md-6">
-              <div class="form-group">
-                <label>Land Type <span class="text-danger">*</span></label>
-                <select name="land_type" class="form-control" required>
-                  <option value="">-- Select --</option>
-                  <option value="residential">Residential</option>
-                  <option value="commercial">Commercial</option>
-                  <option value="agricultural">Agricultural</option>
-                  <option value="mixed">Mixed Use</option>
-                </select>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="form-group">
-                <label>Plot Status <span class="text-danger">*</span></label>
-                <select name="status" class="form-control" required>
-                  <option value="available">Available</option>
-                  <option value="sold">Sold</option>
-                  <option value="pending">Pending</option>
-                  <option value="reserved">Reserved</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Location <span class="text-danger">*</span></label>
-            <input type="text" name="location" class="form-control" placeholder="Enter plot location" required>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="row">
-    <div class="col-12 grid-margin stretch-card">
-      <div class="card">
-        <div class="card-body">
-          <h4 class="card-title">SECTION 2: LAND FEATURES</h4>
-          <div class="row">
-            <div class="col-md-6">
-              <div class="form-group">
-                <label>Area <span class="text-danger">*</span></label>
-                <input type="number" name="area" class="form-control" placeholder="Area in square meters (sqm)" required>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="form-group">
-                <label>Plot Dimensions <span class="text-danger">*</span></label>
-                <input type="text" name="plot_dimensions" class="form-control" placeholder="Enter dimensions (m x m)" required>
-              </div>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Land Use <span class="text-danger">*</span></label>
-            <select name="land_use" class="form-control" required>
-              <option value="">-- Select --</option>
-              <option value="residential">Residential</option>
-              <option value="commercial">Commercial</option>
-              <option value="agricultural">Agricultural</option>
-              <option value="mixed">Mixed Use</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Infrastructure - Optional</label>
-            <div class="row">
-              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_road" class="form-check-input"> Road Access</label></div></div>
-              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_electricity" class="form-check-input"> Electricity</label></div></div>
-              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_water" class="form-check-input"> Water</label></div></div>
-              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_sewage" class="form-check-input"> Sewage System</label></div></div>
-              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_internet" class="form-check-input"> Internet</label></div></div>
-              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_fenced" class="form-check-input"> Fenced</label></div></div>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6">
-              <div class="form-group">
-                <label>Title Deed Available? <span class="text-danger">*</span></label>
-                <div>
-                  <div class="form-check"><label class="form-check-label"><input type="radio" name="title_deed_available" value="yes" class="form-check-input" required> Yes</label></div>
-                  <div class="form-check"><label class="form-check-label"><input type="radio" name="title_deed_available" value="no" class="form-check-input"> No</label></div>
-                  <div class="form-check"><label class="form-check-label"><input type="radio" name="title_deed_available" value="in_process" class="form-check-input"> In Process</label></div>
-                </div>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="form-group">
-                <label>Survey Plan Available? <span class="text-danger">*</span></label>
-                <div>
-                  <div class="form-check"><label class="form-check-label"><input type="radio" name="survey_plan_available" value="yes" class="form-check-input" required> Yes</label></div>
-                  <div class="form-check"><label class="form-check-label"><input type="radio" name="survey_plan_available" value="no" class="form-check-input"> No</label></div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Zoning - Optional</label>
-            <select name="zoning" class="form-control">
-              <option value="">-- Select --</option>
-              <option value="residential">Residential Zone</option>
-              <option value="commercial">Commercial Zone</option>
-              <option value="industrial">Industrial Zone</option>
-              <option value="agricultural">Agricultural Zone</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="row">
-    <div class="col-12 grid-margin stretch-card">
-      <div class="card">
-        <div class="card-body">
-          <h4 class="card-title">SECTION 3: SELLER DETAILS (Owner Details)</h4>
-          <div class="form-group">
-            <label>Seller Selection <span class="text-danger">*</span></label>
-            <select name="seller" class="form-control" required>
-              <option value="">-- Select Seller --</option>
-              {% for s in sellers %}
-              <option value="{{ s.id }}">{{ s.get_full_name }} — {{ s.email }}</option>
-              {% endfor %}
-              <option value="self">Real Estate Company Owns Land</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="row">
-    <div class="col-12 grid-margin stretch-card">
-      <div class="card">
-        <div class="card-body">
-          <h4 class="card-title">SECTION 4: PLOT IMAGES (Land Images)</h4>
-          <div class="form-group">
-            <label>Upload Images <span class="text-danger">*</span></label>
-            <input type="file" name="images" multiple accept=".jpg,.jpeg,.png" class="form-control" required>
-            <small class="text-muted">Supported: JPG, PNG, JPEG • Max 2MB per image • Max 5 photos • Max 5 photos • 2MB each</small>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="row">
-    <div class="col-12 grid-margin stretch-card">
-      <div class="card">
-        <div class="card-body">
-          <h4 class="card-title">SECTION 5: PLOT DOCUMENTS (Land Documents)</h4>
-          <div class="form-group">
-            <label>Title Deed <span class="text-danger">*</span></label>
-            <input type="file" name="title_deed_file" accept=".pdf,.jpg,.png" class="form-control" required>
-            <small class="text-muted">PDF, JPG, PNG • Max 5MB</small>
-          </div>
-          <div class="form-group">
-            <label>Survey Plan <span class="text-danger">*</span></label>
-            <input type="file" name="survey_plan_file" accept=".pdf,.jpg,.png" class="form-control" required>
-            <small class="text-muted">PDF, JPG, PNG • Max 5MB</small>
-          </div>
-          <div class="form-group">
-            <label>Tax Clearance - Optional</label>
-            <input type="file" name="tax_clearance_file" accept=".pdf,.jpg,.png" class="form-control">
-            <small class="text-muted">PDF, JPG, PNG • Max 5MB</small>
-          </div>
-          <div class="form-group">
-            <label>Land Certificate - Optional</label>
-            <input type="file" name="land_certificate_file" accept=".pdf,.jpg,.png" class="form-control">
-            <small class="text-muted">PDF, JPG, PNG • Max 5MB</small>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  {% else %}
+  
   <!-- ==================== HOUSE FORM (31 fields, 6 sections) ==================== -->
   <div class="row">
     <div class="col-12 grid-margin stretch-card">
@@ -292,7 +92,7 @@
               <div class="form-group">
                 <label>Property Type <span class="text-danger">*</span></label>
                 <select name="property_type" class="form-control" required>
-                  <option value="house" {% if category == 'house' or not category %}selected{% endif %}>House</option>
+                  <option value="house" {% if category == 'house' or not category %}selected>House</option>
                   <option value="apartment" {% if category == 'apartment' %}selected{% endif %}>Apartment</option>
                   <option value="commercial" {% if category == 'commercial' %}selected{% endif %}>Commercial</option>
                   <option value="townhouse">Townhouse</option>

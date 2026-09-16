@@ -212,14 +212,28 @@
     function coronaLogout(){ try{ localStorage.clear(); sessionStorage.clear(); }catch(e){} window.location.replace('/login/'); }
     function getCookie(name){ var v=null; if(document.cookie){ var parts=document.cookie.split(';'); for(var i=0;i<parts.length;i++){ var c=parts[i].trim(); if(c.substring(0,name.length+1)===(name+'=')){ v=decodeURIComponent(c.substring(name.length+1)); break; } } } return v; }
     // Seller bell: REAL data from /api/auth/notifications/seller/
+    function sellerAuthHeaders(){
+      var h = {'X-CSRFToken': getCookie('csrftoken')||'', 'X-Requested-With': 'XMLHttpRequest'};
+      try{ var t = localStorage.getItem('access') || localStorage.getItem('token'); if(t) h['Authorization'] = 'Bearer ' + t; }catch(e){}
+      return h;
+    }
     function sellerNotifRefresh(){
       var dot = document.getElementById('sellerNotifDot');
       var list = document.getElementById('sellerNotifList');
-      fetch('/api/auth/notifications/seller/', {credentials:'same-origin'})
+      var recentlyRead = false;
+      try{ var rt = localStorage.getItem('seller_notif_read_at'); if(rt && (Date.now() - parseInt(rt)) < 86400000) recentlyRead = true; }catch(e){}
+      fetch('/api/auth/notifications/seller/', {credentials:'same-origin', headers: sellerAuthHeaders()})
         .then(function(r){ if(!r.ok) throw 0; return r.json(); })
         .then(function(data){
           var items = (data && data.notifications) || [];
           var unread = (data && data.unread) || 0;
+          if(recentlyRead && unread>0){
+            try{
+              var readAt = parseInt(localStorage.getItem('seller_notif_read_at')||'0');
+              var hasNew = items.some(function(it){ try{ return it.time && new Date(it.time) > new Date(readAt); }catch(e){ return false; }});
+              if(!hasNew) unread = 0;
+            }catch(e){}
+          }
           if(dot) dot.style.display = unread ? 'block' : 'none';
           if(list && items.length){
             var esc = function(s){ var d=document.createElement('div'); d.textContent=(s||''); return d.innerHTML; };
@@ -234,9 +248,10 @@
         .catch(function(){});
     }
     function sellerMarkAllRead(){
-      fetch('/api/auth/notifications/seller/', {method:'POST', credentials:'same-origin', headers:{'X-CSRFToken': getCookie('csrftoken')||''}})
-        .then(function(){ var dot=document.getElementById('sellerNotifDot'); if(dot) dot.style.display='none'; })
-        .catch(function(){});
+      fetch('/api/auth/notifications/seller/', {method:'POST', credentials:'same-origin', headers: sellerAuthHeaders()})
+        .then(function(r){ if(!r.ok) throw 0; return r.json().catch(function(){return {};}); })
+        .then(function(){ var dot=document.getElementById('sellerNotifDot'); if(dot) dot.style.display='none'; try{ localStorage.setItem('seller_notif_read_at', Date.now().toString()); }catch(e){} })
+        .catch(function(){ var dot=document.getElementById('sellerNotifDot'); if(dot) dot.style.display='none'; try{ localStorage.setItem('seller_notif_read_at', Date.now().toString()); }catch(e){} });
       return false;
     }
     document.addEventListener('DOMContentLoaded', sellerNotifRefresh);

@@ -42,7 +42,7 @@
         <div class="row g-2 text-center">
           <div class="col-6"><div style="background:#191c24; border:1px solid #2c2e33; border-radius:8px; padding:8px;"><p class="text-muted mb-1" style="font-size:10px;">INTEREST</p><p style="font-weight:700; color:#0077B6;">{% if bank.interest_rate %}{{ bank.interest_rate }}%{% else %}—{% endif %}</p></div></div>
           <div class="col-6"><div style="background:#191c24; border:1px solid #2c2e33; border-radius:8px; padding:8px;"><p class="text-muted mb-1" style="font-size:10px;">MAX LOAN</p><p style="font-weight:700;">{% if bank.max_loan_amount %}TZS {{ bank.max_loan_amount|intcomma }}{% else %}—{% endif %}</p></div></div>
-          <div class="col-6"><div style="background:#191c24; border:1px solid #2c2e33; border-radius:8px; padding:8px;"><p class="text-muted mb-1" style="font-size:10px;">FEE</p><p style="font-weight:700;">{% if bank.processing_fee %}TZS {{ bank.processing_fee|intcomma }}{% else %}—{% endif %}</p></div></div>
+          <div class="col-6"><div style="background:#191c24; border:1px solid #2c2e33; border-radius:8px; padding:8px;"><p class="text-muted mb-1" style="font-size:10px;">FEE</p><p style="font-weight:700;">{% if bank.processing_fee %}{{ bank.processing_fee }}%{% else %}—{% endif %}</p></div></div>
           <div class="col-6"><div style="background:#191c24; border:1px solid #2c2e33; border-radius:8px; padding:8px;"><p class="text-muted mb-1" style="font-size:10px;">APPLICATIONS</p><p style="font-weight:700;">{{ bank.apps_count|default:"0" }}</p></div></div>
         </div>
         {% if bank.req_list %}
@@ -74,7 +74,7 @@
         <div class="modal-body">
           <div class="row text-center g-2 mb-3">
             <div class="col-6 col-md-3"><div class="p-2 rounded h-100" style="background:#0f0f0f; border:1px solid #2c2e33; overflow-wrap:anywhere;"><small class="text-muted d-block">Interest</small><strong style="color:#0077B6;">{% if bank.interest_rate %}{{ bank.interest_rate }}%{% else %}—{% endif %}</strong></div></div>
-            <div class="col-6 col-md-3"><div class="p-2 rounded h-100" style="background:#0f0f0f; border:1px solid #2c2e33; overflow-wrap:anywhere;"><small class="text-muted d-block">Fee</small><strong>{% if bank.processing_fee %}TZS {{ bank.processing_fee|intcomma }}{% else %}—{% endif %}</strong></div></div>
+            <div class="col-6 col-md-3"><div class="p-2 rounded h-100" style="background:#0f0f0f; border:1px solid #2c2e33; overflow-wrap:anywhere;"><small class="text-muted d-block">Fee</small><strong>{% if bank.processing_fee %}{{ bank.processing_fee }}%{% else %}—{% endif %}</strong></div></div>
             <div class="col-6 col-md-3"><div class="p-2 rounded h-100" style="background:#0f0f0f; border:1px solid #2c2e33; overflow-wrap:anywhere;"><small class="text-muted d-block">Min</small><strong>{% if bank.min_loan_amount %}TZS {{ bank.min_loan_amount|intcomma }}{% else %}—{% endif %}</strong></div></div>
             <div class="col-6 col-md-3"><div class="p-2 rounded h-100" style="background:#0f0f0f; border:1px solid #2c2e33; overflow-wrap:anywhere;"><small class="text-muted d-block">Max</small><strong>{% if bank.max_loan_amount %}TZS {{ bank.max_loan_amount|intcomma }}{% else %}—{% endif %}</strong></div></div>
           </div>

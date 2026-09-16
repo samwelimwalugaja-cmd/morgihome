@@ -28,15 +28,16 @@ class User(AbstractUser):
     phone_number = models.CharField(max_length=15)
     is_verified = models.BooleanField(default=False)
     profile_image = models.ImageField(upload_to='profiles/', blank=True, null=True)
-    notify_email = models.BooleanField(default=True, help_text="Pokea updates za applications kwa email")
-    notifications_seen_at = models.DateTimeField(null=True, blank=True, help_text="Mteja alisoma notifications lini mwisho (badge ya kengele)")
+    notify_email = models.BooleanField(default=True, help_text="Receive application updates via email")
+    notifications_seen_at = models.DateTimeField(null=True, blank=True, help_text="When the user last read notifications (bell badge)")
 
     # Bank specific
     interest_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Yearly interest rate in PERCENT (e.g. 12.50 means 12.5% p.a. - this is NOT the fee)")
-    processing_fee = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True, help_text="One-time processing fee as TZS AMOUNT (e.g. 500000 - fill this so applicants see it instead of —)")
+    processing_fee = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Processing fee in PERCENT (e.g. 1.00 means 1% - applicants see 1%)")
     min_loan_amount = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True, help_text="Minimum loan amount TZS")
     max_loan_amount = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True, help_text="Maximum loan amount TZS")
-    bank_requirements = models.TextField(blank=True, null=True, help_text="Mahitaji ya bank (comma separated)")
+    max_repayment_period = models.IntegerField(null=True, blank=True, help_text="Maximum repayment period in MONTHS (e.g. 180 for 15 years - NMB max 180)")
+    bank_requirements = models.TextField(blank=True, null=True, help_text="Bank requirements (comma separated)")
 
     # === REMAINING for Bank/RealEstate ===
     bank_doc_status_choices = (('not_submitted','Not Submitted'),('pending','Pending'),('verified','Verified'),('rejected','Rejected'))

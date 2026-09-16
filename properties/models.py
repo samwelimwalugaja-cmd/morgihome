@@ -95,6 +95,8 @@ class Property(models.Model):
     tax_clearance_file = models.FileField(upload_to='properties/documents/tax_clearance/', blank=True, null=True)
     land_certificate_file = models.FileField(upload_to='properties/documents/land_certificate/', blank=True, null=True)
     building_permit_file = models.FileField(upload_to='properties/documents/building_permit/', blank=True, null=True)
+    is_deleted = models.BooleanField(default=False, db_index=True, help_text="Soft-deleted by seller - hidden from customers")
+    deleted_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -18,7 +18,7 @@ class UserAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Personal info', {'fields': ('first_name', 'last_name', 'phone_number', 'role', 'profile_image')}),
-        ('Bank info (for role=bank)', {'fields': ('interest_rate', 'processing_fee', 'min_loan_amount', 'max_loan_amount', 'bank_requirements')}),
+        ('Bank info (for role=bank)', {'fields': ('interest_rate', 'processing_fee', 'min_loan_amount', 'max_loan_amount', 'max_repayment_period', 'bank_requirements')}),
         ('Business Verification (Bank/RealEstate)', {'fields': ('business_license', 'business_license_verified', 'business_license_status', 'tax_clearance', 'tax_clearance_verified', 'tax_clearance_status', 'company_registration', 'company_registration_verified', 'company_registration_status', 'is_verified')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
@@ -54,7 +54,7 @@ class BankAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Bank info', {'fields': ('first_name', 'phone_number', 'profile_image')}),
-        ('Loan terms', {'fields': ('interest_rate', 'processing_fee', 'min_loan_amount', 'max_loan_amount', 'bank_requirements')}),
+        ('Loan terms', {'fields': ('interest_rate', 'processing_fee', 'min_loan_amount', 'max_loan_amount', 'max_repayment_period', 'bank_requirements')}),
         ('Business Verification', {'fields': ('business_license', 'business_license_verified', 'business_license_status', 'tax_clearance', 'tax_clearance_verified', 'tax_clearance_status', 'company_registration', 'company_registration_verified', 'company_registration_status', 'is_verified')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),

@@ -43,7 +43,7 @@
       document.getElementById('trackAfford').textContent=(app.affordability_score!=null?app.affordability_score.toFixed(1)+'%':'—');
       document.getElementById('trackRisk').textContent=(app.risk_score!=null?app.risk_score.toFixed(1)+'%':'—');
       document.getElementById('trackDti').textContent=(app.dti_ratio!=null?app.dti_ratio.toFixed(1)+'%':'—');
-      document.getElementById('trackRec').textContent=app.affordability_score<80?'Punguza kiasi cha mkopo au ongeza muda':'Unaweza kuendelea na maombi';
+      document.getElementById('trackRec').textContent=app.affordability_score<80?'Reduce loan amount or extend tenure':'You can proceed with the application';
       // Progress bar
       const steps=['pending','document_verification','valuation','credit_assessment','approved','disbursed'];
       const idx=steps.indexOf(app.status);

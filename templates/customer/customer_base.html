@@ -160,6 +160,20 @@
         <li class="nav-item menu-items {% if request.path == '/customer/dashboard/' %}active{% endif %}">
           <a class="nav-link" href="/customer/dashboard/"><span class="menu-icon"><i class="mdi mdi-speedometer"></i></span><span class="menu-title">Dashboard</span></a>
         </li>
+        <li class="nav-item menu-items {% if request.path == '/customer/bank-requirements/' %}active{% endif %}">
+          <a class="nav-link" data-bs-toggle="collapse" href="#bankReqSub" aria-expanded="false" aria-controls="bankReqSub"><span class="menu-icon"><i class="mdi mdi-bank"></i></span><span class="menu-title">Bank Requirements</span><i class="menu-arrow"></i></a>
+          <div class="collapse" id="bankReqSub">
+            <ul class="nav flex-column sub-menu">
+              <li class="nav-item"><a class="nav-link" href="/customer/bank-requirements/">All Banks</a></li>
+              <li class="nav-item"><a class="nav-link" href="/customer/bank-requirements/?bank=crdb">CRDB Bank</a></li>
+              <li class="nav-item"><a class="nav-link" href="/customer/bank-requirements/?bank=nmb">NMB Bank</a></li>
+              <li class="nav-item"><a class="nav-link" href="/customer/bank-requirements/?bank=ncba">NCBA Bank</a></li>
+              <li class="nav-item"><a class="nav-link" href="/customer/bank-requirements/?bank=nbc">NBC Bank</a></li>
+              <li class="nav-item"><a class="nav-link" href="/customer/bank-requirements/?bank=tcb">TCB Bank</a></li>
+              <li class="nav-item"><a class="nav-link" href="/customer/bank-requirements/?bank=mwanqa">Mwanqa Hakika Bank</a></li>
+            </ul>
+          </div>
+        </li>
         <li class="nav-item menu-items {% if request.path == '/customer/properties/' or '/properties/' in request.path %}active{% endif %}">
           <a class="nav-link" href="/customer/properties/"><span class="menu-icon"><i class="mdi mdi-home"></i></span><span class="menu-title">Properties</span></a>
         </li>
@@ -170,7 +184,7 @@
               <li class="nav-item"><a class="nav-link" href="/customer/apply/?type=residential">Residential Mortgage</a></li>
               <li class="nav-item"><a class="nav-link" href="/customer/apply/?type=construction">Home Construction</a></li>
               <li class="nav-item"><a class="nav-link" href="/customer/apply/?type=renovation">Renovation Mortgage</a></li>
-              <li class="nav-item"><a class="nav-link" href="/customer/apply/?type=land">Land Purchase</a></li>
+              
               <li class="nav-item"><a class="nav-link" href="/customer/apply/?type=commercial">Commercial Property</a></li>
             </ul>
           </div>
@@ -187,22 +201,7 @@
         <li class="nav-item menu-items {% if request.path == '/customer/verify-property/' %}active{% endif %}">
           <a class="nav-link" href="/customer/verify-property/"><span class="menu-icon"><i class="mdi mdi-home-search"></i></span><span class="menu-title">Property Verification</span></a>
         </li>
-        <li class="nav-item menu-items {% if request.path == '/customer/bank-requirements/' %}active{% endif %}">
-          <a class="nav-link" data-bs-toggle="collapse" href="#bankReqSub" aria-expanded="false" aria-controls="bankReqSub"><span class="menu-icon"><i class="mdi mdi-bank"></i></span><span class="menu-title">Bank Requirements</span><i class="menu-arrow"></i></a>
-          <div class="collapse" id="bankReqSub">
-            <ul class="nav flex-column sub-menu">
-              <li class="nav-item"><a class="nav-link" href="/customer/bank-requirements/">All Banks</a></li>
-              <li class="nav-item"><a class="nav-link" href="/customer/bank-requirements/?bank=crdb">CRDB Bank</a></li>
-              <li class="nav-item"><a class="nav-link" href="/customer/bank-requirements/?bank=nmb">NMB Bank</a></li>
-              <li class="nav-item"><a class="nav-link" href="/customer/bank-requirements/?bank=ncba">NCBA Bank</a></li>
-              <li class="nav-item"><a class="nav-link" href="/customer/bank-requirements/?bank=nbc">NBC Bank</a></li>
-              <li class="nav-item"><a class="nav-link" href="/customer/bank-requirements/?bank=tcb">TCB Bank</a></li>
-              <li class="nav-item"><a class="nav-link" href="/customer/bank-requirements/?bank=mwanqa">Mwanqa Hakika Bank</a></li>
-            </ul>
-          </div>
-        </li>
         <li class="nav-item nav-category"><span class="nav-link">System</span></li>
-        <li class="nav-item menu-items {% if request.path == '/customer/profile/' %}active{% endif %}"><a class="nav-link" href="/customer/profile/"><span class="menu-icon"><i class="mdi mdi-account"></i></span><span class="menu-title">Profile</span></a></li>
         <li class="nav-item menu-items"><a class="nav-link" href="#" onclick="coronaLogout(); return false;"><span class="menu-icon"><i class="mdi mdi-logout"></i></span><span class="menu-title">Logout</span></a></li>
       </ul>
     </nav>
@@ -344,12 +343,35 @@
       var badge = document.getElementById('custNotifCount');
       if(!list) return;
       function esc(s){ var d=document.createElement('div'); d.textContent=(s||''); return d.innerHTML; }
-      fetch('/api/auth/notifications/', {credentials:'same-origin'})
+      function custAuthHeaders(){
+        var h = {};
+        try{ var t = localStorage.getItem('access') || localStorage.getItem('token'); if(t) h['Authorization'] = 'Bearer ' + t; }catch(e){}
+        return h;
+      }
+      function getCookie(name){
+        var v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+        return v ? v.pop() : '';
+      }
+      // Check local read marker to avoid showing badge immediately after mark
+      var recentlyRead = false;
+      try{ var rt = localStorage.getItem('cust_notif_read_at'); if(rt && (Date.now() - parseInt(rt)) < 86400000) recentlyRead = true; }catch(e){}
+      fetch('/api/auth/notifications/', {credentials:'same-origin', headers: custAuthHeaders()})
         .then(function(r){ if(!r.ok) throw 0; return r.json(); })
         .then(function(data){
           var items = (data && data.notifications) || [];
           var unread = (data && data.unread) || 0;
-          if(!items.length) return; // keep the empty state
+          if(recentlyRead && unread>0){
+            // If all notifications are older than read time, treat as read
+            try{
+              var readAt = parseInt(localStorage.getItem('cust_notif_read_at')||'0');
+              var hasNew = items.some(function(it){ try{ return it.time && new Date(it.time) > new Date(readAt); }catch(e){ return false; }});
+              if(!hasNew) unread = 0;
+            }catch(e){}
+          }
+          if(!items.length){
+            if(badge) badge.style.display='none';
+            return;
+          }
           if(badge){
             if(unread > 0){ badge.style.display=''; badge.textContent = unread > 9 ? '9+' : String(unread); }
             else { badge.style.display='none'; }
@@ -362,6 +384,16 @@
           }).join('');
         })
         .catch(function(){});
+      // Expose helper for mark all from other pages
+      window.custMarkAllRead = function(){
+        var h = custAuthHeaders();
+        h['X-CSRFToken'] = getCookie('csrftoken')||'';
+        h['X-Requested-With'] = 'XMLHttpRequest';
+        return fetch('/api/auth/notifications/', {method:'POST', credentials:'same-origin', headers: h})
+          .then(function(r){ if(!r.ok) throw 0; return r.json().catch(function(){return {};}); })
+          .then(function(){ try{ localStorage.setItem('cust_notif_read_at', Date.now().toString()); }catch(e){} if(badge) badge.style.display='none'; })
+          .catch(function(){ try{ localStorage.setItem('cust_notif_read_at', Date.now().toString()); }catch(e){} if(badge) badge.style.display='none'; });
+      };
     })();
     // External Apply links without mortgage type -> ask user which mortgage type
     document.addEventListener('click', function(e){

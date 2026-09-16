@@ -1,4 +1,4 @@
-/* Seller My Properties - Hatua 6 + 7 Edit/Delete */
+/* Seller My Properties - Steps 6 + 7 Edit/Delete */
 (function(){
   function getToken(){ return localStorage.getItem('access'); }
   function authHeaders(){ const t=getToken(); const h={'Content-Type':'application/json'}; if(t) h['Authorization']='Bearer '+t; return h; }
@@ -16,7 +16,7 @@
       const data=await res.json();
       let arr=Array.isArray(data)?data:(data.results||[]);
       const user=JSON.parse(localStorage.getItem('user')||'{}');
-      // Seller anaona nyumba zake tu (sio za seller mwingine) - kama alivyoomba
+      // Seller sees only their own properties (not other sellers')
       let myProps=arr.filter(p=> String(p.seller)===String(user.id));
       // Header search filter ?q=
       const q=getQuery().toLowerCase();
@@ -32,11 +32,11 @@
         let img=p.cover_image_url || p.image || (p.gallery && p.gallery.find(g=>g.is_cover)?.image) || (p.gallery && p.gallery[0]?.image) || ''; if(img && img.startsWith('/')) img=window.location.origin+img;
         const imgHtml=img?`<img src="${img}" class="card-img-top" style="height:160px;object-fit:cover" onerror="this.style.display='none'">`:`<div style="height:160px;background:#eef2f7;display:flex;align-items:center;justify-content:center"><i class="bi bi-house" style="font-size:32px;color:#a0aec0"></i></div>`;
         const isMine = !user.id || p.seller==user.id;
-        return `<div class="col-md-6 col-xl-4"><div class="card h-100" style="${isMine?'border-left:4px solid #0077B6':''}">${imgHtml}<div class="card-body"><h6 class="card-title mb-1">${p.title} ${isMine?'<span class="badge bg-primary ms-1">Yangu</span>':''}</h6><p class="text-muted small mb-1"><i class="bi bi-geo-alt me-1"></i>${p.location}</p><p class="fw-bold mb-1" style="color:#0077B6">${Number(p.price).toLocaleString()} TZS</p><p class="small text-muted">${(p.description||'').slice(0,80)}...</p><div class="d-flex gap-2 mt-2 flex-wrap"><span class="badge bg-light text-dark border">${p.bedrooms} Beds</span><span class="badge bg-light text-dark border">${p.bathrooms} Baths</span><span class="badge ${p.status==='available'?'bg-success':'bg-warning'}">${p.status}</span></div><div class="mt-3 d-flex gap-2 flex-wrap"><button class="btn btn-sm btn-outline-primary" onclick="editProp(${p.id})"><i class="bi bi-pencil me-1"></i> Edit</button><button class="btn btn-sm btn-outline-danger" onclick="deleteProp(${p.id})"><i class="bi bi-trash me-1"></i> Delete</button><a href="/seller/buyers/" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye me-1"></i> Buyers</a></div></div></div></div>`;
+        return `<div class="col-md-6 col-xl-4"><div class="card h-100" style="${isMine?'border-left:4px solid #0077B6':''}">${imgHtml}<div class="card-body"><h6 class="card-title mb-1">${p.title} ${isMine?'<span class="badge bg-primary ms-1">Mine</span>':''}</h6><p class="text-muted small mb-1"><i class="bi bi-geo-alt me-1"></i>${p.location}</p><p class="fw-bold mb-1" style="color:#0077B6">${Number(p.price).toLocaleString()} TZS</p><p class="small text-muted">${(p.description||'').slice(0,80)}...</p><div class="d-flex gap-2 mt-2 flex-wrap"><span class="badge bg-light text-dark border">${p.bedrooms} Beds</span><span class="badge bg-light text-dark border">${p.bathrooms} Baths</span><span class="badge ${p.status==='available'?'bg-success':'bg-warning'}">${p.status}</span></div><div class="mt-3 d-flex gap-2 flex-wrap"><button class="btn btn-sm btn-outline-primary" onclick="editProp(${p.id})"><i class="bi bi-pencil me-1"></i> Edit</button><button class="btn btn-sm btn-outline-danger" onclick="deleteProp(${p.id})"><i class="bi bi-trash me-1"></i> Delete</button><a href="/seller/buyers/" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye me-1"></i> Buyers</a></div></div></div></div>`;
       }).join('');
     }catch(e){
-      grid.innerHTML=`<div class="col-12"><div class="alert alert-danger">Imeshindwa kupakia: ${e.message}</div></div>`;
-      if(window.showToast) showToast('Imeshindwa kupakia nyumba: '+e.message,'error');
+      grid.innerHTML=`<div class="col-12"><div class="alert alert-danger">Failed to load: ${e.message}</div></div>`;
+      if(window.showToast) showToast('Failed to load properties: '+e.message,'error');
     }
   }
   window.editProp=async function(id){
@@ -80,27 +80,45 @@
       const res=await fetch('/api/properties/'+id+'/', {method:'PATCH', headers: authHeadersNoJson(), body: fd});
       const text=await res.text();
       if(res.ok){
-        if(window.showToast) showToast('House imehaririwa kikamilifu! ✅','success','Imfanikiwa');
+        if(window.showToast) showToast('Property updated successfully! ✅','success','Success');
         bootstrap.Modal.getInstance(document.getElementById('spEditModal')).hide();
         load();
       } else {
-        if(window.showToast) showToast('Imeshindwa kuhariri: '+text.slice(0,200),'error','Imeshindwa ❌');
+        if(window.showToast) showToast('Failed to update: '+text.slice(0,200),'error','Failed ❌');
         else alert(text);
       }
-    }catch(e){ if(window.showToast) showToast('Imeshindwa: '+e.message,'error'); }
+    }catch(e){ if(window.showToast) showToast('Failed: '+e.message,'error'); }
   };
   window.deleteProp=async function(id){
-    if(!confirm('Are you sure you want to kufuta nyumba #'+id+'?')) return;
+    let confirmed=false;
+    if(typeof Swal!=='undefined'){
+      const r=await Swal.fire({title:'Delete property #'+id+'?', text:'This property will be deleted and will no longer be visible to customers. Are you sure?', icon:'warning', showCancelButton:true, confirmButtonColor:'#e53e3e', cancelButtonColor:'#6c7293', confirmButtonText:'Yes, Delete', cancelButtonText:'Cancel'});
+      confirmed=r.isConfirmed;
+    } else {
+      confirmed=confirm('Are you sure you want to delete property #'+id+'?');
+    }
+    if(!confirmed) return;
     try{
       const res=await fetch('/api/properties/'+id+'/', {method:'DELETE', headers: authHeaders()});
       if(res.ok || res.status===204){
-        if(window.showToast) showToast('House imefutwa kikamilifu! ✅','success');
+        if(typeof Swal!=='undefined') Swal.fire({icon:'success', title:'Deleted!', text:'Property deleted successfully and is no longer visible to customers.', timer:2500, showConfirmButton:false});
+        else if(window.showToast) showToast('Property deleted successfully! ✅','success');
         load();
       } else {
         const t=await res.text();
-        if(window.showToast) showToast('Imeshindwa kufuta: '+t.slice(0,200),'error');
+        // Try parse JSON detail
+        let msg=t;
+        try{ const j=JSON.parse(t); msg=j.detail||j.error||msg; }catch(e){}
+        msg=msg.slice(0,400);
+        if(typeof Swal!=='undefined') Swal.fire({icon:'error', title:'Cannot delete', text:msg, confirmButtonColor:'#0077B6'});
+        else if(window.showToast) showToast('Failed to delete: '+msg,'error');
+        else alert(msg);
       }
-    }catch(e){ if(window.showToast) showToast('Imeshindwa: '+e.message,'error'); }
+    }catch(e){
+      const m=e.message||'';
+      if(typeof Swal!=='undefined') Swal.fire({icon:'error', title:'Failed', text:m});
+      else if(window.showToast) showToast('Failed: '+m,'error');
+    }
   };
   load();
 })();

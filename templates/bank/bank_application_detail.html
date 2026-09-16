@@ -81,14 +81,14 @@
     </div>
     {% endif %}
 
-    <!-- Documents (REAL) -->
+    <!-- Documents (REAL) - title + file -->
     <div class="morgi-card p-5 lg:p-6">
       <h3 class="font-semibold mb-4 flex items-center gap-2"><i data-lucide="folder-open" class="w-4 h-4" style="color:#0077B6"></i> Documents ({{ application.documents|length }})</h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {% for doc in application.documents %}
         <a href="{{ doc.url|default:'#' }}" target="_blank" class="flex items-center gap-3 p-3 rounded-lg border border-[var(--morgi-border)] hover:bg-[var(--morgi-border)]/20">
-          <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600"><i data-lucide="file-text" class="w-5 h-5"></i></div>
-          <div class="flex-1 min-w-0"><p class="text-sm font-medium truncate">{{ doc.name }}</p><p class="text-xs text-[var(--morgi-muted)]">{{ doc.type|default:"Document" }}</p></div>
+          <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 shrink-0"><i data-lucide="file-text" class="w-5 h-5"></i></div>
+          <div class="flex-1 min-w-0"><p class="text-sm font-medium truncate">{{ doc.title|default:doc.type }}</p><p class="text-xs text-[var(--morgi-muted)] truncate">{{ doc.name }}</p><p class="text-[11px] text-[var(--morgi-muted)]">{{ doc.type }}</p></div>
           <i data-lucide="{% if doc.verified %}circle-check{% else %}clock{% endif %}" class="w-5 h-5 {% if doc.verified %}text-emerald-500{% else %}text-amber-500{% endif %}"></i>
         </a>
         {% empty %}
@@ -100,9 +100,9 @@
 
   <!-- Right: AI Risk Analysis -->
   <div class="space-y-6">
-    <!-- AI Score -->
-    <div class="morgi-card p-5 lg:p-6 border-t-4" style="border-top-color: #22c55e;">
-      <h3 class="font-semibold flex items-center gap-2"><i data-lucide="sparkles" class="w-5 h-5 text-emerald-500"></i> AI Risk Analysis</h3>
+    <!-- AI Score — Click to view detailed risk breakdown -->
+    <div class="morgi-card p-5 lg:p-6 border-t-4 cursor-pointer hover:shadow-lg transition" style="border-top-color: #22c55e;" onclick="showRiskDetail()" title="Click to view detailed risk breakdown — type, DTI, affordability & why this %">
+      <h3 class="font-semibold flex items-center gap-2"><i data-lucide="sparkles" class="w-5 h-5 text-emerald-500"></i> AI Risk Analysis <span class="ml-auto text-xs font-normal text-[var(--morgi-muted)]">Click for details →</span></h3>
       <div class="text-center py-6">
         <div class="relative w-28 h-28 mx-auto">
           <svg class="w-28 h-28 -rotate-90" viewBox="0 0 100 100">
@@ -115,7 +115,7 @@
           </div>
         </div>
         <p class="mt-3 inline-flex px-3 py-1 rounded-full text-sm font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">{{ application.ai_risk|default:"-" }} Risk</p>
-        <p class="text-xs text-[var(--morgi-muted)] mt-2">AI affordability model • live score</p>
+        <p class="text-xs text-[var(--morgi-muted)] mt-2">AI affordability model • live score — click to see why</p>
       </div>
       <div class="space-y-3 text-sm">
         <div class="flex justify-between p-2.5 rounded-lg bg-[var(--morgi-border)]/30"><span class="text-[var(--morgi-muted)]">Affordability Score</span><span class="font-semibold">{{ application.score|default:0 }} / 100</span></div>
@@ -123,62 +123,14 @@
         <div class="flex justify-between p-2.5 rounded-lg bg-[var(--morgi-border)]/30"><span class="text-[var(--morgi-muted)]">Employment</span><span class="font-semibold">{{ application.employer|default:"-" }}</span></div>
         <div class="flex justify-between p-2.5 rounded-lg bg-[var(--morgi-border)]/30"><span class="text-[var(--morgi-muted)]">Status</span><span class="font-semibold">{{ application.status|default:"-"|title }}</span></div>
       </div>
+      <div class="mt-4 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 text-xs text-blue-700 dark:text-blue-300"><i data-lucide="info" class="w-3 h-3 inline"></i> Click this card to view detailed risk type: <strong>Very Good (≤30)</strong>, <strong>Good (31-40)</strong>, <strong>High (41-50)</strong>, <strong>Very High (>50)</strong> with DTI & affordability breakdown.</div>
       <div class="mt-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
         <p class="text-xs font-semibold text-amber-800 dark:text-amber-200 flex items-center gap-1"><i data-lucide="triangle-alert" class="w-3 h-3"></i> Warning</p>
         <p class="text-xs text-amber-700 dark:text-amber-300 mt-1">Property title not fully verified. Please review before approval.</p>
       </div>
     </div>
 
-    <!-- REVIEW STAGES: bank confirms each step, customer sees it live -->
-    <div class="morgi-card p-5">
-      <h3 class="font-semibold mb-1">Review Stages</h3>
-      <p class="text-xs text-[var(--morgi-muted)] mb-4">Confirm each step below. The customer instantly sees e.g. “Bank is now at CRB verification stage”.</p>
-      <div class="space-y-2">
-        {% for st in application.steps|default:"" %}
-        <div class="flex items-center gap-3 p-2.5 rounded-lg border {% if st.state == 'done' %}stage-done{% elif st.state == 'active' %}stage-current{% else %}border-[var(--morgi-border)]{% endif %}">
-          <div class="stage-dot w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 {% if st.state == 'pending' %}stage-pending-dot{% endif %}">
-            {% if st.state == 'done' %}✓{% elif st.state == 'active' %}●{% else %}{{ forloop.counter }}{% endif %}
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium leading-tight">{{ st.label }}</p>
-            <p class="text-xs text-[var(--morgi-muted)]">
-              {% if st.state == 'done' %}Confirmed{% if st.confirmed_at %} • {{ st.confirmed_at|date:"d M H:i" }}{% endif %}{% elif st.state == 'active' %}In progress — current stage{% else %}Waiting{% endif %}
-            </p>
-          </div>
-          {% if application.status != 'approved' and application.status != 'rejected' %}
-            {% if st.state == 'done' %}
-            <span class="px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0" style="background:rgba(0,200,83,.15); color:#00a344; border:1px solid rgba(0,200,83,.4);">Confirmed</span>
-            {% elif st.state == 'active' %}
-            {% if application.next_stage %}
-            <form method="post" action="{% url 'bank_application_stage' application.id %}" class="shrink-0">
-              {% csrf_token %}
-              <input type="hidden" name="stage" value="{{ application.next_stage }}">
-              <button type="submit" title="Mark {{ st.short }} as done and move to {{ application.next_stage_label }}" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-white" style="background:#0077B6">Confirm {{ st.short }} done →</button>
-            </form>
-            {% else %}
-            <span class="px-3 py-1.5 rounded-lg text-xs font-semibold text-white shrink-0" style="background:#0077B6;">Current</span>
-            {% endif %}
-            {% else %}
-            <form method="post" action="{% url 'bank_application_stage' application.id %}" class="shrink-0">
-              {% csrf_token %}
-              <input type="hidden" name="stage" value="{{ st.key }}">
-              <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-white" style="background:#0077B6">Confirm</button>
-            </form>
-            {% endif %}
-          {% endif %}
-        </div>
-        {% endfor %}
-      </div>
-      {% if application.review_note %}<p class="text-xs mt-3 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">Latest note: {{ application.review_note }}</p>{% endif %}
-      {% if application.status != 'approved' and application.status != 'rejected' %}
-      <form method="post" action="{% url 'bank_application_stage' application.id %}" class="mt-3 flex gap-2">
-        {% csrf_token %}
-        <input type="hidden" name="stage" value="{{ application.review_stage|default:'document_verification' }}">
-        <input name="note" type="text" placeholder="Add a note the customer will see..." class="morgi-input flex-1 rounded-lg px-3 py-2 text-sm">
-        <button type="submit" class="px-4 py-2 rounded-lg text-xs font-semibold text-white" style="background:#0077B6">Send update</button>
-      </form>
-      {% endif %}
-    </div>
+
 
     <!-- Corrections requested from the customer -->
     {% if application.corrections %}
@@ -201,25 +153,7 @@
     </div>
     {% endif %}
 
-    <!-- Timeline (live from DB) -->
-    <div class="morgi-card p-5">
-      <h3 class="font-semibold mb-4">Application Timeline</h3>
-      <div class="space-y-4 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-px before:bg-[var(--morgi-border)]">
-        <div class="flex gap-3 relative"><div class="w-6 h-6 rounded-full bg-[#0077B6] text-white flex items-center justify-center shrink-0 z-10"><i data-lucide="send" class="w-3 h-3"></i></div><div><p class="text-sm font-medium">Application Submitted — sent directly to bank</p><p class="text-xs text-[var(--morgi-muted)]">{{ application.date|default:"-" }}</p></div></div>
-        {% for ev in application.timeline %}
-        <div class="flex gap-3 relative"><div class="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 z-10"><i data-lucide="check" class="w-3 h-3"></i></div><div><p class="text-sm font-medium">{{ ev.title|default:ev.stage }}</p><p class="text-xs text-[var(--morgi-muted)]">{{ ev.message|truncatechars:120 }}</p></div></div>
-        {% empty %}
-        <div class="flex gap-3 relative"><div class="w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 z-10"><i data-lucide="eye" class="w-3 h-3"></i></div><div><p class="text-sm font-medium">Pending Bank Review — stage: {{ application.review_stage|default:"received"|title }}</p><p class="text-xs text-[var(--morgi-muted)]">Now</p></div></div>
-        {% endfor %}
-      </div>
-    </div>
 
-    <!-- Officer Notes -->
-    <div class="morgi-card p-5">
-      <h3 class="font-semibold mb-3">Officer Notes</h3>
-      <textarea class="morgi-input w-full rounded-lg p-3 text-sm min-h-[90px]" placeholder="Write notes..."></textarea>
-      <button class="mt-3 w-full btn-secondary py-2 rounded-lg text-sm font-medium">Save Notes</button>
-    </div>
 
     <!-- ACTIONS (Spec Section 4.5): Approve / Reject / Request docs -->
     <div class="morgi-card p-5">
@@ -236,11 +170,45 @@
       </div>
       <a href="{% url 'bank_application_review' application.id|default:1024 %}" class="mt-2 block text-center px-4 py-2.5 rounded-lg text-sm font-medium border border-[var(--morgi-border)] hover:bg-[var(--morgi-border)]/30">Request More Documents</a>
       {% endif %}
-    </div>
-  </div>
-</div>
+     </div>
+   </div>
+ </div>
 
-<!-- APPROVAL MODAL (Spec 4.6) -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+function showRiskDetail(){
+  var score = "{{ application.score|default:0 }}";
+  var dti = "{{ application.dti|default:'—' }}";
+  var risk = "{{ application.ai_risk|default:'—' }}";
+  var amount = "{{ application.amount|default:'—' }}";
+  var emp = "{{ application.employer|default:'—' }}";
+  var dtiNum = parseFloat(String(dti).replace('%',''))||0;
+  var cat = dtiNum<=30 ? 'Very Good (≤30) — Safe to approve' : dtiNum<=40 ? 'Good/Acceptable (31-40) — Acceptable' : dtiNum<=50 ? 'High Risk (41-50) — Not recommended' : dtiNum>50 ? 'Very High Risk (>50) — Reject' : 'Unknown';
+  var why = '';
+  if(dtiNum<=30) why = 'DTI ≤30 means customer spends ≤30% of income on this loan — very affordable. Risk low.';
+  else if(dtiNum<=40) why = 'DTI 31-40 is acceptable but monitor affordability. Risk medium.';
+  else if(dtiNum<=50) why = 'DTI 41-50 is high risk — customer would spend 41-50% of income on loan. Affordability low.';
+  else if(dtiNum>50) why = 'DTI >50 is very high risk — exceeds 50% of income. Should be rejected or reduce loan.';
+  Swal.fire({
+    title: 'AI Risk Detail — '+risk+' Risk ('+score+'/100)',
+    html: '<div style="text-align:left; font-size:13px;">'
+        + '<p><strong>DTI:</strong> '+dti+' → <span style="color:'+(dtiNum>40?'#dc3545':dtiNum>30?'#ffc107':'#00c853')+'">'+cat+'</span></p>'
+        + '<p><strong>Why this %?</strong> '+why+'</p>'
+        + '<p><strong>Affordability:</strong> '+score+'/100 — higher is better. Low score = low disposable vs installment.</p>'
+        + '<p><strong>Employment:</strong> '+emp+' (employed lowers risk by 10, business +5, unemployed +30).</p>'
+        + '<p><strong>Loan:</strong> TZS '+amount+' — combined with income/expenses gives DTI.</p>'
+        + '<p style="margin-top:10px; font-size:11px; color:#6c7293;">Thresholds: ≤30 Very Good, 31-40 Good, 41-50 High, >50 Very High. Click Explore Applications to filter by risk.</p>'
+        + '</div>',
+    icon: dtiNum>40 ? 'warning' : 'info',
+    confirmButtonColor: '#0077B6',
+    confirmButtonText: 'Close',
+    showCloseButton: true,
+    width: '520px'
+  });
+}
+</script>
+
+ <!-- APPROVAL MODAL (Spec 4.6) -->
 <div id="approveModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
   <div class="morgi-card w-full max-w-md p-6">
     <h3 class="font-bold text-lg">Confirm Approval</h3>

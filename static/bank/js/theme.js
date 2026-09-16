@@ -1,8 +1,8 @@
 /**
  * MorgiHome - Theme Toggle
- * - Inahifadhi mfumo wa template: kuongeza/kuondoa class 'dark' kwenye <html>
- * - Inakumbuka chaguo la mtumiaji kupitia localStorage
- * - Inaheshimu prefers-color-scheme kama hakuna chaguo lililohifadhiwa
+ * - Saves template system: adds/removes 'dark' class on <html>
+ * - Remembers user choice via localStorage
+ * - Respects prefers-color-scheme if no stored choice
  */
 (function () {
   const STORAGE_KEY = 'theme'; // 'dark' | 'light'
@@ -25,7 +25,7 @@
     updateIcons(theme);
     // ARIA
     const btn = document.getElementById('theme-toggle');
-    if (btn) btn.setAttribute('aria-label', theme === 'dark' ? 'Badilisha kwenda Light Mode' : 'Badilisha kwenda Dark Mode');
+    if (btn) btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode');
   }
 
   function updateIcons(theme) {
@@ -51,12 +51,12 @@
     return 'light';
   }
 
-  // 1. Apply theme kabla ya paint (inaitwa mara moja head script inapopakia)
-  //    Hii script inapaswa kupakiwa kwenye <head> kabla ya CSS ili kuepuka FOUC
+  // 1. Apply theme before paint (called once head script loads)
+  //    This script should be loaded in <head> before CSS to avoid FOUC
   const initialTheme = getPreferredTheme();
   applyTheme(initialTheme);
 
-  // Expose kwa matumizi ya nje
+  // Expose for external use
   window.MorgiTheme = {
     toggle: function () {
       const isDark = html.classList.contains('dark');
@@ -75,9 +75,9 @@
     }
   };
 
-  // 2. Baada ya DOM kupakia, funga event listener kwenye button
+  // 2. After DOM loads, attach event listener to button
   document.addEventListener('DOMContentLoaded', function () {
-    // Verifysha theme sahihi baada ya DOM (kama script ya head haikukimbia)
+    // Verify correct theme after DOM (if head script didn't run)
     applyTheme(getPreferredTheme());
 
     const btn = document.getElementById('theme-toggle');
@@ -87,7 +87,7 @@
       });
     }
 
-    // Sikiliza system changes tu kama mtumiaji hajaweka preference
+    // Listen to system changes only if user hasn't set preference
     if (window.matchMedia) {
       const mq = window.matchMedia('(prefers-color-scheme: dark)');
       // Modern browsers

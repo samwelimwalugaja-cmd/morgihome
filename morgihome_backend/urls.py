@@ -21,8 +21,8 @@ from accounts.dashboard_views import (
     DashboardRedirectView,
     ProfileView, CustomerProfileView, SellerProfileView, RealEstateProfileView,
     CustomerDashboardView, CustomerPropertiesView, CustomerApplyViewApex, CustomerApplicationsView, CustomerTrackView, CustomerCorrectionRespondView, CustomerContractsView, CustomerVerifyPropertyView, CustomerBankRequirementsView, CustomerRepaymentView, CustomerNotificationsView, CustomerSearchView,
-    SellerDashboardView, SellerPropertiesView, SellerAddPropertyViewApex, SellerEditPropertyView, SellerBuyersViewApex, SellerContractsViewApex, SellerSalesView, SellerPropertyDetailView, SellerNotificationsView,
-    RealEstateDashboardView, RealEstatePropertiesView, RealEstateAddPropertyView, RealEstateEditPropertyView, RealEstateApplicationsView, RealEstateContractsView, RealEstateBuyersView, RealEstateBuyerDetailView, RealEstateBanksView, RealEstateReportsView, RealEstateNotificationsView, RealEstateSearchView,
+    SellerDashboardView, SellerPropertiesView, SellerAddPropertyViewApex, SellerEditPropertyView, SellerBuyersViewApex, SellerContractsViewApex, SellerSalesView, SellerPropertyDetailView, SellerPropertyDeleteView, SellerNotificationsView,
+    RealEstateDashboardView, RealEstatePropertiesView, RealEstateAddPropertyView, RealEstateEditPropertyView, RealEstateApplicationsView, RealEstateContractsView, RealEstateBuyersView, RealEstateBuyerDetailView, RealEstateBanksView, RealEstateReportsView, RealEstateNotificationsView, RealEstateSearchView, RealEstatePropertyDeleteView,
     PropertyDetailCoronaView, PublicPropertyDetailView, CustomerPropertyDetailView,
 )
 
@@ -68,6 +68,7 @@ urlpatterns = [
     path('seller/dashboard/', SellerDashboardView.as_view(), name='seller_dashboard_apex'),
     path('seller/properties/add/', SellerAddPropertyViewApex.as_view(), name='seller_add_property_apex'),
     path('seller/properties/edit/<int:id>/', SellerEditPropertyView.as_view(), name='seller_edit_property_apex'),
+    path('seller/properties/delete/<int:id>/', SellerPropertyDeleteView.as_view(), name='seller_property_delete'),
     path('seller/properties/<int:id>/', SellerPropertyDetailView.as_view(), name='seller_property_detail'),
     path('seller/properties/all/', SellerPropertiesView.as_view(), name='seller_properties_all'),
     path('seller/properties/', SellerPropertiesView.as_view(), name='seller_properties_apex'),
@@ -86,6 +87,7 @@ urlpatterns = [
     path('realestate/dashboard/', RealEstateDashboardView.as_view(), name='realestate_dashboard_apex'),
     path('realestate/properties/add/', RealEstateAddPropertyView.as_view(), name='realestate_add_property_apex'),
     path('realestate/properties/edit/<int:id>/', RealEstateEditPropertyView.as_view(), name='realestate_edit_property_apex'),
+    path('realestate/properties/delete/<int:id>/', RealEstatePropertyDeleteView.as_view(), name='realestate_property_delete'),
     path('realestate/properties/all/', RealEstatePropertiesView.as_view(), name='realestate_properties_all'),
     path('realestate/properties/<int:id>/', PropertyDetailCoronaView.as_view(), name='realestate_property_detail'),
     path('realestate/properties/', RealEstatePropertiesView.as_view(), name='realestate_properties_apex'),

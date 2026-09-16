@@ -86,6 +86,43 @@ class MortgageApplication(models.Model):
 
     status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='pending')
 
+    # --- Customer personal / NIDA / marital ---
+    marital_status = models.CharField(max_length=20, blank=True, null=True, choices=(('single','Single'),('married','Married')), help_text="Single or Married")
+    dob = models.DateField(blank=True, null=True, help_text="Birth date - must be 18-57 years, must match NIDA")
+    nida_number = models.CharField(max_length=30, blank=True, null=True, help_text="NIDA number 20 digits - first 8 encode DOB YYYYMMDD")
+    marriage_certificate_number = models.CharField(max_length=50, blank=True, null=True, help_text="Marriage certificate card number (if married)")
+    marriage_certificate_file = models.FileField(upload_to='mortgage_documents/marriage/', blank=True, null=True)
+
+    # --- Business / employment extra ---
+    business_type = models.CharField(max_length=20, blank=True, null=True, choices=(('wholesale','Wholesale'),('retail','Retail')), help_text="Wholesale or Retail only")
+    business_registration_number = models.CharField(max_length=50, blank=True, null=True, help_text="BRELA BRL-... or Halmashauri LIC-... number")
+    annual_income = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True, help_text="Average annual income for business owner")
+
+    # --- Statutory deductions (based on income) ---
+    employment_sector = models.CharField(max_length=20, blank=True, null=True, choices=(('public','Public Sector'),('private','Private Sector')), help_text="Public vs Private sector - PSSSF 5% applies only to public")
+    deduction_psssf = models.BooleanField(default=False, help_text="PSSSF 5% of salary - public sector employees only")
+    deduction_heslb = models.BooleanField(default=False, help_text="HESLB 15% of salary - for those with education loan")
+    deduction_paye = models.BooleanField(default=False, help_text="PAYE 0-30% based on income bracket")
+    psssf_amount = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True, help_text="Computed PSSSF 5%")
+    heslb_amount = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True, help_text="Computed HESLB 15%")
+    paye_amount = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True, help_text="Computed PAYE per bracket")
+    total_deductions = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True, help_text="Total deductions")
+    net_monthly_income = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True, help_text="Net monthly income after deductions")
+
+    # --- Existing / Other loan (Step 6) ---
+    has_other_loan = models.CharField(max_length=10, blank=True, null=True, choices=(('yes','Yes'),('no','No')), help_text="Do you have another loan at a different bank?")
+    other_loan_bank = models.CharField(max_length=150, blank=True, null=True, help_text="Existing loan bank name")
+    other_loan_amount = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True, help_text="Original amount of existing loan")
+    other_loan_balance = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True, help_text="Outstanding balance")
+    other_loan_monthly_payment = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True, help_text="Monthly payment of existing loan")
+    other_loan_consolidate = models.CharField(max_length=10, blank=True, null=True, choices=(('yes','Yes - Consolidate'),('no','No - Keep Separate')), help_text="Should the new loan consolidate the old debt? (Takeover)")
+    # legacy alias from Step 3 (has_existing_loan) -> mapped to has_other_loan
+    has_existing_loan = models.CharField(max_length=10, blank=True, null=True, choices=(('yes','Yes'),('no','No')))
+    existing_loan_bank = models.CharField(max_length=150, blank=True, null=True)
+    existing_loan_amount = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+    existing_loan_repayment = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+    existing_loan_balance = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+
     # Bank step-by-step review tracking - customer sees this live
     review_stage = models.CharField(max_length=30, default='received', help_text="Current bank review stage")
     review_note = models.TextField(blank=True, null=True, help_text="Latest bank note shown to customer")

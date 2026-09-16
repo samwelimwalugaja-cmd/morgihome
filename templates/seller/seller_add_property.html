@@ -6,7 +6,7 @@
 <div class="page-header">
   <h3 class="page-title">
     <a href="/seller/properties/" class="btn btn-outline-secondary btn-sm me-2" title="Back"><i class="mdi mdi-arrow-left"></i></a>
-    <span class="page-title-icon text-white me-2" style="background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%) !important;"><i class="mdi mdi-home-plus"></i></span> Add {% if category == 'plot' %}Plot{% elif category == 'apartment' %}Apartment{% elif category == 'commercial' %}Commercial Building{% else %}House{% endif %}
+    <span class="page-title-icon text-white me-2" style="background: linear-gradient(135deg, #0077B6 0%, #0A2B4E 100%) !important;"><i class="mdi mdi-home-plus"></i></span> Add {% if category == 'apartment' %}Apartment{% elif category == 'commercial' %}Commercial Building{% else %}House{% endif %}
   </h3>
   <nav aria-label="breadcrumb">
     <ul class="breadcrumb">
@@ -28,7 +28,7 @@
           <a href="?category=house" class="btn {% if category == 'house' %}btn-primary{% else %}btn-outline-primary{% endif %}" {% if category == 'house' %}style="background:#0077B6; border-color:#0077B6;"{% endif %}><i class="mdi mdi-home"></i> House</a>
           <a href="?category=apartment" class="btn {% if category == 'apartment' %}btn-primary{% else %}btn-outline-primary{% endif %}" {% if category == 'apartment' %}style="background:#0077B6; border-color:#0077B6;"{% endif %}><i class="mdi mdi-city-variant"></i> Apartment</a>
           <a href="?category=commercial" class="btn {% if category == 'commercial' %}btn-primary{% else %}btn-outline-primary{% endif %}" {% if category == 'commercial' %}style="background:#0077B6; border-color:#0077B6;"{% endif %}><i class="mdi mdi-domain"></i> Commercial</a>
-          <a href="?category=plot" class="btn {% if category == 'plot' %}btn-primary{% else %}btn-outline-primary{% endif %}" {% if category == 'plot' %}style="background:#0077B6; border-color:#0077B6;"{% endif %}><i class="mdi mdi-map"></i> Plot</a>
+          
         </div>
       </div>
     </div>
@@ -37,139 +37,9 @@
 
 <form method="post" enctype="multipart/form-data" class="forms-sample">
   {% csrf_token %}
-  <input type="hidden" name="property_category" value="{% if category == 'plot' %}plot{% else %}house{% endif %}">
+  <input type="hidden" name="property_category" value="house">
 
-  {% if category == 'plot' %}
-  <!-- ==================== PLOT ==================== -->
-  <div class="row">
-    <div class="col-12 grid-margin stretch-card">
-      <div class="card">
-        <div class="card-body">
-          <h4 class="card-title d-flex align-items-center gap-2"><span class="d-inline-flex align-items-center justify-content-center text-white" style="width:28px; height:28px; border-radius:50%; background:#0077B6; font-size:13px; font-weight:800;">1</span> PLOT DETAILS</h4>
-          <div class="row">
-            <div class="col-md-6"><div class="form-group"><label>Plot Name (Title) <span class="text-danger">*</span></label><input type="text" name="title" class="form-control" placeholder="Mikocheni Plot 45" required></div></div>
-            <div class="col-md-6"><div class="form-group"><label>Price (TZS) <span class="text-danger">*</span></label><input type="number" name="price" class="form-control" placeholder="Enter price" required min="1000"></div></div>
-          </div>
-          <div class="form-group"><label>Description <span class="text-danger">*</span></label><textarea name="description" class="form-control" rows="3" placeholder="Write a description of the plot..." required></textarea></div>
-          <div class="row">
-            <div class="col-md-6"><div class="form-group"><label>Land Type <span class="text-danger">*</span></label>
-              <select name="land_type" class="form-control" required>
-                <option value="">-- Select --</option>
-                <option value="residential">Residential</option>
-                <option value="commercial">Commercial</option>
-                <option value="agricultural">Agricultural</option>
-                <option value="mixed">Mixed Use</option>
-              </select></div></div>
-            <div class="col-md-6"><div class="form-group"><label>Status <span class="text-danger">*</span></label>
-              <select name="status" class="form-control" required>
-                <option value="available">Available</option>
-                <option value="sold">Sold</option>
-                <option value="pending">Pending</option>
-                <option value="reserved">Reserved</option>
-              </select></div></div>
-          </div>
-          <div class="row">
-            <div class="col-md-6"><div class="form-group"><label>Location <span class="text-danger">*</span></label><input type="text" name="location" class="form-control" placeholder="Enter plot location" required></div></div>
-            <div class="col-md-6"><div class="form-group"><label>Plot No. (NaPa)</label><input type="text" name="napa" class="form-control" placeholder="NMB/MK/12345"></div></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="row">
-    <div class="col-12 grid-margin stretch-card">
-      <div class="card">
-        <div class="card-body">
-          <h4 class="card-title d-flex align-items-center gap-2"><span class="d-inline-flex align-items-center justify-content-center text-white" style="width:28px; height:28px; border-radius:50%; background:#0077B6; font-size:13px; font-weight:800;">2</span> MEASUREMENTS & INFRASTRUCTURE</h4>
-          <div class="row">
-            <div class="col-md-4"><div class="form-group"><label>Size (Area, sqm) <span class="text-danger">*</span></label><input type="number" name="area" class="form-control" placeholder="Area (sqm)" required></div></div>
-            <div class="col-md-4"><div class="form-group"><label>Dimensions <span class="text-danger">*</span></label><input type="text" name="plot_dimensions" class="form-control" placeholder="m x m" required></div></div>
-            <div class="col-md-4"><div class="form-group"><label>Land Use <span class="text-danger">*</span></label>
-              <select name="land_use" class="form-control" required>
-                <option value="">-- Select --</option>
-                <option value="residential">Residential</option>
-                <option value="commercial">Commercial</option>
-                <option value="agricultural">Agricultural</option>
-                <option value="mixed">Mixed Use</option>
-              </select></div></div>
-          </div>
-          <div class="form-group">
-            <label>Infrastructure</label>
-            <div class="row">
-              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_road" class="form-check-input"> Road</label></div></div>
-              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_electricity" class="form-check-input"> Electricity</label></div></div>
-              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_water" class="form-check-input"> Water</label></div></div>
-              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_sewage" class="form-check-input"> Sewage</label></div></div>
-              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_internet" class="form-check-input"> Internet</label></div></div>
-              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_fenced" class="form-check-input"> Fenced</label></div></div>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-4"><div class="form-group"><label>Title Deed Available? <span class="text-danger">*</span></label>
-              <div>
-                <div class="form-check"><label class="form-check-label"><input type="radio" name="title_deed_available" value="yes" class="form-check-input" required> Yes</label></div>
-                <div class="form-check"><label class="form-check-label"><input type="radio" name="title_deed_available" value="no" class="form-check-input"> No</label></div>
-                <div class="form-check"><label class="form-check-label"><input type="radio" name="title_deed_available" value="in_process" class="form-check-input"> In Process</label></div>
-              </div></div></div>
-            <div class="col-md-4"><div class="form-group"><label>Survey Plan Available? <span class="text-danger">*</span></label>
-              <div>
-                <div class="form-check"><label class="form-check-label"><input type="radio" name="survey_plan_available" value="yes" class="form-check-input" required> Yes</label></div>
-                <div class="form-check"><label class="form-check-label"><input type="radio" name="survey_plan_available" value="no" class="form-check-input"> No</label></div>
-              </div></div></div>
-            <div class="col-md-4"><div class="form-group"><label>Zoning</label>
-              <select name="zoning" class="form-control">
-                <option value="">-- Select --</option>
-                <option value="residential">Residential</option>
-                <option value="commercial">Commercial</option>
-                <option value="industrial">Industrial</option>
-                <option value="agricultural">Agricultural</option>
-              </select></div></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="row">
-    <div class="col-12 grid-margin stretch-card">
-      <div class="card">
-        <div class="card-body">
-          <h4 class="card-title d-flex align-items-center gap-2"><span class="d-inline-flex align-items-center justify-content-center text-white" style="width:28px; height:28px; border-radius:50%; background:#0077B6; font-size:13px; font-weight:800;">3</span> PLOT PHOTOS</h4>
-          <div class="form-group mb-0"><label>Upload Photos (max 5)</label>
-            <input type="file" name="images" multiple accept=".jpg,.jpeg,.png,.webp" class="form-control file-upload-default">
-            <div class="input-group"><input type="text" class="form-control file-upload-info" disabled placeholder="JPG/PNG • Max 2MB each • Max 5"><span class="input-group-append"><button class="file-upload-browse btn btn-primary" style="background:#0077B6; border-color:#0077B6;" type="button"><i class="mdi mdi-upload"></i> Choose File</button></span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="row">
-    <div class="col-12 grid-margin stretch-card">
-      <div class="card">
-        <div class="card-body">
-          <h4 class="card-title d-flex align-items-center gap-2"><span class="d-inline-flex align-items-center justify-content-center text-white" style="width:28px; height:28px; border-radius:50%; background:#0077B6; font-size:13px; font-weight:800;">4</span> PLOT DOCUMENTS</h4>
-          <div class="row">
-            <div class="col-md-6"><div class="form-group"><label>Title Deed <span class="text-danger">*</span></label>
-              <input type="file" name="title_deed_file" accept=".pdf,.jpg,.png" class="form-control file-upload-default" required>
-              <div class="input-group"><input type="text" class="form-control file-upload-info" disabled placeholder="PDF/JPG/PNG • Max 5MB"><span class="input-group-append"><button class="file-upload-browse btn btn-primary" style="background:#0077B6; border-color:#0077B6;" type="button"><i class="mdi mdi-upload"></i> Choose File</button></span></div></div></div>
-            <div class="col-md-6"><div class="form-group"><label>Survey Plan <span class="text-danger">*</span></label>
-              <input type="file" name="survey_plan_file" accept=".pdf,.jpg,.png" class="form-control file-upload-default" required>
-              <div class="input-group"><input type="text" class="form-control file-upload-info" disabled placeholder="PDF/JPG/PNG • Max 5MB"><span class="input-group-append"><button class="file-upload-browse btn btn-primary" style="background:#0077B6; border-color:#0077B6;" type="button"><i class="mdi mdi-upload"></i> Choose File</button></span></div></div></div>
-            <div class="col-md-6"><div class="form-group"><label>Tax Clearance (optional)</label>
-              <input type="file" name="tax_clearance_file" accept=".pdf,.jpg,.png" class="form-control file-upload-default">
-              <div class="input-group"><input type="text" class="form-control file-upload-info" disabled placeholder="PDF/JPG/PNG • Max 5MB"><span class="input-group-append"><button class="file-upload-browse btn btn-primary" style="background:#0077B6; border-color:#0077B6;" type="button"><i class="mdi mdi-upload"></i> Choose File</button></span></div></div></div>
-            <div class="col-md-6"><div class="form-group"><label>Land Certificate (optional)</label>
-              <input type="file" name="land_certificate_file" accept=".pdf,.jpg,.png" class="form-control file-upload-default">
-              <div class="input-group"><input type="text" class="form-control file-upload-info" disabled placeholder="PDF/JPG/PNG • Max 5MB"><span class="input-group-append"><button class="file-upload-browse btn btn-primary" style="background:#0077B6; border-color:#0077B6;" type="button"><i class="mdi mdi-upload"></i> Choose File</button></span></div></div></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  {% else %}
+  
   <!-- ==================== BUILDING: HOUSE / APARTMENT / COMMERCIAL ==================== -->
   <div class="row">
     <div class="col-12 grid-margin stretch-card">
@@ -310,7 +180,6 @@
       </div>
     </div>
   </div>
-  {% endif %}
 
   <div class="row">
     <div class="col-12 d-flex justify-content-end gap-2 mb-4">

@@ -100,9 +100,9 @@
       <div class="line" id="line3"></div>
       <div class="step" data-step="4" onclick="goToSegment(4)"><div class="circle">4</div><div class="label">Business</div></div>
       <div class="line" id="line4"></div>
-      <div class="step" data-step="5" onclick="goToSegment(5)"><div class="circle">5</div><div class="label">Loan</div></div>
+      <div class="step" data-step="5" onclick="goToSegment(5)"><div class="circle">5</div><div class="label">Bank</div></div>
       <div class="line" id="line5"></div>
-      <div class="step" data-step="6" onclick="goToSegment(6)"><div class="circle">6</div><div class="label">Bank</div></div>
+      <div class="step" data-step="6" onclick="goToSegment(6)"><div class="circle">6</div><div class="label">Loan</div></div>
       <div class="line" id="line6"></div>
       <div class="step" data-step="7" onclick="goToSegment(7)"><div class="circle">7</div><div class="label">Documents</div></div>
       <div class="line" id="line7"></div>
@@ -152,13 +152,13 @@
           <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Full Name *</label><input type="text" class="form-control" value="{% if user.is_authenticated %}{{ user.get_full_name|default:user.email }}{% endif %}" readonly style="background:#2c2e33; border-color:#444; color:#fff;"></div>
           <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Email *</label><input type="email" class="form-control" value="{% if user.is_authenticated %}{{ user.email }}{% endif %}" readonly style="background:#2c2e33; border-color:#444; color:#fff;"></div>
           <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Phone *</label><input type="text" class="form-control" value="{% if user.is_authenticated %}{{ user.phone_number }}{% endif %}" readonly style="background:#2c2e33; border-color:#444; color:#fff;"></div>
-          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Date of Birth *</label><input type="date" name="dob" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293; font-weight:600;">Date of Birth *</label><input type="date" name="dob" id="dobInput" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;" required><small class="text-muted" style="font-size:11px;">Age 18-57 only. Must match NIDA first 8 digits.</small></div>
           <div class="col-12 col-md-4"><label class="form-label" style="font-size:12px; color:#6c7293;">Gender</label><select name="gender" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;"><option value="">Select</option><option value="male">Male</option><option value="female">Female</option></select></div>
-          <div class="col-12 col-md-4"><label class="form-label" style="font-size:12px; color:#6c7293;">Marital Status</label><select name="marital_status" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;"><option value="">Select</option><option value="single">Single</option><option value="married">Married</option><option value="divorced">Divorced</option></select></div>
+          <div class="col-12 col-md-4"><label class="form-label" style="font-size:12px; color:#6c7293;">Marital Status</label><select name="marital_status" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;"><option value="">Select</option><option value="single">Single</option><option value="married">Married</option></select></div>
           <div class="col-12 col-md-4"><label class="form-label" style="font-size:12px; color:#6c7293;">Dependents</label><input type="number" name="dependents" class="form-control" placeholder="0" min="0" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
-          <div class="col-12"><label class="form-label" style="font-size:12px; color:#6c7293;">National ID Number (NIDA) <span style="color:#6c7293; font-weight:400;">— 15 digits</span></label>
-            <input type="text" name="nin" id="nidaInput" class="form-control" placeholder="e.g. 199012345678901" maxlength="15" pattern="\d{15}" inputmode="numeric" style="background:#2c2e33; border-color:#444; color:#fff;">
-            <small class="text-muted" style="font-size:11px;">Exactly 15 digits. No spaces or dashes.</small>
+          <div class="col-12"><label class="form-label" style="font-size:12px; color:#6c7293; font-weight:600;">NIDA Number (20 digits) <span class="text-danger">*</span></label>
+            <input type="text" name="nida_number" id="nidaInput" class="form-control" placeholder="e.g. 19900101123456789012" maxlength="20" pattern="\d{20}" inputmode="numeric" style="background:#2c2e33; border-color:#444; color:#fff;" required>
+            <small class="text-muted" style="font-size:11px;">First 8 digits = YYYYMMDD of birth (e.g. 1990-01-01 -> 19900101...). Must match Date of Birth above.</small>
             <div class="field-error" id="nidaError" style="color:#fc424a; font-size:11px; display:none;"></div>
             <button type="button" id="verifyNidaBtn" class="btn btn-outline-primary btn-sm mt-2" style="border-radius:6px; font-size:12px;" onclick="startNidaVerification()"><i class="mdi mdi-shield-check me-1"></i> Verify NIDA</button>
             <span id="nidaVerifyStatus" class="ms-2" style="font-size:12px; display:none;"></span>
@@ -186,6 +186,17 @@
             </div>
           </div>
           <div id="nidaFinalMsg" class="col-12" style="display:none;"></div>
+          <div id="marriageCertWrap" class="col-12" style="display:none;">
+            <div style="background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.2); border-radius:8px; padding:14px;">
+              <p class="mb-2" style="font-weight:700; font-size:13px; color:#f59e0b;"><i class="mdi mdi-heart me-1"></i> Marriage Certificate (required for Married) <span class="text-danger">*</span></p>
+              <div class="row g-2">
+                <div class="col-12 col-md-6"><label class="form-label" style="font-size:11px; color:#6c7293;">Marriage Certificate Number *</label><input type="text" name="marriage_certificate_number" id="marriageCertNo" class="form-control" placeholder="MC-2020-001234" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+                <div class="col-12 col-md-6"><label class="form-label" style="font-size:11px; color:#6c7293;">Certificate Copy (PDF/JPG/PNG) *</label><input type="file" name="marriage_certificate_file" id="marriageCertFile" accept=".pdf,.jpg,.jpeg,.png" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+              </div>
+            </div>
+          </div>
+          <div id="dobError" class="col-12 text-danger small" style="display:none;"></div>
+          <div id="nidaError2" class="col-12 text-danger small" style="display:none;"></div>
         </div>
       </div>
     </div>
@@ -211,7 +222,7 @@
           <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Employer Name *</label><input type="text" name="employer_name" id="employerName" class="form-control" placeholder="e.g. Ministry of Education" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
           <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Job Title *</label><input type="text" name="job_title" id="jobTitle" class="form-control" placeholder="e.g. Teacher" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
           <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Years of Employment *</label><input type="number" name="years_employed" id="yearsEmployed" class="form-control" placeholder="3" min="0" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
-          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Monthly Income (TZS) *</label><input type="number" name="monthly_income" id="monthlyIncome" class="form-control" placeholder="2000000" required style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Gross Monthly Income (TZS) *</label><input type="number" name="monthly_income" id="monthlyIncome" class="form-control" placeholder="2000000" required style="background:#2c2e33; border-color:#444; color:#fff;"><small class="text-muted" style="font-size:11px;">Gross salary before deductions</small></div>
           <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Monthly Expenses (TZS) *</label><input type="number" name="monthly_expenses" id="monthlyExpenses" class="form-control" placeholder="800000" required style="background:#2c2e33; border-color:#444; color:#fff;"></div>
           <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Contract Type *</label><select name="contract_type" id="contractType" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;"><option value="">Select</option><option value="permanent">Permanent</option><option value="contract">Contract</option></select></div>
           <div class="col-12"><label class="form-label" style="font-size:12px; color:#6c7293;">Do you have an existing loan at any bank? *</label>
@@ -232,8 +243,66 @@
               </div>
             </div>
           </div>
+          <!-- Statutory Deductions - Employee (English) -->
+          <div class="col-12">
+            <div style="background:rgba(124,58,237,0.07); border:1px solid rgba(124,58,237,0.20); border-radius:10px; padding:14px;">
+              <h6 style="font-weight:700; color:#7c3aed; font-size:13px;"><i class="mdi mdi-cash-multiple me-1"></i> Statutory Deductions — Based on Your Income *</h6>
+              <p class="text-muted mb-2" style="font-size:11px;">Select deductions applied to you each month. System will subtract them from gross income and calculate <strong>Net Income</strong> for DTI. PAYE is auto-calculated per tax brackets.</p>
+              <div class="row g-2">
+                <div class="col-12 col-md-6">
+                  <label class="form-label" style="font-size:11px; color:#6c7293; font-weight:600;">Employment Sector *</label>
+                  <select name="employment_sector" id="employmentSector" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;" onchange="recalcDeductions()">
+                    <option value="">-- Select --</option>
+                    <option value="public">Public Sector</option>
+                    <option value="private">Private Sector</option>
+                  </select>
+                  <small style="font-size:10px;" class="text-muted">PSSSF 5% applies to public sector only</small>
+                </div>
+                <div class="col-12">
+                  <div class="d-flex flex-column gap-2 mt-1">
+                    <label class="d-flex align-items-center gap-2 p-2 rounded" style="background:#191c24; border:1px solid #2c2e33; cursor:pointer;" id="psssfLabel">
+                      <input type="checkbox" name="deduction_psssf" id="deductPsssf" value="true" onchange="recalcDeductions()">
+                      <span style="font-size:12px;"><strong>PSSSF</strong> (Employee Contribution) <span class="badge bg-primary ms-1">5% of salary</span> <small class="text-muted">— for public sector employees only</small></span>
+                    </label>
+                    <label class="d-flex align-items-center gap-2 p-2 rounded" style="background:#191c24; border:1px solid #2c2e33; cursor:pointer;">
+                      <input type="checkbox" name="deduction_heslb" id="deductHeslb" value="true" onchange="recalcDeductions()">
+                      <span style="font-size:12px;"><strong>HESLB</strong> (Education Loan) <span class="badge bg-warning text-dark ms-1">15% of salary</span> <small class="text-muted">— for those with education loan debt</small></span>
+                    </label>
+                    <label class="d-flex align-items-center gap-2 p-2 rounded" style="background:#191c24; border:1px solid #2c2e33; cursor:pointer;">
+                      <input type="checkbox" name="deduction_paye" id="deductPaye" value="true" onchange="recalcDeductions()">
+                      <span style="font-size:12px;"><strong>PAYE</strong> (Income Tax) <span class="badge bg-info text-dark ms-1">0%–30% based on income</span> <a href="javascript:void(0)" onclick="var e=document.getElementById('payeBracketsInfo');e.style.display=e.style.display==='none'?'block':'none'" style="font-size:11px; margin-left:6px;">(view brackets)</a></span>
+                    </label>
+                  </div>
+                </div>
+                <div class="col-12" id="payeBracketsInfo" style="display:none;">
+                  <div style="background:#0f0f0f; border:1px solid #2c2e33; border-radius:8px; padding:10px; font-size:11px;">
+                    <table class="table table-sm mb-1" style="color:#e5e6ea; font-size:11px;">
+                      <thead><tr><th>Monthly Income (TZS)</th><th>Rate</th><th>Formula</th></tr></thead>
+                      <tbody>
+                        <tr><td>0 – 270,000</td><td>0%</td><td>Not taxed</td></tr>
+                        <tr><td>270,001 – 520,000</td><td>8%</td><td>(income - 270,000)×8%</td></tr>
+                        <tr><td>520,001 – 760,000</td><td>20%</td><td>20,000 + (income - 520,000)×20%</td></tr>
+                        <tr><td>760,001 – 1,000,000</td><td>25%</td><td>68,000 + (income - 760,000)×25%</td></tr>
+                        <tr><td>&gt;1,000,000</td><td>30%</td><td>128,000 + (income - 1,000,000)×30%</td></tr>
+                      </tbody>
+                    </table>
+                    <small class="text-muted"><strong>Example:</strong> Salary 900,000 → PAYE ≈ 103,000 (marginal 25% but avg ~11%). Max rate in Tanzania is 30%.</small>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <div id="deductionPreview" class="p-2 rounded" style="background:rgba(0,210,91,0.08); border:1px solid rgba(0,210,91,0.2); font-size:12px; display:none;">
+                    <div class="d-flex justify-content-between"><span>Gross Income:</span><strong id="grossIncomePreview">TZS 0</strong></div>
+                    <div class="d-flex justify-content-between"><span>Total Deductions:</span><strong id="totalDeductionsPreview">TZS 0</strong></div>
+                    <div class="d-flex justify-content-between"><span>Net Income (per month):</span><strong id="netIncomePreview" style="color:#00d25b;">TZS 0</strong></div>
+                    <small id="deductionBreakdown" class="text-muted" style="font-size:10px;"></small>
+                    <small id="deductionExplain" class="text-muted" style="font-size:10px; display:block; margin-top:4px;"></small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="alert mt-3" style="background:rgba(0,119,182,0.08); border:1px solid rgba(0,119,182,0.15); font-size:12px;"><i class="mdi mdi-information-outline me-1" style="color:#0077B6;"></i> Your monthly income and repayment will be used to calculate affordability (DSR). The selected bank's interest rate will be applied automatically.</div>
+        <div class="alert mt-3" style="background:rgba(0,119,182,0.08); border:1px solid rgba(0,119,182,0.15); font-size:12px;"><i class="mdi mdi-information-outline me-1" style="color:#0077B6;"></i> Your monthly income and repayment will be used to calculate affordability (DSR). The selected bank's interest rate will be applied automatically. All deductions will be used to calculate the true DTI.</div>
       </div>
     </div>
   </div>
@@ -246,69 +315,80 @@
         <div id="businessDisabledMsg" class="alert mt-2" style="display:none; background:rgba(255,193,7,0.12); border:1px solid rgba(255,193,7,0.25); color:#e5e6ea; border-radius:8px; font-size:13px;"><i class="mdi mdi-information-outline me-1" style="color:#ffc107;"></i> <strong>Not required:</strong> You selected <b>Employed</b>, so business details are not needed. You do not need to fill anything here because you are not a business owner. Please click Next to proceed. This step is for business owners only.</div>
         <div class="row g-3 mt-1">
           <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Business Name</label><input type="text" name="business_name" class="form-control" placeholder="e.g. Sanga Enterprises" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
-          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Registration Number (BRELA)</label><input type="text" name="business_reg" class="form-control" placeholder="123456" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
-          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Business Type</label><select name="business_type" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;"><option value="">Select</option><option value="retail">Retail</option><option value="wholesale">Wholesale</option><option value="services">Services</option><option value="manufacturing">Manufacturing</option><option value="agriculture">Agriculture</option></select></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Business Registration Number <span style="color:#ffc107;">* if Business Owner</span></label><input type="text" name="business_registration_number" id="businessRegNo" class="form-control" placeholder="BRL-2024-001234 or LIC-DSM-2024-005678" style="background:#2c2e33; border-color:#444; color:#fff;"><small class="text-muted" style="font-size:11px;">BRELA: BRL-2024-001234 | Council: LIC-DSM-2024-005678</small></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Business Type *</label><select name="business_type" id="businessType" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;"><option value="">Select</option><option value="wholesale">Wholesale</option><option value="retail">Retail</option></select></div>
           <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Years in Business</label><input type="number" name="business_years" class="form-control" placeholder="5" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
-          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Monthly Business Income</label><input type="number" name="business_income" class="form-control" placeholder="3500000" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
-          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Monthly Business Expenses</label><input type="number" name="business_expenses" class="form-control" placeholder="1200000" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Average Annual Income (TZS) <span style="color:#ffc107;">* if Business Owner</span></label><input type="number" name="annual_income" id="annualIncome" class="form-control" placeholder="24000000" style="background:#2c2e33; border-color:#444; color:#fff;"><small class="text-muted" style="font-size:11px;">Average annual income — not monthly (will be divided by 12)</small></div>
+          <!-- Deductions for Business Owner (PSSSF disabled) - English -->
+          <div class="col-12">
+            <div style="background:rgba(124,58,237,0.07); border:1px solid rgba(124,58,237,0.20); border-radius:10px; padding:14px;">
+              <h6 style="font-weight:700; color:#7c3aed; font-size:13px;"><i class="mdi mdi-percent me-1"></i> Statutory Deductions — Based on Your Income *</h6>
+              <p class="text-muted mb-2" style="font-size:11px;">Select deductions applied to you. <strong>PSSSF does NOT apply</strong> to business owners (public sector only) — disabled here.</p>
+              <div class="row g-2">
+                <div class="col-12">
+                  <div class="d-flex flex-column gap-2">
+                    <label class="d-flex align-items-center gap-2 p-2 rounded" style="background:#191c24; border:1px solid #2c2e33; opacity:0.5; cursor:not-allowed;" title="Not applicable to Business Owner">
+                      <input type="checkbox" name="deduction_psssf_biz" id="deductPsssfBiz" disabled>
+                      <span style="font-size:12px;"><strong>PSSSF</strong> (5% of salary) <span class="badge bg-secondary ms-1">Not applicable</span> <small class="text-muted">— for public sector employees only</small></span>
+                    </label>
+                    <label class="d-flex align-items-center gap-2 p-2 rounded" style="background:#191c24; border:1px solid #2c2e33; cursor:pointer;">
+                      <input type="checkbox" name="deduction_heslb" id="deductHeslbBiz" value="true" onchange="recalcDeductionsBiz()">
+                      <span style="font-size:12px;"><strong>HESLB</strong> (Education Loan) <span class="badge bg-warning text-dark ms-1">15% of salary</span></span>
+                    </label>
+                    <label class="d-flex align-items-center gap-2 p-2 rounded" style="background:#191c24; border:1px solid #2c2e33; cursor:pointer;">
+                      <input type="checkbox" name="deduction_paye" id="deductPayeBiz" value="true" onchange="recalcDeductionsBiz()">
+                      <span style="font-size:12px;"><strong>PAYE</strong> (Income Tax) <span class="badge bg-info text-dark ms-1">0%–30% based on income</span> <a href="javascript:void(0)" onclick="document.getElementById('payeBracketsBiz').style.display=document.getElementById('payeBracketsBiz').style.display==='none'?'block':'none'" style="font-size:11px;">(view brackets)</a></span>
+                    </label>
+                  </div>
+                </div>
+                <div class="col-12" id="payeBracketsBiz" style="display:none;">
+                  <div style="background:#0f0f0f; border:1px solid #2c2e33; border-radius:8px; padding:10px; font-size:11px;">
+                    <table class="table table-sm mb-1" style="color:#e5e6ea; font-size:11px;">
+                      <thead><tr><th>Monthly Income (TZS)</th><th>Rate</th><th>Formula</th></tr></thead>
+                      <tbody>
+                        <tr><td>0 – 270,000</td><td>0%</td><td>Not taxed</td></tr>
+                        <tr><td>270,001 – 520,000</td><td>8%</td><td>(income - 270k)×8%</td></tr>
+                        <tr><td>520,001 – 760,000</td><td>20%</td><td>20,000 + (income-520k)×20%</td></tr>
+                        <tr><td>760,001 – 1,000,000</td><td>25%</td><td>68,000 + (income-760k)×25%</td></tr>
+                        <tr><td>&gt;1,000,000</td><td>30%</td><td>128,000 + (income-1M)×30%</td></tr>
+                      </tbody>
+                    </table>
+                    <small class="text-muted">Example: 900,000 → PAYE ≈ 103,000. Max marginal 25% but avg lower.</small>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <div id="deductionPreviewBiz" class="p-2 rounded" style="background:rgba(0,210,91,0.08); border:1px solid rgba(0,210,91,0.2); font-size:12px; display:none;">
+                    <div class="d-flex justify-content-between"><span>Gross Income (per month):</span><strong id="grossIncomeBiz">TZS 0</strong></div>
+                    <div class="d-flex justify-content-between"><span>Total Deductions:</span><strong id="totalDeductionsBiz">TZS 0</strong></div>
+                    <div class="d-flex justify-content-between"><span>Net Income (per month):</span><strong id="netIncomeBiz" style="color:#00d25b;">TZS 0</strong></div>
+                    <small id="deductionBreakdownBiz" class="text-muted" style="font-size:10px;"></small>
+                    <small id="deductionExplainBiz" class="text-muted" style="font-size:10px; display:block; margin-top:4px;"></small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- STEP 5: Loan Details -->
+  <!-- STEP 5: Bank Selection -->
   <div class="segment-card" data-segment="5">
     <div class="card">
       <div class="card-body">
-        <h5 style="font-weight:700;"><span style="display:inline-flex; width:28px; height:28px; background:#0077B6; color:#fff; border-radius:50%; align-items:center; justify-content:center; font-size:13px; margin-right:8px;">5</span> Loan Details</h5>
-        <div class="row g-3 mt-1">
-          <div class="col-12"><label class="form-label" style="font-size:12px; color:#6c7293;" id="propertyLabel">Property <span id="propertyRequiredStar">*</span> <small class="text-muted" id="propertyOptionalNote" style="display:none; font-weight:400;">(optional for Semi-Finish / Construction)</small></label>
-            <select name="property" id="applyProperty" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;" required>
-              <option value="">-- Select Property --</option>
-              {% for prop in properties %}
-              <option value="{{ prop.id }}" data-price="{{ prop.price }}" {% if selected_property and selected_property.id == prop.id %}selected{% endif %}>{{ prop.title }} — TZS {{ prop.price|intcomma }} • {{ prop.location }}</option>
-              {% endfor %}
-            </select>
-            <small class="text-muted" id="propertyHelp" style="font-size:11px; display:none;">For Semi-Finish / Construction you may leave this empty if you own the land/house already.</small>
-          </div>
-          <div class="col-12"><label class="form-label" style="font-size:12px; color:#6c7293;">Loan Type *</label>
-            <select name="loan_type" id="loanType" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;" required>
-              <option value="">-- Select Type --</option>
-              <option value="purchase">Purchase - Buy house/apartment (90% financed, 5M-700M)</option>
-              <option value="refinance">Refinance / Equity Release - Cash from titled property (5M-700M)</option>
-              <option value="semi_finish">Semi Finish - Complete house at lintel stage (5M-700M, 2 stages)</option>
-              <option value="construction">Construction - Build new house (5M-200M, 5 stages BOQ)</option>
-            </select>
-          </div>
-          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Loan Amount (TZS) *</label><input type="number" name="loan_amount" id="loanAmount" class="form-control" placeholder="50000000" required min="5000000" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
-          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Down Payment (TZS) *</label><input type="number" name="down_payment" id="downPayment" class="form-control" placeholder="10000000" required style="background:#2c2e33; border-color:#444; color:#fff;"></div>
-          <div class="col-12"><label class="form-label" style="font-size:12px; color:#6c7293;">Repayment Period (Months) *</label>
-            <select name="repayment_period" id="repaymentPeriod" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;" required>
-              <option value="">-- Select --</option><option value="12">12 months (1 year)</option><option value="24">24 months (2)</option><option value="36">36 months (3)</option><option value="60">60 months (5)</option><option value="120">120 months (10)</option><option value="180" selected>180 months (15 years)</option><option value="240">240 months (20)</option><option value="300">300 months (25)</option><option value="360">360 months (30)</option>
-            </select>
-            <small class="text-muted" style="font-size:11px;">Maximum period depends on the selected bank. Construction loans up to 200M.</small>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- STEP 6: Bank Selection -->
-  <div class="segment-card" data-segment="6">
-    <div class="card">
-      <div class="card-body">
-        <h5 style="font-weight:700;"><span style="display:inline-flex; width:28px; height:28px; background:#0077B6; color:#fff; border-radius:50%; align-items:center; justify-content:center; font-size:13px; margin-right:8px;">6</span> Select Bank</h5>
+        <h5 style="font-weight:700;"><span style="display:inline-flex; width:28px; height:28px; background:#0077B6; color:#fff; border-radius:50%; align-items:center; justify-content:center; font-size:13px; margin-right:8px;">5</span> Select Bank</h5>
         <p class="text-muted" style="font-size:13px;">Select one bank. Interest and fees will be used to calculate repayment.</p>
         <div class="row g-3 mt-1">
           {% for bank in banks %}
           <div class="col-12 col-md-6">
-            <div class="bank-card" data-bank="{{ bank.id }}" onclick="selectBank({{ bank.id }})">
+            <div class="bank-card" data-bank="{{ bank.id }}" data-max-period="{{ bank.max_repayment_period|default:'' }}" data-min-loan="{{ bank.min_loan_amount|default:'' }}" data-max-loan="{{ bank.max_loan_amount|default:'' }}" data-fee="{{ bank.processing_fee|default:'' }}" onclick="selectBank({{ bank.id }})">
               <div class="d-flex justify-content-between align-items-center">
                 <h6 class="mb-1" style="font-weight:700;">{{ bank.get_full_name }}</h6>
                 {% if bank.interest_rate %}<span class="badge" style="background:rgba(0,119,182,0.15); color:#0077B6; border:1px solid rgba(0,119,182,0.3);">{{ bank.interest_rate }}% p.a.</span>{% endif %}
               </div>
               <p class="text-muted mb-1" style="font-size:12px;">{{ bank.email }}</p>
-              <div style="font-size:12px;"><span class="text-muted">Min:</span> TZS {{ bank.min_loan_amount|default:"—"|intcomma }} • <span class="text-muted">Max:</span> TZS {{ bank.max_loan_amount|default:"—"|intcomma }}</div>
+              <div style="font-size:12px;"><span class="text-muted">Fee:</span> {% if bank.processing_fee %}{{ bank.processing_fee }}%{% else %}—{% endif %} • <span class="text-muted">Min:</span> TZS {{ bank.min_loan_amount|default:"—"|intcomma }} • <span class="text-muted">Max:</span> TZS {{ bank.max_loan_amount|default:"—"|intcomma }}{% if bank.max_repayment_period %} • <span class="text-muted">Max:</span> {{ bank.max_repayment_period }} m{% endif %}</div>
               <input type="radio" name="bank" value="{{ bank.id }}" hidden>
             </div>
           </div>
@@ -327,6 +407,121 @@
     </div>
   </div>
 
+  <!-- STEP 6: Loan Details -->
+  <div class="segment-card" data-segment="6">
+    <div class="card">
+      <div class="card-body">
+        <h5 style="font-weight:700;"><span style="display:inline-flex; width:28px; height:28px; background:#0077B6; color:#fff; border-radius:50%; align-items:center; justify-content:center; font-size:13px; margin-right:8px;">6</span> Loan Details</h5>
+        <div class="row g-3 mt-1">
+          <div class="col-12"><label class="form-label" style="font-size:12px; color:#6c7293;" id="propertyLabel">Property <span id="propertyRequiredStar">*</span> <small class="text-muted" id="propertyOptionalNote" style="display:none; font-weight:400;">(optional for Semi-Finish / Construction)</small></label>
+            <select name="property" id="applyProperty" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;" required>
+              <option value="">-- Select Property --</option>
+              {% for prop in properties %}
+              <option value="{{ prop.id }}" data-price="{{ prop.price }}" {% if selected_property and selected_property.id == prop.id %}selected{% endif %}>{{ prop.title }} — TZS {{ prop.price|intcomma }} • {{ prop.location }}</option>
+              {% endfor %}
+            </select>
+            <small class="text-muted" id="propertyHelp" style="font-size:11px; display:none;">For Semi-Finish / Construction you may leave this empty if you own the house already.</small>
+          </div>
+          <div class="col-12"><label class="form-label" style="font-size:12px; color:#6c7293;">Loan Type *</label>
+            <select name="loan_type" id="loanType" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;" required>
+              <option value="">-- Select Type --</option>
+              <option value="purchase">Purchase - Buy house/apartment (90% financed, 5M-700M)</option>
+              <option value="refinance">Refinance / Equity Release - Cash from titled property (5M-700M)</option>
+              <option value="semi_finish">Semi Finish - Complete house at lintel stage (5M-700M, 2 stages)</option>
+              <option value="construction">Construction - Build new house (5M-200M, 5 stages BOQ)</option>
+            </select>
+          </div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Loan Amount (TZS) *</label><input type="number" name="loan_amount" id="loanAmount" class="form-control" placeholder="50000000" required min="5000000" style="background:#2c2e33; border-color:#444; color:#fff;" oninput="updateDownPaymentCustomer()" onkeyup="updateDownPaymentCustomer()" onchange="updateDownPaymentCustomer()"></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Down Payment (TZS) <span class="text-muted">(auto 10%)</span></label><input type="number" name="down_payment" id="downPayment" class="form-control" placeholder="" readonly style="background:#191c24; border-color:#444; color:#fff;"><small class="text-muted" style="font-size:11px;" id="downHint">10% of loan amount — will calculate as you type</small></div>
+          <div class="col-12"><label class="form-label" style="font-size:12px; color:#6c7293; font-weight:600;">Repayment Period (Months) *</label>
+            <select name="repayment_period" id="repaymentPeriod" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;" required>
+              <option value="">-- Select Bank first --</option>
+            </select>
+            <small class="text-muted" style="font-size:11px;" id="periodHint">Select a bank first — repayment period will be auto-filled based on the bank policy (max years). You may choose less than the max; exceeding the max will show a warning.</small>
+            <div id="bankMaxInfoApply" class="alert alert-info py-2 px-3 mt-2" style="display:none; font-size:12px;"></div>
+            <small class="text-muted" style="font-size:11px;">Construction loans up to 200M.</small>
+          </div>
+          <!-- Other Loan / Consolidation Section (Step 6) - English -->
+          <div class="col-12">
+            <div style="background:linear-gradient(135deg, rgba(0,119,182,0.08) 0%, rgba(10,43,78,0.08) 100%); border:1px solid rgba(0,119,182,0.25); border-radius:12px; padding:16px;">
+              <h6 style="font-weight:800; color:#0077B6; font-size:13px;"><i class="mdi mdi-bank-transfer me-1"></i> Do you have another loan at a different bank? <span class="text-danger">*</span></h6>
+              <p class="text-muted mb-2" style="font-size:11px;">Some banks will takeover your existing loan and consolidate it into this new mortgage. Answer this so the selected bank knows whether to include the old debt or keep this loan separate.</p>
+              <div class="row g-3">
+                <div class="col-12 col-md-6">
+                  <label class="form-label" style="font-size:12px; color:#6c7293; font-weight:600;">Do you have another loan? *</label>
+                  <select name="has_other_loan" id="hasOtherLoan" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;" onchange="toggleOtherLoanDetails(this.value)" required>
+                    <option value="no" selected>No — I don't have another loan</option>
+                    <option value="yes">Yes — I have another loan</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-6" id="consolidateWrap" style="display:none;">
+                  <label class="form-label" style="font-size:12px; color:#6c7293; font-weight:600;">Should this loan consolidate the old debt? *</label>
+                  <select name="other_loan_consolidate" id="otherLoanConsolidate" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;">
+                    <option value="">-- Select --</option>
+                    <option value="yes">Yes — New bank to takeover the debt (Consolidation)</option>
+                    <option value="no">No — Keep loans separate</option>
+                  </select>
+                  <small class="text-muted" style="font-size:10px;">"Yes" = new bank pays the old debt and adds it to this loan. "No" = you will repay two separate loans.</small>
+                </div>
+                <div id="otherLoanDetails" class="col-12" style="display:none;">
+                  <div style="background:#191c24; border:1px solid #2c2e33; border-radius:8px; padding:14px;">
+                    <p class="mb-2" style="font-weight:600; font-size:12px; color:#0077B6;"><i class="mdi mdi-information-outline me-1"></i> Existing Loan Details (will be sent to your selected bank)</p>
+                    <div class="row g-2">
+                      <div class="col-12 col-md-6"><label class="form-label" style="font-size:11px; color:#6c7293;">Existing Loan Bank Name *</label><input type="text" name="other_loan_bank" id="otherLoanBank" class="form-control" placeholder="e.g. NMB, CRDB, NBC" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+                      <div class="col-12 col-md-6"><label class="form-label" style="font-size:11px; color:#6c7293;">Original Loan Amount (TZS)</label><input type="number" name="other_loan_amount" id="otherLoanAmount" class="form-control" placeholder="30000000" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+                      <div class="col-12 col-md-6"><label class="form-label" style="font-size:11px; color:#6c7293;">Outstanding Balance (TZS) *</label><input type="number" name="other_loan_balance" id="otherLoanBalance" class="form-control" placeholder="15000000" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+                      <div class="col-12 col-md-6"><label class="form-label" style="font-size:11px; color:#6c7293;">Monthly Payment (TZS)</label><input type="number" name="other_loan_monthly_payment" id="otherLoanMonthly" class="form-control" placeholder="500000" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+                    </div>
+                    <div class="alert mt-2 mb-0" style="background:rgba(0,119,182,0.08); border:1px solid rgba(0,119,182,0.15); font-size:11px; color:#e5e6ea;">
+                      <i class="mdi mdi-lightbulb-outline me-1" style="color:#0077B6;"></i> <strong>Note:</strong> If you select "Yes — takeover", the new bank will finance the old debt as part of this mortgage (Debt Consolidation). If "No", DTI will be calculated by adding both payments (old loan + new mortgage).
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<script>
+// Fallback real-time Down Payment calc — ensures field shows actual money even if main JS hasn't bound yet
+(function(){
+  function fallbackDown(){
+    var loanEl=document.getElementById('loanAmount');
+    var downEl=document.getElementById('downPayment');
+    var hint=document.getElementById('downHint');
+    if(!loanEl||!downEl) return;
+    var loan=parseFloat(String(loanEl.value).replace(/,/g,''))||0;
+    if(loan>0){
+      var down=Math.round(loan*0.10);
+      downEl.value=String(down);
+      if(hint) hint.textContent='TZS '+down.toLocaleString()+' (10% of TZS '+loan.toLocaleString()+')';
+    } else {
+      downEl.value='';
+      if(hint) hint.textContent='10% of loan amount — will calculate as you type';
+    }
+  }
+  // Bind immediately if DOM already ready
+  var lo=document.getElementById('loanAmount');
+  if(lo){
+    lo.addEventListener('input', fallbackDown);
+    lo.addEventListener('keyup', fallbackDown);
+    lo.addEventListener('change', fallbackDown);
+    lo.addEventListener('paste', function(){ setTimeout(fallbackDown, 50); });
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    var l=document.getElementById('loanAmount');
+    if(l){ l.addEventListener('input', fallbackDown); l.addEventListener('keyup', fallbackDown); fallbackDown(); }
+    // interval fallback for first 15s (covers draft restore timing)
+    var tries=0; var it=setInterval(function(){ fallbackDown(); if(++tries>50) clearInterval(it); }, 300);
+  });
+  window.updateDownPaymentCustomer = fallbackDown;
+  // also run now if possible
+  setTimeout(fallbackDown, 500);
+})();
+</script>
+
   <!-- STEP 7: Documents -->
   <div class="segment-card" data-segment="7">
     <div class="card">
@@ -337,7 +532,7 @@
         <div id="docBusinessNote" class="alert mt-2" style="display:none; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.15); font-size:12px;"><i class="mdi mdi-store" style="color:#10b981;"></i> You are a business owner — business income proof is required. Employer reference letter is not needed.</div>
         <div class="row g-3 mt-1">
           <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">ID / Passport *</label><div class="doc-drop"><input type="file" name="documents" id="docId" accept=".pdf,.jpg,.jpeg,.png" class="form-control doc-required" style="background:#2c2e33; border-color:#444; color:#fff;"></div></div>
-          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">3 Recent Pay Slips *</label><div class="doc-drop"><input type="file" name="documents" id="docPayslip" accept=".pdf,.jpg,.jpeg,.png" multiple class="form-control doc-required" style="background:#2c2e33; border-color:#444; color:#fff;"></div></div>
+          <div class="col-12 col-md-6" id="docPayslipWrap"><label class="form-label" style="font-size:12px; color:#6c7293;">3 Recent Pay Slips <span id="docPayslipStar">*</span></label><div class="doc-drop"><input type="file" name="documents" id="docPayslip" accept=".pdf,.jpg,.jpeg,.png" multiple class="form-control doc-required" style="background:#2c2e33; border-color:#444; color:#fff;"></div></div>
           <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">3 Months Bank Statements *</label><div class="doc-drop"><input type="file" name="documents" id="docBankStatement" accept=".pdf,.jpg,.jpeg,.png" multiple class="form-control doc-required" style="background:#2c2e33; border-color:#444; color:#fff;"></div></div>
           <div class="col-12 col-md-6" id="docEmployerRefWrap"><label class="form-label" style="font-size:12px; color:#6c7293;">Employer Reference Letter <span id="docEmployerRefStar" style="display:none;">*</span></label><div class="doc-drop"><input type="file" name="documents" id="docEmployerRef" accept=".pdf,.jpg,.jpeg,.png" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;"></div></div>
           <div class="col-12 col-md-6" id="docEmploymentContractWrap"><label class="form-label" style="font-size:12px; color:#6c7293;">Employment Contract <span id="docContractStar" style="display:none;">*</span></label><div class="doc-drop"><input type="file" name="documents" id="docEmploymentContract" accept=".pdf,.jpg,.jpeg,.png" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;"></div></div>
@@ -565,11 +760,53 @@ function autoResumeDraft(obj){
   let restoreObj = obj;
   if(obj.draft_data){
     restoreObj = {...obj.draft_data, _customerType: obj.draft_data.customer_type || obj.draft_data._customerType, _currentStep: obj.current_step, _mortgageType: obj.mortgage_type||obj._mortgageType, mortgage_type: obj.mortgage_type};
+    // Top-level bank/property fallbacks (draft.bank outside draft_data) - for direct bank apply
+    if(obj.bank && !restoreObj.bank) restoreObj.bank = obj.bank;
+    if(obj.property && !restoreObj.property) restoreObj.property = obj.property;
+    // also support property as id directly
+    if(obj.property_details && obj.property_details.id && !restoreObj.property) restoreObj.property = obj.property_details.id;
   }
   restoreFormFromObj(restoreObj);
+  // Ensure bank is restored even if restoreObj missed it - check top-level and draft_data
+  var bankToRestore = restoreObj.bank || obj.bank || (obj.draft_data && obj.draft_data.bank) || null;
+  if(bankToRestore){
+    var card=document.querySelector(`.bank-card[data-bank="${bankToRestore}"]`);
+    if(card){ document.querySelectorAll('.bank-card').forEach(c=>c.classList.remove('selected')); card.classList.add('selected'); var inp=card.querySelector('input'); if(inp) inp.checked=true; var sel=document.getElementById('applyBank'); if(sel) sel.value=bankToRestore; }
+    else { var sel2=document.getElementById('applyBank'); if(sel2) sel2.value=bankToRestore; }
+    // Show header and lock if this was a direct bank application (only one bank should appear)
+    try{ updateBankHeaderById(bankToRestore); }catch(e){}
+    // If URL had bank param originally or draft came from direct apply (_directBank flag), hide other banks
+    var urlHasBank = new URLSearchParams(window.location.search).get('bank');
+    var isDirect = !!urlHasBank || !!restoreObj._directBank || !!restoreObj.directBank;
+    // Always re-apply bank UI (populate periods etc.) so step shows correctly
+    try{ populatePeriodsCustomer(); }catch(e){}
+    // If direct, lock to prevent confusion (show only selected bank)
+    if(isDirect && bankToRestore){
+      try{ lockBankSelection(bankToRestore); }catch(e){}
+    }
+  }
+  // Restore other loan and deductions states if present
+  if(restoreObj.has_other_loan || restoreObj.has_other_loan==='no' || restoreObj.has_other_loan==='yes'){
+    var hol=document.getElementById('hasOtherLoan'); if(hol && restoreObj.has_other_loan) hol.value=restoreObj.has_other_loan;
+    try{ toggleOtherLoanDetails(restoreObj.has_other_loan); }catch(e){}
+    if(restoreObj.other_loan_bank) { var el=document.getElementById('otherLoanBank'); if(el) el.value=restoreObj.other_loan_bank; }
+    if(restoreObj.other_loan_amount) { var el=document.getElementById('otherLoanAmount'); if(el) el.value=restoreObj.other_loan_amount; }
+    if(restoreObj.other_loan_balance) { var el=document.getElementById('otherLoanBalance'); if(el) el.value=restoreObj.other_loan_balance; }
+    if(restoreObj.other_loan_monthly_payment) { var el=document.getElementById('otherLoanMonthly'); if(el) el.value=restoreObj.other_loan_monthly_payment; }
+    if(restoreObj.other_loan_consolidate) { var el=document.getElementById('otherLoanConsolidate'); if(el) el.value=restoreObj.other_loan_consolidate; }
+  }
+  if(restoreObj.employment_sector){ var es=document.getElementById('employmentSector'); if(es) es.value=restoreObj.employment_sector; }
+  if(restoreObj.deduction_psssf){ var cb=document.getElementById('deductPsssf'); if(cb) cb.checked = (String(restoreObj.deduction_psssf).toLowerCase()==='true' || String(restoreObj.deduction_psssf)==='1'); }
+  if(restoreObj.deduction_heslb){ var cb=document.getElementById('deductHeslb'); if(cb) cb.checked = (String(restoreObj.deduction_heslb).toLowerCase()==='true' || String(restoreObj.deduction_heslb)==='1'); var cb2=document.getElementById('deductHeslbBiz'); if(cb2) cb2.checked = (String(restoreObj.deduction_heslb).toLowerCase()==='true' || String(restoreObj.deduction_heslb)==='1'); }
+  if(restoreObj.deduction_paye){ var cb=document.getElementById('deductPaye'); if(cb) cb.checked = (String(restoreObj.deduction_paye).toLowerCase()==='true' || String(restoreObj.deduction_paye)==='1'); var cb2=document.getElementById('deductPayeBiz'); if(cb2) cb2.checked = (String(restoreObj.deduction_paye).toLowerCase()==='true' || String(restoreObj.deduction_paye)==='1'); }
+  try{ recalcDeductions(); }catch(e){}
+  try{ recalcDeductionsBiz(); }catch(e){}
   currentSegment = parseInt(obj.current_step || obj._currentStep || 1);
   if(isNaN(currentSegment) || currentSegment<1) currentSegment=1;
-  if(currentSegment===4 && (customerType==='employed' || restoreObj._customerType==='employed')) currentSegment=5;
+  // Skip Employment for business owner, skip Business for employed
+  var effType = customerType || restoreObj._customerType || (obj.draft_data && obj.draft_data.customer_type) || '';
+  if(currentSegment===3 && effType==='business') currentSegment=4;
+  if(currentSegment===4 && effType==='employed') currentSegment=5;
   updateStepper(false); // false = don't re-save immediately
   const info=document.getElementById('autoResumeInfo');
   const txt=document.getElementById('autoResumeText');
@@ -632,7 +869,331 @@ async function discardDraft(){
   if(typeof Swal!=='undefined') Swal.fire({icon:'success', title:'Draft cleared', timer:4000, showConfirmButton:false});
 }
 
+
+// === New helpers for Task requirements ===
+function toggleMarriageCert(){
+  var maritalEl=document.querySelector('[name="marital_status"]');
+  var wrap=document.getElementById('marriageCertWrap');
+  var mNo=document.getElementById('marriageCertNo');
+  var mFile=document.getElementById('marriageCertFile');
+  if(!maritalEl || !wrap) return;
+  if(maritalEl.value==='married'){
+    wrap.style.display='block';
+    if(mNo) mNo.setAttribute('required','');
+    if(mFile) mFile.setAttribute('required','');
+  } else {
+    wrap.style.display='none';
+    if(mNo) mNo.removeAttribute('required');
+    if(mFile) mFile.removeAttribute('required');
+  }
+}
+function validateDobNidaCustomer(showError){
+  var dobEl=document.getElementById('dobInput') || document.querySelector('[name="dob"]');
+  var nidaEl=document.getElementById('nidaInput');
+  var valid=true;
+  var dobStr=dobEl?dobEl.value:'';
+  var nidaVal=nidaEl?nidaEl.value.trim():'';
+  var dob=null;
+  if(dobStr){
+    var parts=dobStr.split('-'); // YYYY-MM-DD local
+    if(parts.length===3){ dob=new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2])); if(isNaN(dob.getTime())) dob=null; }
+    else { dob=new Date(dobStr); if(isNaN(dob.getTime())) dob=null; }
+  }
+  // NIDA 20 digits — only error if showError and user typed something but length !=20
+  if(nidaVal && !/^\d{20}$/.test(nidaVal)){
+    valid=false;
+    if(showError){
+      var err=document.getElementById('nidaError'); if(err){err.textContent='NIDA must be exactly 20 digits (you have '+nidaVal.length+'). First 8 must be YYYYMMDD of birth.'; err.style.display='block';}
+      if(nidaEl) nidaEl.classList.add('is-invalid');
+    }
+  } else if(nidaVal && dob){
+    var y=parseInt(nidaVal.substr(0,4)), m=parseInt(nidaVal.substr(4,2)), d=parseInt(nidaVal.substr(6,2));
+    try{
+      var nidaY = nidaVal.substr(0,4), nidaM = nidaVal.substr(4,2), nidaD = nidaVal.substr(6,2);
+      var dobY = String(dob.getFullYear()).padStart(4,'0'), dobM = String(dob.getMonth()+1).padStart(2,'0'), dobD = String(dob.getDate()).padStart(2,'0');
+      var nidaYMD = nidaY+nidaM+nidaD;
+      var dobYMD = dobY+dobM+dobD;
+      if(nidaYMD!==dobYMD){
+        valid=false;
+        if(showError){
+          var e2=document.getElementById('nidaError2'); if(e2){e2.textContent='NIDA first 8 digits ('+nidaVal.substr(0,8)+') must equal DOB YYYYMMDD ('+dobYMD+'). Example: DOB 1990-01-15 → NIDA starts 19900115...'; e2.style.display='block';}
+          nidaEl.classList.add('is-invalid');
+          if(typeof Swal!=='undefined') Swal.fire({icon:'error', title:'NIDA/DOB mismatch', text:'First 8 of NIDA ('+nidaVal.substr(0,8)+') must match DOB ('+dobYMD+')', toast:true, position:'top-end', timer:5000, showConfirmButton:false});
+        }
+      } else {
+        if(showError){ var e2=document.getElementById('nidaError2'); if(e2) e2.style.display='none'; nidaEl.classList.remove('is-invalid'); nidaEl.classList.add('is-valid'); }
+        var err=document.getElementById('nidaError'); if(err) err.style.display='none';
+      }
+      // Also validate nida date not future
+      var nidaDate=new Date(y, m-1, d);
+      if(nidaDate > new Date()){
+        valid=false;
+        if(showError){ var e2=document.getElementById('nidaError2'); if(e2){e2.textContent='NIDA birth date cannot be in future.'; e2.style.display='block';} }
+      }
+    }catch(e){ valid=false; }
+  } else {
+    if(showError){ var e2=document.getElementById('nidaError2'); if(e2) e2.style.display='none'; }
+  }
+  // Age 18-57 and not current year
+  if(dob){
+    var today=new Date();
+    var age=today.getFullYear()-dob.getFullYear();
+    var mm=today.getMonth()-dob.getMonth();
+    if(mm<0 || (mm===0 && today.getDate()<dob.getDate())) age--;
+    if(dob.getFullYear()===today.getFullYear()){
+      valid=false;
+      if(showError){ var de=document.getElementById('dobError'); if(de){de.textContent='Birth date cannot be this year.'; de.style.display='block';} dobEl.classList.add('is-invalid'); }
+    } else if(age<18){
+      valid=false;
+      if(showError){ var de=document.getElementById('dobError'); if(de){de.textContent='Age '+age+' — must be at least 18 years.'; de.style.display='block';} dobEl.classList.add('is-invalid'); }
+    } else if(age>57){
+      valid=false;
+      if(showError){ var de=document.getElementById('dobError'); if(de){de.textContent='Age '+age+' — maximum is 57 years.'; de.style.display='block';} dobEl.classList.add('is-invalid'); }
+    } else {
+      if(showError){ var de=document.getElementById('dobError'); if(de) de.style.display='none'; dobEl.classList.remove('is-invalid'); dobEl.classList.add('is-valid'); }
+    }
+  }
+  return valid;
+}
+function updateDownPaymentCustomer(){
+  var loanEl=document.getElementById('loanAmount');
+  var downEl=document.getElementById('downPayment');
+  var hint=document.getElementById('downHint');
+  if(!loanEl||!downEl) return;
+  var loan=parseFloat(loanEl.value)||0;
+  if(loan){
+    var down=Math.round(loan*0.10);
+    downEl.value=down;
+    if(hint) hint.textContent='TZS '+down.toLocaleString()+' (10% of TZS '+loan.toLocaleString()+')';
+  } else {
+    downEl.value='';
+    if(hint) hint.textContent='10% of loan amount — will calculate as you type';
+  }
+  if(typeof recalcAI==='function') recalcAI();
+}
+function populatePeriodsCustomer(){
+  var bankSel=document.querySelector('input[name="bank"]:checked');
+  var bankFallback=document.getElementById('applyBank');
+  var bid=(bankSel&&bankSel.value)||(bankFallback&&bankFallback.value)||'';
+  var periodEl=document.getElementById('repaymentPeriod');
+  var infoEl=document.getElementById('bankMaxInfoApply');
+  if(!periodEl) return;
+  if(!bid){
+    periodEl.innerHTML='<option value="">-- Select Bank first --</option>';
+    if(infoEl) infoEl.style.display='none';
+    return;
+  }
+  var card=document.querySelector('.bank-card[data-bank="'+bid+'"]');
+  var maxVal=0;
+  if(card) maxVal=parseInt(card.getAttribute('data-max-period')||'0')||0;
+  if(!maxVal) maxVal=180;
+  window._bankMaxMonthsCustomer=maxVal;
+  var maxY=Math.round(maxVal/12);
+  var options=[12,24,36,48,60,72,84,96,108,120,180,240,300,360];
+  periodEl.innerHTML='<option value="">-- Select Period --</option>';
+  var hasSelected=false;
+  options.forEach(function(v){
+    if(v<=maxVal){
+      var o=document.createElement('option');
+      o.value=v;
+      o.textContent=v+' months ('+(v/12)+' years)'+(v===maxVal?' — Max':'');
+      if(v===Math.min(240, maxVal) && !hasSelected){ o.selected=true; hasSelected=true; }
+      periodEl.appendChild(o);
+    }
+  });
+  if(options.indexOf(maxVal)===-1){
+    var o=document.createElement('option');
+    o.value=maxVal;
+    o.textContent=maxVal+' months ('+(maxVal/12)+' years) — Max';
+    periodEl.appendChild(o);
+  }
+  if(infoEl){
+    var bankName='';
+    if(card){ var h6=card.querySelector('h6'); if(h6) bankName=h6.textContent.trim(); }
+    infoEl.innerHTML='<strong>'+(bankName||'Bank')+'</strong> max is <strong>'+maxVal+' months ('+maxY+' years)</strong> — choose less than this. If you exceed it, you will be warned.';
+    infoEl.style.display='block';
+  }
+}
+function validateBusinessRegCustomer(showError){
+  var el=document.getElementById('businessRegNo');
+  if(!el) return true;
+  var v=el.value.trim();
+  if(!v) return true;
+  var brela=/^BRL-\d{4}-\d{6}$/;
+  var lic=/^LIC-[A-Z]{2,4}-\d{4}-\d{6}$/;
+  if(!brela.test(v) && !lic.test(v)){
+    if(showError){
+      el.classList.add('is-invalid');
+      if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Invalid business number', text:'Use BRL-2024-001234 or LIC-DSM-2024-005678', toast:true, position:'top-end', timer:5000, showConfirmButton:false});
+    }
+    return false;
+  } else {
+    el.classList.remove('is-invalid');
+    el.classList.add('is-valid');
+    return true;
+  }
+}
+// === Statutory Deductions helpers (PSSSF 5% public only, HESLB 15%, PAYE brackets) ===
+function calcPayeTZ(income){
+  var v=parseFloat(income||0);
+  if(v<=270000) return 0;
+  if(v<=520000) return (v-270000)*0.08;
+  if(v<=760000) return 20000 + (v-520000)*0.20;
+  if(v<=1000000) return 68000 + (v-760000)*0.25;
+  return 128000 + (v-1000000)*0.30;
+}
+function getGrossMonthlyForDeductions(isBiz){
+  if(isBiz){
+    var annual=document.getElementById('annualIncome');
+    if(annual && annual.value) return parseFloat(annual.value)/12;
+    return 0;
+  } else {
+    var mi=document.getElementById('monthlyIncome');
+    return mi ? parseFloat(mi.value)||0 : 0;
+  }
+}
+function recalcDeductions(){
+  var income=getGrossMonthlyForDeductions(false);
+  var sector=document.getElementById('employmentSector') ? document.getElementById('employmentSector').value : '';
+  var wantPsssf=document.getElementById('deductPsssf') ? document.getElementById('deductPsssf').checked : false;
+  var wantHeslb=document.getElementById('deductHeslb') ? document.getElementById('deductHeslb').checked : false;
+  var wantPaye=document.getElementById('deductPaye') ? document.getElementById('deductPaye').checked : false;
+  // PSSSF only for public - disable if private
+  var psssfLabel=document.getElementById('psssfLabel');
+  var psssfCb=document.getElementById('deductPsssf');
+  if(sector==='private' && psssfCb){
+    psssfCb.checked=false; psssfCb.disabled=true; wantPsssf=false;
+    if(psssfLabel){ psssfLabel.style.opacity='0.5'; psssfLabel.title='PSSSF only for public sector'; }
+  } else if(psssfCb){
+    psssfCb.disabled=false;
+    if(psssfLabel){ psssfLabel.style.opacity='1'; psssfLabel.title=''; }
+  }
+  var psssf= wantPsssf && sector==='public' ? income*0.05 : 0;
+  var heslb= wantHeslb ? income*0.15 : 0;
+  var paye= wantPaye ? calcPayeTZ(income) : 0;
+  var total=psssf+heslb+paye;
+  var net=income-total; if(net<0) net=0;
+  var preview=document.getElementById('deductionPreview');
+  var grossEl=document.getElementById('grossIncomePreview');
+  var totalEl=document.getElementById('totalDeductionsPreview');
+  var netEl=document.getElementById('netIncomePreview');
+  var bd=document.getElementById('deductionBreakdown');
+  var explain=document.getElementById('deductionExplain');
+  if(preview){
+    if(income>0 && (wantPsssf||wantHeslb||wantPaye)){
+      preview.style.display='block';
+      if(grossEl) grossEl.textContent='TZS '+Math.round(income).toLocaleString()+' per month';
+      if(totalEl) totalEl.textContent='TZS '+Math.round(total).toLocaleString();
+      if(netEl) netEl.textContent='TZS '+Math.round(net).toLocaleString();
+      if(bd){
+        var parts=[];
+        if(psssf) parts.push('PSSSF 5%: TZS '+Math.round(psssf).toLocaleString()+' (5% × '+Math.round(income).toLocaleString()+')');
+        if(heslb) parts.push('HESLB 15%: TZS '+Math.round(heslb).toLocaleString()+' (15% × '+Math.round(income).toLocaleString()+')');
+        if(paye) parts.push('PAYE: TZS '+Math.round(paye).toLocaleString());
+        if(income>0 && wantPaye){
+          var eff=(paye/income*100).toFixed(1);
+          parts.push('(avg '+eff+'%)');
+        }
+        bd.textContent=parts.join(' • ') || '';
+      }
+      if(explain){
+        explain.textContent='Gross Monthly: TZS '+Math.round(income).toLocaleString()+' → Total Deductions: TZS '+Math.round(total).toLocaleString()+' → Net Monthly: TZS '+Math.round(net).toLocaleString()+'. Verified: HESLB = 15% of gross monthly.';
+      }
+    } else {
+      preview.style.display='none';
+    }
+  }
+  if(typeof recalcAI==='function') setTimeout(recalcAI, 100);
+}
+function recalcDeductionsBiz(){
+  var annualEl=document.getElementById('annualIncome');
+  var annualVal= annualEl ? parseFloat(annualEl.value)||0 : 0;
+  var income=getGrossMonthlyForDeductions(true);
+  var wantHeslb=document.getElementById('deductHeslbBiz') ? document.getElementById('deductHeslbBiz').checked : false;
+  var wantPaye=document.getElementById('deductPayeBiz') ? document.getElementById('deductPayeBiz').checked : false;
+  var heslb= wantHeslb ? income*0.15 : 0;
+  var paye= wantPaye ? calcPayeTZ(income) : 0;
+  var total=heslb+paye;
+  var net=income-total; if(net<0) net=0;
+  var preview=document.getElementById('deductionPreviewBiz');
+  var grossEl=document.getElementById('grossIncomeBiz');
+  var totalEl=document.getElementById('totalDeductionsBiz');
+  var netEl=document.getElementById('netIncomeBiz');
+  var bd=document.getElementById('deductionBreakdownBiz');
+  var explain=document.getElementById('deductionExplainBiz');
+  if(preview){
+    if(income>0 && (wantHeslb||wantPaye)){
+      preview.style.display='block';
+      if(grossEl) grossEl.textContent='TZS '+Math.round(income).toLocaleString()+' per month (Annual TZS '+Math.round(annualVal).toLocaleString()+' ÷12)';
+      if(totalEl) totalEl.textContent='TZS '+Math.round(total).toLocaleString();
+      if(netEl) netEl.textContent='TZS '+Math.round(net).toLocaleString();
+      if(bd){
+        var parts=[];
+        if(heslb) parts.push('HESLB 15%: TZS '+Math.round(heslb).toLocaleString()+' (15% × '+Math.round(income).toLocaleString()+')');
+        if(paye) parts.push('PAYE: TZS '+Math.round(paye).toLocaleString()+' (avg '+(income? (paye/income*100).toFixed(1)+'%':'')+')');
+        bd.textContent=parts.join(' • ') || '';
+      }
+      if(explain){
+        var netAnnual = net*12;
+        explain.textContent='Verified: Gross Monthly = Annual ÷12 = TZS '+Math.round(income).toLocaleString()+' | HESLB 15% = TZS '+Math.round(heslb).toLocaleString()+' | Net Monthly = TZS '+Math.round(net).toLocaleString()+' | Net Annual = TZS '+Math.round(netAnnual).toLocaleString();
+      }
+    } else {
+      preview.style.display='none';
+    }
+  }
+  if(typeof recalcAI==='function') setTimeout(recalcAI, 100);
+}
+function toggleOtherLoanDetails(val){
+  var details=document.getElementById('otherLoanDetails');
+  var consol=document.getElementById('consolidateWrap');
+  if(val==='yes'){
+    if(details) details.style.display='block';
+    if(consol) consol.style.display='block';
+  } else {
+    if(details) details.style.display='none';
+    if(consol) consol.style.display='none';
+    ['otherLoanBank','otherLoanAmount','otherLoanBalance','otherLoanMonthly'].forEach(function(id){
+      var el=document.getElementById(id); if(el) el.value='';
+    });
+    var c=document.getElementById('otherLoanConsolidate'); if(c) c.value='';
+  }
+  if(typeof saveDraft==='function') saveDraft();
+  if(typeof recalcAI==='function') recalcAI();
+}
+function bindCustomerApplyExtras(){
+  var dobEl=document.getElementById('dobInput');
+  var nidaEl=document.getElementById('nidaInput');
+  if(dobEl){ dobEl.addEventListener('change', function(){ validateDobNidaCustomer(true); }); dobEl.addEventListener('input', function(){ validateDobNidaCustomer(false); }); }
+  if(nidaEl){ nidaEl.addEventListener('input', function(){ validateDobNidaCustomer(false); }); nidaEl.addEventListener('change', function(){ validateDobNidaCustomer(true); }); }
+  var maritalEl=document.querySelector('[name="marital_status"]');
+  if(maritalEl){ maritalEl.addEventListener('change', toggleMarriageCert); }
+  var loanEl=document.getElementById('loanAmount');
+  if(loanEl){ loanEl.addEventListener('input', updateDownPaymentCustomer); loanEl.addEventListener('change', updateDownPaymentCustomer); }
+  var bankInputs=document.querySelectorAll('.bank-card');
+  bankInputs.forEach(function(c){ c.addEventListener('click', function(){ setTimeout(populatePeriodsCustomer, 200); }); });
+  var applyBankSel=document.getElementById('applyBank');
+  if(applyBankSel){ applyBankSel.addEventListener('change', populatePeriodsCustomer); }
+  var periodEl=document.getElementById('repaymentPeriod');
+  if(periodEl){ periodEl.addEventListener('change', function(){
+    var max=window._bankMaxMonthsCustomer||0;
+    if(max && parseInt(this.value)>max){
+      if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Period exceeds bank limit', text:'Bank max is '+max+' months ('+Math.round(max/12)+' years).', toast:true, position:'top-end', timer:5000, showConfirmButton:false});
+      this.value=max;
+    }
+    if(typeof recalcAI==='function') recalcAI();
+  });}
+  var businessRegEl=document.getElementById('businessRegNo');
+  if(businessRegEl){ businessRegEl.addEventListener('input', function(){ validateBusinessRegCustomer(false); }); businessRegEl.addEventListener('change', function(){ validateBusinessRegCustomer(true); }); }
+  // Deductions listeners
+  var dedIds=['deductPsssf','deductHeslb','deductPaye','deductHeslbBiz','deductPayeBiz','employmentSector','monthlyIncome','annualIncome','hasOtherLoan','otherLoanConsolidate','otherLoanMonthly'];
+  dedIds.forEach(function(id){
+    var el=document.getElementById(id);
+    if(el){ el.addEventListener('change', function(){ try{recalcDeductions();}catch(e){} try{recalcDeductionsBiz();}catch(e){} try{recalcAI();}catch(e){} }); el.addEventListener('input', function(){ try{recalcDeductions();}catch(e){} try{recalcDeductionsBiz();}catch(e){} try{recalcAI();}catch(e){} }); }
+  });
+}
+
 function clearFieldError(el){
+
   if(!el) return;
   el.classList.remove('is-invalid');
   el.classList.remove('is-valid');
@@ -725,35 +1286,55 @@ function validateSegment(seg, showErrors){
       valid=false;
       if(showErrors) showFieldError(maritalEl, 'Marital status is required');
     } else if(maritalEl && showErrors) markFieldValid(maritalEl);
-    // Dependents optional - no validation
+    // Show/hide marriage cert based on marital
+    toggleMarriageCert();
+    if(maritalEl && maritalEl.value==='married'){
+      var mNoEl=document.getElementById('marriageCertNo');
+      var mFileEl=document.getElementById('marriageCertFile');
+      if(!mNoEl || !mNoEl.value.trim()){ valid=false; if(showErrors) showFieldError(mNoEl||document.getElementById('marriageCertNo'), 'Marriage certificate number is required for married'); }
+      else if(showErrors) markFieldValid(mNoEl);
+      if(!mFileEl || !mFileEl.files || mFileEl.files.length===0){ valid=false; if(showErrors) showFieldError(mFileEl||document.getElementById('marriageCertFile'), 'Marriage certificate file is required'); }
+    }
+    // Validate DOB/NIDA 20 digits + age 18-57
+    if(!validateDobNidaCustomer(showErrors)) valid=false;
+    // NIDA is now REQUIRED - must be 15 digits and verified 2/3
     const nidaInp=document.getElementById('nidaInput');
     window._nidaNeedsVerify=false;
-    if(nidaInp && nidaInp.value.trim()!==''){
-      if(!/^\d{15}$/.test(nidaInp.value.trim())){
+    if(!nidaInp || !nidaInp.value.trim()){
+      valid=false;
+      if(showErrors) showFieldError(nidaInp || document.getElementById('nidaInput'), 'NIDA is required (20 digits, first 8 must match DOB YYYYMMDD)');
+      window._nidaNeedsVerify=true;
+    } else if(!/^\d{20}$/.test(nidaInp.value.trim())){
+      valid=false;
+      if(showErrors) showFieldError(nidaInp, 'NIDA must be exactly 20 digits (you entered '+nidaInp.value.trim().length+' digits)');
+    } else {
+      let nScore=(typeof nidaQ1Ok!=='undefined'?(nidaQ1Ok?1:0)+(nidaQ2Ok?1:0)+(nidaQ3Ok?1:0):0);
+      const finalMsg=document.getElementById('nidaFinalMsg');
+      const hasVerified = finalMsg && finalMsg.style.display!=='none' && finalMsg.innerHTML.includes('Verified');
+      const q1Visible = document.getElementById('nidaQ1Wrap') && document.getElementById('nidaQ1Wrap').style.display!=='none';
+      if(!hasVerified || nScore<2){
         valid=false;
-        if(showErrors) showFieldError(nidaInp, 'NIDA must be exactly 15 digits');
-      } else {
-        let nScore=(nidaQ1Ok?1:0)+(nidaQ2Ok?1:0)+(nidaQ3Ok?1:0);
-        const finalMsg=document.getElementById('nidaFinalMsg');
-        const hasVerified = finalMsg && finalMsg.style.display!=='none';
-        const q1Visible = document.getElementById('nidaQ1Wrap') && document.getElementById('nidaQ1Wrap').style.display!=='none';
-        if(!hasVerified || nScore<2){
-          valid=false;
-          window._nidaNeedsVerify=true;
-          if(showErrors){
-            if(!q1Visible){
-              showFieldError(nidaInp, 'Please click Verify NIDA button to verify your NIDA');
-              if(typeof Swal!=='undefined') Swal.fire({icon:'info', title:'Please verify your NIDA', text:'You entered NIDA correctly. Now click the Verify NIDA button to answer verification questions.', toast:true, position:'top-end', timer:5000, showConfirmButton:false});
-            } else {
-              showFieldError(nidaInp, 'Please verify your NIDA - answer at least 2 of 3 questions correctly');
-              if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'NIDA verification required', text:'Click Verify NIDA and answer at least 2 of 3 questions correctly (you already answered '+nScore+'/2).', toast:true, position:'top-end', timer:5000, showConfirmButton:false});
-            }
+        window._nidaNeedsVerify=true;
+        if(showErrors){
+          if(!q1Visible){
+            showFieldError(nidaInp, 'Please click Verify NIDA — then answer 2 of 3 questions (First Name, Last Name, Email)');
+            if(typeof Swal!=='undefined') Swal.fire({icon:'info', title:'Please verify your NIDA', text:'You entered 20 digits correctly and DOB matches. Now click the Verify NIDA button and answer 2/3 questions.', toast:true, position:'top-end', timer:5000, showConfirmButton:false});
+          } else {
+            showFieldError(nidaInp, 'Please verify NIDA - answer at least 2 of 3 questions correctly (you have '+nScore+'/2)');
+            if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'NIDA verification required', text:'Answer 2 of 3 correctly (you have '+nScore+'/2). Click Verify NIDA if you have not.', toast:true, position:'top-end', timer:5000, showConfirmButton:false});
           }
-        } else if(showErrors) markFieldValid(nidaInp);
+        }
+      } else {
+        if(showErrors) markFieldValid(nidaInp);
+        window._nidaNeedsVerify=false;
       }
     }
   } else if(seg===3){
-    // Employment details - hidden status auto-filled, validate all visible required fields
+    // Employment details — skip entirely for Business Owner (they don't see this step at all)
+    if(customerType==='business'){
+      // Business owner should not be on Employment step — consider it valid and skip
+      return true;
+    }
     const hiddenEmp2=document.getElementById('employmentStatus');
     if(!hiddenEmp2 || !hiddenEmp2.value){
       valid=false;
@@ -784,8 +1365,33 @@ function validateSegment(seg, showErrors){
     if(customerType==='business'){
       valid = mark('[name=\"business_name\"]', 'Business name is required') && valid;
       valid = mark('[name=\"business_type\"]', 'Business type is required') && valid;
+      // Business registration — BRELA or Council LIC, required
+      var bizRegEl=document.getElementById('businessRegNo')||document.querySelector('[name="business_registration_number"]');
+      if(!bizRegEl || !bizRegEl.value.trim()){
+        valid=false;
+        if(showErrors) showFieldError(bizRegEl||document.querySelector('[name="business_registration_number"]'), 'Business registration number is required (BRL-... or LIC-...)');
+      } else if(!validateBusinessRegCustomer(showErrors)){
+        valid=false;
+      } else if(showErrors) markFieldValid(bizRegEl);
+      valid = mark('[name=\"annual_income\"]', 'Average annual income is required') && valid;
+      var annualEl=document.getElementById('annualIncome');
+      if(annualEl && annualEl.value && parseFloat(annualEl.value)<=0){ valid=false; if(showErrors) showFieldError(annualEl,'Enter valid annual income'); }
+      // Years in business also required
+      valid = mark('[name=\"business_years\"]', 'Years in business is required') && valid;
+      // Monthly Business Expenses removed per requirements - not validated
     }
   } else if(seg===5){
+    const bankSel = document.querySelector('input[name=\"bank\"]:checked');
+    const fallback = document.getElementById('applyBank');
+    const hasBank = (bankSel && bankSel.value) || (fallback && fallback.value);
+    if(!hasBank){
+      valid=false;
+      if(showErrors){
+        if(fallback) showFieldError(fallback, 'Please select a bank');
+        if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Bank selection required', text:'Please select a bank before continuing', toast:true, position:'top-end', timer:4500, showConfirmButton:false});
+      }
+    }
+  } else if(seg===6){
     // Property is optional for semi_finish / construction / renovation
     const lt=document.getElementById('loanType')?.value || '';
     const propertyOptional = ['semi_finish','construction'].includes(lt) || ['construction','renovation','semi_finish'].includes(currentMortgageType);
@@ -801,6 +1407,22 @@ function validateSegment(seg, showErrors){
     valid = mark('#loanAmount', 'Loan amount is required') && valid;
     const loan = document.getElementById('loanAmount');
     if(loan && loan.value && parseFloat(loan.value) < 5000000){ valid=false; if(showErrors) showFieldError(loan,'Minimum is 5,000,000 TZS'); }
+    // Bank-specific min/max loan enforcement
+    (function(){
+      var loanVal = loan ? parseFloat(loan.value)||0 : 0;
+      var bankSel = document.querySelector('input[name="bank"]:checked');
+      var bankFallback = document.getElementById('applyBank');
+      var bid = (bankSel && bankSel.value) || (bankFallback && bankFallback.value);
+      if(bid && loanVal){
+        var card = document.querySelector('.bank-card[data-bank="'+bid+'"]');
+        if(card){
+          var bMin = parseFloat(card.getAttribute('data-min-loan')||'0')||0;
+          var bMax = parseFloat(card.getAttribute('data-max-loan')||'0')||0;
+          if(bMin && loanVal < bMin){ valid=false; if(showErrors) showFieldError(loan,'Loan below bank minimum TZS '+bMin.toLocaleString()); }
+          if(bMax && loanVal > bMax){ valid=false; if(showErrors) showFieldError(loan,'Loan exceeds bank maximum TZS '+bMax.toLocaleString()+' - select different bank or reduce amount'); }
+        }
+      }
+    })();
     // Purchase loans (residential/commercial/land) can never exceed the property value
     (function(){
       var lt5 = document.getElementById('loanType')?.value || '';
@@ -815,25 +1437,42 @@ function validateSegment(seg, showErrors){
       }
     })();
     valid = mark('#repaymentPeriod', 'Repayment period is required') && valid;
-  } else if(seg===6){
-    const bankSel = document.querySelector('input[name=\"bank\"]:checked');
-    const fallback = document.getElementById('applyBank');
-    const hasBank = (bankSel && bankSel.value) || (fallback && fallback.value);
-    if(!hasBank){
-      valid=false;
-      if(showErrors){
-        if(fallback) showFieldError(fallback, 'Please select a bank');
-        if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Bank selection required', text:'Please select a bank before continuing', toast:true, position:'top-end', timer:4500, showConfirmButton:false});
+    // Bank max repayment period enforcement
+    (function(){
+      var periodEl = document.getElementById('repaymentPeriod');
+      var periodVal = periodEl ? parseInt(periodEl.value)||0 : 0;
+      var bankSel2 = document.querySelector('input[name="bank"]:checked');
+      var bankFallback2 = document.getElementById('applyBank');
+      var bid2 = (bankSel2 && bankSel2.value) || (bankFallback2 && bankFallback2.value);
+      if(bid2 && periodVal){
+        var card2 = document.querySelector('.bank-card[data-bank="'+bid2+'"]');
+        if(card2){
+          var maxP = parseInt(card2.getAttribute('data-max-period')||'0')||0;
+          if(maxP && periodVal > maxP){
+            valid=false;
+            if(showErrors) showFieldError(periodEl,'Selected bank allows max '+maxP+' months ('+(maxP/12).toFixed(0)+' years) - you selected '+periodVal+' months. Choose shorter period or different bank');
+            if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Period exceeds bank limit', text:'Bank max is '+maxP+' months ('+(maxP/12).toFixed(0)+' years). Please select shorter period.', toast:true, position:'top-end', timer:5000, showConfirmButton:false});
+          }
+        }
       }
+    })();
+    // Other loan validation
+    var hasOtherLoanEl=document.getElementById('hasOtherLoan');
+    if(hasOtherLoanEl && hasOtherLoanEl.value==='yes'){
+      valid = mark('#otherLoanBank', 'Benki ya mkopo wa zamani inahitajika') && valid;
+      valid = mark('#otherLoanBalance', 'Deni lililobaki linahitajika') && valid;
+      var consolEl=document.getElementById('otherLoanConsolidate');
+      if(consolEl && !consolEl.value){
+        valid=false;
+        if(showErrors) showFieldError(consolEl, 'Select whether to consolidate the loan (Yes/No)');
+      } else if(consolEl && showErrors) markFieldValid(consolEl);
     }
   } else if(seg===7){
-    // Documents - required based on customer type
+    // Documents - required based on customer type — business owner hides all employee docs
     const isBusiness = customerType==='business';
-    const requiredIds = ['#docId','#docPayslip','#docBankStatement','#docTitleDeed'];
-    // Employer docs only for employed
-    if(!isBusiness){
-      requiredIds.push('#docEmployerRef','#docEmploymentContract');
-    }
+    const requiredIds = isBusiness
+      ? ['#docId','#docBankStatement','#docTitleDeed']
+      : ['#docId','#docPayslip','#docBankStatement','#docTitleDeed','#docEmployerRef','#docEmploymentContract'];
     for(const sel of requiredIds){
       const el=document.querySelector(sel);
       if(!el) continue;
@@ -893,11 +1532,16 @@ function updateStepper(showAlert=true, hasInvalid=false){
 }
 function goToSegment(target){
   if(target===currentSegment) return;
+  // Business should never land on Employment (3) — redirect to Business (4)
+  if(target===3 && customerType==='business'){ target=4; }
+  // Employed should never land on Business (4) — redirect to Bank (5)
+  if(target===4 && customerType==='employed'){ target=5; }
   if(target < currentSegment){
     // Backward always allowed
     clearAllFieldErrors();
     currentSegment = target;
-    if(currentSegment===4 && customerType==='employed') currentSegment=3;
+    if(currentSegment===4 && customerType==='employed') currentSegment=5;
+    if(currentSegment===3 && customerType==='business') currentSegment=4;
     updateStepper(true, false);
     window.scrollTo({top:0, behavior:'smooth'});
     return;
@@ -908,12 +1552,14 @@ function goToSegment(target){
   if(!validateSegment(currentSegment, true)) hasInvalid = true;
   // validate intermediate segments between current and target
   for(let s=currentSegment+1; s<target; s++){
-    if(s===4 && customerType==='employed') continue; // skipped
+    if(s===4 && customerType==='employed') continue; // skipped for employed
+    if(s===3 && customerType==='business') continue; // skipped for business
     if(!validateSegment(s, false)) hasInvalid = true;
   }
   // also validate target-1 etc? we already
   currentSegment = target;
   if(currentSegment===4 && customerType==='employed') currentSegment=5;
+  if(currentSegment===3 && customerType==='business') currentSegment=4;
   updateStepper(true, hasInvalid);
   if(hasInvalid){
     if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Some fields incomplete', text:'Previous steps have missing required fields - marked with red border. Please complete them.', toast:true, position:'top-end', timer:5000, showConfirmButton:false});
@@ -957,26 +1603,46 @@ function updateEmploymentBusinessDisabled(){
       if(el){ el.disabled=false; el.style.opacity='1'; el.style.pointerEvents='auto'; }
     });
   }
-  // Step 7 document notes based on type
+  // Step 7 document wraps + notes based on type — hide all employee docs for business owner
   const docEmpNote=document.getElementById('docEmployedNote');
   const docBizNote=document.getElementById('docBusinessNote');
   const docEmpStar=document.getElementById('docEmployerRefStar');
   const docConStar=document.getElementById('docContractStar');
+  const docEmpWrap=document.getElementById('docEmployerRefWrap');
+  const docConWrap=document.getElementById('docEmploymentContractWrap');
+  const docPayslipWrap=document.getElementById('docPayslipWrap');
+  const docPayslipStar=document.getElementById('docPayslipStar');
   if(isEmployed){
     if(docEmpNote) docEmpNote.style.display='block';
     if(docBizNote) docBizNote.style.display='none';
     if(docEmpStar) docEmpStar.style.display='inline';
     if(docConStar) docConStar.style.display='inline';
+    if(docEmpWrap) docEmpWrap.style.display='block';
+    if(docConWrap) docConWrap.style.display='block';
+    if(docPayslipWrap) docPayslipWrap.style.display='block';
+    if(docPayslipStar) docPayslipStar.style.display='inline';
   } else if(isBusiness){
     if(docEmpNote) docEmpNote.style.display='none';
     if(docBizNote) docBizNote.style.display='block';
     if(docEmpStar) docEmpStar.style.display='none';
     if(docConStar) docConStar.style.display='none';
+    if(docEmpWrap) docEmpWrap.style.display='none';
+    if(docConWrap) docConWrap.style.display='none';
+    if(docPayslipWrap) docPayslipWrap.style.display='none';
+    if(docPayslipStar) docPayslipStar.style.display='none';
+    // Clear any files previously selected in employee docs so validation doesn't carry over
+    try{ var e1=document.getElementById('docEmployerRef'); if(e1) e1.value=''; }catch(e){}
+    try{ var e2=document.getElementById('docEmploymentContract'); if(e2) e2.value=''; }catch(e){}
+    try{ var e3=document.getElementById('docPayslip'); if(e3) e3.value=''; }catch(e){}
   } else {
     if(docEmpNote) docEmpNote.style.display='none';
     if(docBizNote) docBizNote.style.display='none';
     if(docEmpStar) docEmpStar.style.display='none';
     if(docConStar) docConStar.style.display='none';
+    if(docEmpWrap) docEmpWrap.style.display='block';
+    if(docConWrap) docConWrap.style.display='block';
+    if(docPayslipWrap) docPayslipWrap.style.display='block';
+    if(docPayslipStar) docPayslipStar.style.display='inline';
   }
 }
 
@@ -1012,6 +1678,7 @@ function selectBank(id){
   const inp = el ? el.querySelector('input') : null;
   if(inp) inp.checked=true;
   document.getElementById('applyBank').value = id;
+  try{ populatePeriodsCustomer(); updateDownPaymentCustomer(); }catch(e){}
   recalcAI();
   updateBankHeaderById(id);
 }
@@ -1129,6 +1796,16 @@ function lockBankSelection(bankId){
         bankBadge.appendChild(span);
       }
     }
+    // Persist direct bank flag for draft resume - so resume still shows locked bank even without ?bank= param
+    try{
+      var dinp=document.getElementById('_directBankInput');
+      if(!dinp){ dinp=document.createElement('input'); dinp.type='hidden'; dinp.name='_directBank'; dinp.id='_directBankInput'; var f=document.getElementById('wizardForm'); if(f) f.appendChild(dinp); }
+      dinp.value=bankId;
+      window._directBankId=bankId;
+      try{ localStorage.setItem('apply_direct_bank_'+(currentMortgageType||'residential'), String(bankId)); }catch(e){}
+      // trigger save so draft_data contains _directBank
+      if(typeof saveDraft==='function') setTimeout(saveDraft, 200);
+    }catch(e){}
   }catch(e){}
 }
 
@@ -1236,17 +1913,24 @@ function startNidaVerification(){
   const status=document.getElementById('nidaVerifyStatus');
   const val=(input.value||'').trim();
   if(err) err.style.display='none';
-  if(!/^\d{15}$/.test(val)){
-    if(err){ err.textContent='NIDA number must be exactly 15 digits (numbers only, no spaces).'; err.style.display='block'; }
-    if(status){ status.textContent=''; status.style.display='none'; }
+  if(!/^\d{20}$/.test(val)){
+    var len=val.length;
+    if(err){ err.textContent='NIDA must be exactly 20 digits (you have '+len+'). First 8 must equal DOB YYYYMMDD. Example: DOB 1995-06-20 → NIDA starts 19950620xxxxxxxxxxxx'; err.style.display='block'; }
+    if(status){ status.style.display='none'; status.textContent=''; }
     input.classList.add('is-invalid');
-    if(typeof Swal!=='undefined') Swal.fire({icon:'error', title:'Invalid NIDA', text:'NIDA number must be exactly 15 digits.', timer:4000, showConfirmButton:false, toast:true, position:'top-end'});
+    if(typeof Swal!=='undefined') Swal.fire({icon:'error', title:'Invalid NIDA', text:'NIDA must be 20 digits — you have '+len+'. First 8 = YYYYMMDD of birth.', timer:5000, showConfirmButton:false, toast:true, position:'top-end'});
+    return;
+  }
+  // Validate DOB match first (most important per requirement)
+  var dobOk = validateDobNidaCustomer(true);
+  if(!dobOk){
+    if(status){ status.style.display='inline'; status.innerHTML='<span style="color:#fc424a;"><i class="mdi mdi-close-circle"></i> Check DOB/NIDA mismatch above</span>'; }
     return;
   }
   input.classList.remove('is-invalid');
   input.classList.add('is-valid');
-  if(status){ status.style.display='inline'; status.innerHTML='<span style="color:#00d25b;"><i class="mdi mdi-check-circle"></i> Format valid - answer the questions below</span>'; }
-  // reset scores
+  if(status){ status.style.display='inline'; status.innerHTML='<span style="color:#00d25b;"><i class="mdi mdi-check-circle"></i> Format valid (20 digits & DOB match) — answer the 3 questions below</span>'; }
+  // Show 3-question flow (required: DOB match + 2/3 correct)
   nidaScore=0; nidaQ1Ok=nidaQ2Ok=nidaQ3Ok=false;
   document.getElementById('nidaQ1Wrap').style.display='block';
   document.getElementById('nidaQ1Check').style.display='none';
@@ -1257,8 +1941,12 @@ function startNidaVerification(){
   document.getElementById('nidaQ1Input').value='';
   document.getElementById('nidaQ2Input').value='';
   document.getElementById('nidaQ3Input').value='';
+  // keep needsVerify true until Qs done
+  window._nidaNeedsVerify=true;
+  document.getElementById('nidaError').style.display='none';
+  document.getElementById('nidaError2').style.display='none';
   document.getElementById('nidaQ1Input').focus();
-  if(typeof Swal!=='undefined') Swal.fire({icon:'info', title:'Verify Identity', text:'Please answer 3 questions to verify your NIDA.', timer:4000, showConfirmButton:false, toast:true, position:'top-end'});
+  if(typeof Swal!=='undefined') Swal.fire({icon:'info', title:'Verify Identity', text:'NIDA format OK & DOB matches. Now answer 3 questions (need 2/3).', timer:4000, showConfirmButton:false, toast:true, position:'top-end'});
 }
 function checkAnswer(inputVal, expected){
   return inputVal.trim().toLowerCase() === expected.trim().toLowerCase() && inputVal.trim()!=='';
@@ -1349,6 +2037,13 @@ function nextSegment(){
     updateStepper(true, true);
     return;
   }
+  // Business owner: skip Employment (3) entirely - go 2 -> 4 directly
+  if(currentSegment===2 && customerType==='business'){
+    currentSegment = 4;
+    updateStepper(true, false);
+    if(typeof Swal!=='undefined') Swal.fire({icon:'success', title:`Step 2 saved successfully`, text:`Personal info saved • Skipping Employment (business) → Business step 4/8`, timer:4000, showConfirmButton:false, toast:true, position:'top-end'});
+    return;
+  }
   if(currentSegment===4 && customerType==='employed'){
     currentSegment = 5;
     updateStepper(true, false);
@@ -1358,6 +2053,7 @@ function nextSegment(){
   if(currentSegment < totalSegments){
     const prev=currentSegment;
     currentSegment++;
+    if(currentSegment===3 && customerType==='business') currentSegment=4; // skip Employment for business
     if(currentSegment===4 && customerType==='employed') currentSegment=5;
     updateStepper(true, false);
     if(typeof Swal!=='undefined') Swal.fire({icon:'success', title:`Step ${prev} saved successfully`, text:`Step ${prev} completed • now step ${currentSegment}/8`, timer:4000, showConfirmButton:false, toast:true, position:'top-end'});
@@ -1368,7 +2064,8 @@ function nextSegment(){
 function prevSegment(){
   if(currentSegment>1){
     currentSegment--;
-    if(currentSegment===4 && customerType==='employed') currentSegment=3;
+    if(currentSegment===4 && customerType==='employed') currentSegment=3; // employed skipping 4, back goes 5->3
+    if(currentSegment===3 && customerType==='business') currentSegment=2; // business skipping 3, back 4->2
     updateStepper(true);
     window.scrollTo({top:0, behavior:'smooth'});
   }
@@ -1378,18 +2075,20 @@ function buildReview(){
   // Filter out csrf and empty, map nicely
   const skipKeys = new Set(['csrfmiddlewaretoken','documents']);
   const map = {
-    customer_type:'Customer Type', dob:'Date of Birth', gender:'Gender', marital_status:'Marital Status', dependents:'Dependents', nin:'NIDA',
+    customer_type:'Customer Type', dob:'Date of Birth', gender:'Gender', marital_status:'Marital Status', dependents:'Dependents', nida_number:'NIDA',
     employment_status:'Employment Status', employer_name:'Employer', job_title:'Job Title', years_employed:'Years Employed', monthly_income:'Monthly Income', monthly_expenses:'Monthly Expenses', contract_type:'Contract Type',
     has_existing_loan:'Has Existing Loan', existing_loan_bank:'Existing Loan Bank', existing_loan_amount:'Existing Loan Amount', existing_loan_repayment:'Existing Repayment', existing_loan_balance:'Existing Balance',
-    business_name:'Business Name', business_reg:'BRELA Reg No', business_type:'Business Type', business_years:'Years in Business', business_income:'Business Income', business_expenses:'Business Expenses',
+    business_name:'Business Name', business_reg:'BRELA Reg No', business_type:'Business Type', business_years:'Years in Business', business_income:'Annual Income',
+    employment_sector:'Employment Sector', deduction_psssf:'PSSSF 5%', deduction_heslb:'HESLB 15%', deduction_paye:'PAYE',
+    has_other_loan:'Has Other Loan', other_loan_bank:'Other Loan Bank', other_loan_amount:'Other Loan Amount', other_loan_balance:'Remaining Balance', other_loan_monthly_payment:'Other Loan Monthly', other_loan_consolidate:'Consolidate?',
     property:'Property', loan_type:'Loan Type', loan_amount:'Loan Amount', down_payment:'Down Payment', repayment_period:'Repayment Period (months)',
     bank:'Bank', bank_fallback:'Bank'
   };
   const groups = {
-    'Personal Information': ['customer_type','dob','gender','marital_status','dependents','nin'],
-    'Employment Details': ['employment_status','employer_name','job_title','years_employed','monthly_income','monthly_expenses','contract_type','has_existing_loan','existing_loan_bank','existing_loan_amount','existing_loan_repayment','existing_loan_balance'],
-    'Business Details': ['business_name','business_reg','business_type','business_years','business_income','business_expenses'],
-    'Loan Details': ['property','loan_type','loan_amount','down_payment','repayment_period'],
+    'Personal Information': ['customer_type','dob','gender','marital_status','dependents','nida_number','marriage_certificate_number'],
+    'Employment Details': ['employment_status','employer_name','job_title','years_employed','monthly_income','monthly_expenses','contract_type','has_existing_loan','existing_loan_bank','existing_loan_amount','existing_loan_repayment','existing_loan_balance','employment_sector','deduction_psssf','deduction_heslb','deduction_paye'],
+    'Business Details': ['business_name','business_registration_number','business_type','business_years','annual_income','deduction_heslb','deduction_paye'],
+    'Loan Details': ['property','loan_type','loan_amount','down_payment','repayment_period','has_other_loan','other_loan_bank','other_loan_amount','other_loan_balance','other_loan_monthly_payment','other_loan_consolidate'],
     'Bank Selection': ['bank','bank_fallback']
   };
   let html='';
@@ -1450,76 +2149,284 @@ function buildReview(){
   }
 }
 
+function calculateLocalAI(loan, annualRate, period, income, expenses, employment){
+  // Fallback client-side when API unavailable - same formulas as ai_utils.py
+  var monthlyRate = annualRate / 12;
+  var installment;
+  if(monthlyRate===0) installment = loan / period;
+  else {
+    var pow = Math.pow(1+monthlyRate, period);
+    installment = loan * (monthlyRate * pow) / (pow - 1);
+  }
+  var disposable = income - expenses;
+  var dti = income>0 ? (installment/income*100) : 100;
+  var affordability, risk;
+  if(disposable<=0) affordability=0;
+  else if(installment<=0) affordability=100;
+  else { affordability = Math.min(100, (disposable/installment)*100); }
+  risk = 100 - affordability;
+  var empMap={'employed':-10,'self_employed':0,'business':5,'business_owner':5,'unemployed':30};
+  risk += (empMap[employment]||0);
+  risk = Math.max(0, Math.min(100, risk));
+  var rec = (affordability<80 || risk>70 || dti>40) ? "AI Advice: Reduce the loan amount or extend the repayment period to improve affordability." : "AI Advice: You meet the criteria and can proceed with the application.";
+  return {monthly_installment: installment, affordability_score: affordability, risk_score: risk, dti_ratio: dti, recommendation: rec, annual_rate: annualRate};
+}
+async function tryRefreshToken(){
+  try{
+    var refresh = localStorage.getItem('refresh') || localStorage.getItem('refresh_token');
+    if(!refresh) return false;
+    var res = await fetch('/api/auth/token/refresh/', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({refresh: refresh})});
+    if(res.ok){
+      var data = await res.json();
+      if(data.access){ localStorage.setItem('access', data.access); if(data.refresh) localStorage.setItem('refresh', data.refresh); return true; }
+    }
+  }catch(e){ console.warn('refresh failed', e); }
+  return false;
+}
 async function recalcAI(){
   const loan=parseFloat(document.getElementById('loanAmount')?.value)||0;
   const period=parseInt(document.getElementById('repaymentPeriod')?.value)||0;
-  const income=parseFloat(document.getElementById('monthlyIncome')?.value)||0;
-  const expenses=parseFloat(document.getElementById('monthlyExpenses')?.value)||0;
+  var incomeRaw=parseFloat(document.getElementById('monthlyIncome')?.value)||0;
+  var expensesRaw=parseFloat(document.getElementById('monthlyExpenses')?.value)||0;
+  // If business owner, use annualIncome /12
+  if(customerType==='business'){
+    var annualEl=document.getElementById('annualIncome');
+    if(annualEl && annualEl.value){ incomeRaw=parseFloat(annualEl.value)/12; }
+  }
+  // Deductions: compute gross -> net for AI
+  var dedPsssf=false, dedHeslb=false, dedPaye=false, sector='';
+  if(customerType==='business'){
+    dedHeslb=document.getElementById('deductHeslbBiz')?.checked||false;
+    dedPaye=document.getElementById('deductPayeBiz')?.checked||false;
+    // psssf false for biz
+  } else {
+    dedPsssf=document.getElementById('deductPsssf')?.checked||false;
+    dedHeslb=document.getElementById('deductHeslb')?.checked||false;
+    dedPaye=document.getElementById('deductPaye')?.checked||false;
+    sector=document.getElementById('employmentSector')?.value||'';
+  }
+  var psssfAmt=0, heslbAmt=0, payeAmt=0;
+  if(incomeRaw>0){
+    if(dedPsssf && sector==='public') psssfAmt=incomeRaw*0.05;
+    if(dedHeslb) heslbAmt=incomeRaw*0.15;
+    if(dedPaye) payeAmt=calcPayeTZ(incomeRaw);
+  }
+  var totalDeds=psssfAmt+heslbAmt+payeAmt;
+  var netIncome=incomeRaw - totalDeds; if(netIncome<0) netIncome=0;
+  // effective income for DTI: net if deductions else gross
+  var effIncome = totalDeds>0 ? netIncome : incomeRaw;
+  var effExpenses = expensesRaw;
+  // other loan consolidation: if has_other_loan yes and NOT consolidating, add monthly payment to expenses
+  var hasOther=document.getElementById('hasOtherLoan')?.value||'no';
+  var otherConsol=document.getElementById('otherLoanConsolidate')?.value||'no';
+  var otherMonthly=parseFloat(document.getElementById('otherLoanMonthly')?.value)||0;
+  if(hasOther==='yes' && otherConsol==='no' && otherMonthly>0){
+    effExpenses += otherMonthly;
+  }
+  const income=effIncome;
+  const expenses=effExpenses;
+  // also keep raw for payload deductions
   const employment=document.getElementById('employmentStatus')?.value;
   const bank=document.getElementById('applyBank')?.value || document.querySelector('input[name="bank"]:checked')?.value;
   if(!loan||!period||!income){
-    console.warn('recalcAI skip - missing', {loan,period,income});
+    // clear AI boxes when incomplete so user not confused
+    var el1=document.getElementById('aiMonthly'); if(el1) el1.textContent='—';
+    var el2=document.getElementById('aiAfford'); if(el2) el2.textContent='—';
+    var el3=document.getElementById('aiRisk'); if(el3) el3.textContent='—';
+    var el4=document.getElementById('aiDti'); if(el4) el4.textContent='—';
+    var rec=document.getElementById('aiRecommendation'); if(rec) rec.style.display='none';
+    var alertBox=document.getElementById('aiAlert'); if(alertBox) alertBox.style.display='none';
     return;
   }
+  // Try API first, fallback to local calc if API fails
   try{
-    const token=localStorage.getItem('access');
-    const csrftoken=getCookie('csrftoken');
-    const headers={'Content-Type':'application/json'};
-    if(token) headers['Authorization']='Bearer '+token;
+    var token=localStorage.getItem('access') || localStorage.getItem('access_token') || '';
+    var csrftoken=getCookie('csrftoken');
+    var headers={'Content-Type':'application/json'};
+    if(token && !isJwtExpired(token)) headers['Authorization']='Bearer '+token;
     if(csrftoken) headers['X-CSRFToken']=csrftoken;
-    const res=await fetch('/api/mortgages/calculate/',{method:'POST',headers:headers, credentials:'same-origin', body:JSON.stringify({loan_amount:loan, down_payment:parseFloat(document.getElementById('downPayment')?.value)||0, repayment_period:period, monthly_income:income, monthly_expenses:expenses, employment_status:employment, bank:bank})});
-    const data=await res.json();
-    if(data.monthly_installment){
-      const el1=document.getElementById('aiMonthly'); if(el1) el1.textContent='TZS '+Number(data.monthly_installment).toLocaleString();
-      const el2=document.getElementById('aiAfford'); if(el2) el2.textContent=data.affordability_score+'/100';
-      const b1=document.getElementById('aiAffordBar'); if(b1) b1.style.width=data.affordability_score+'%';
-      const el3=document.getElementById('aiRisk'); if(el3) el3.textContent=data.risk_score+'/100';
-      const b2=document.getElementById('aiRiskBar'); if(b2) b2.style.width=data.risk_score+'%';
-      const el4=document.getElementById('aiDti'); if(el4) el4.textContent=data.dti_ratio+'%';
+    var payload={loan_amount:loan, down_payment:parseFloat(document.getElementById('downPayment')?.value)||0, repayment_period:period, monthly_income:incomeRaw, monthly_expenses:expensesRaw, employment_status:employment, bank:bank, employment_sector: sector||document.getElementById('employmentSector')?.value||'', deduction_psssf: dedPsssf, deduction_heslb: dedHeslb, deduction_paye: dedPaye, has_other_loan: hasOther, other_loan_monthly_payment: otherMonthly, other_loan_consolidate: otherConsol, annual_income: (customerType==='business'? parseFloat(document.getElementById('annualIncome')?.value)||0 : undefined)};
+    var res=await fetch('/api/mortgages/calculate/',{method:'POST',headers:headers, credentials:'same-origin', body:JSON.stringify(payload)});
+    if(res.status===401){
+      // try refresh once then retry without token (session cookie)
+      var refreshed = await tryRefreshToken();
+      if(refreshed){
+        token=localStorage.getItem('access')||'';
+        if(token && !isJwtExpired(token)) headers['Authorization']='Bearer '+token; else delete headers['Authorization'];
+        res=await fetch('/api/mortgages/calculate/',{method:'POST',headers:headers, credentials:'same-origin', body:JSON.stringify(payload)});
+      }
+      if(res.status===401){
+        // fallback to session only (remove Bearer)
+        delete headers['Authorization'];
+        res=await fetch('/api/mortgages/calculate/',{method:'POST',headers:headers, credentials:'same-origin', body:JSON.stringify(payload)});
+      }
+    }
+    var data={};
+    try{ data=await res.json(); }catch(e){ data={}; }
+    var usedData = null;
+    if(res.ok && data.monthly_installment){
+      usedData = data;
+    } else {
+      console.warn('AI calc API failed, fallback local', res.status, data);
+      // compute locally using selected bank rate if available
+      var annualRate = 0.12;
+      if(bank){
+        var card=document.querySelector('.bank-card[data-bank="'+bank+'"]');
+        if(card){
+          var txt = card.querySelector('.badge');
+          if(txt){ var m=txt.textContent.match(/([\d.]+)/); if(m) annualRate=parseFloat(m[1])/100; }
+        }
+      }
+      usedData = calculateLocalAI(loan, annualRate, period, income, expenses, employment);
+      // adjust DTI for other loan not consolidated (combined debt)
+      try{
+        var hasOtherLocal=document.getElementById('hasOtherLoan')?.value;
+        var otherConLocal=document.getElementById('otherLoanConsolidate')?.value;
+        var otherPayLocal=parseFloat(document.getElementById('otherLoanMonthly')?.value)||0;
+        if(hasOtherLocal==='yes' && otherConLocal==='no' && otherPayLocal>0 && income>0){
+          var comb=usedData.monthly_installment + otherPayLocal;
+          usedData.dti_ratio = (comb/income)*100;
+        }
+      }catch(e){}
+      usedData.bank_name=null;
+    }
+    if(usedData && usedData.monthly_installment){
+      const el1=document.getElementById('aiMonthly'); if(el1) el1.textContent='TZS '+Number(usedData.monthly_installment).toLocaleString(undefined,{minimumFractionDigits:1, maximumFractionDigits:1});
+      const el2=document.getElementById('aiAfford'); if(el2) el2.textContent=Number(usedData.affordability_score).toFixed(2)+'/100';
+      const b1=document.getElementById('aiAffordBar'); if(b1) b1.style.width=usedData.affordability_score+'%';
+      const el3=document.getElementById('aiRisk'); if(el3) el3.textContent=Number(usedData.risk_score).toFixed(2)+'/100';
+      const b2=document.getElementById('aiRiskBar'); if(b2) b2.style.width=usedData.risk_score+'%';
+      const el4=document.getElementById('aiDti'); if(el4) el4.textContent=Number(usedData.dti_ratio).toFixed(2)+'%';
       const rec=document.getElementById('aiRecommendation');
       if(rec){
         rec.style.display='block';
-        rec.textContent=data.recommendation;
-        rec.style.background = (data.affordability_score<60||data.risk_score>70) ? 'rgba(255,193,7,0.1)' : 'rgba(0,210,91,0.1)';
-        rec.style.border='1px solid '+(data.affordability_score<60||data.risk_score>70 ? 'rgba(255,193,7,0.3)' : 'rgba(0,210,91,0.3)');
-        rec.style.color = data.affordability_score<60 ? '#ffc107' : '#00d25b';
+        rec.textContent=usedData.recommendation;
+        rec.style.background = (usedData.affordability_score<60||usedData.risk_score>70) ? 'rgba(255,193,7,0.1)' : 'rgba(0,210,91,0.1)';
+        rec.style.border='1px solid '+(usedData.affordability_score<60||usedData.risk_score>70 ? 'rgba(255,193,7,0.3)' : 'rgba(0,210,91,0.3)');
+        rec.style.color = usedData.affordability_score<60 ? '#ffc107' : '#00d25b';
       }
       const alertBox=document.getElementById('aiAlert');
-      if(alertBox){
-        if(data.affordability_score<60){
-          alertBox.style.display='block';
-          alertBox.innerHTML='<i class="mdi mdi-alert"></i> Based on your details and selected bank, <b>you do not meet the criteria for this loan</b>. Try adjusting the amount or try another bank.';
-          alertBox.style.background='rgba(252,66,74,0.1)'; alertBox.style.border='1px solid rgba(252,66,74,0.3)'; alertBox.style.color='#fc424a';
-        } else {
-          alertBox.style.display='none';
+      const submitBtn=document.getElementById('submitBtn');
+      const nextBtn=document.getElementById('nextBtn');
+      // DTI based logic: <=30 very good, 31-40 good, 41-50 high risk, >50 very high
+      var dtiVal=usedData.dti_ratio||0;
+      var bankRateVal=usedData.annual_rate || 12;
+      // Try get bank rate from card
+      if(bank){
+        var cardR=document.querySelector('.bank-card[data-bank="'+bank+'"]');
+        if(cardR){
+          var badge=cardR.querySelector('.badge');
+          if(badge){ var m=badge.textContent.match(/([\d.]+)/); if(m) bankRateVal=parseFloat(m[1]); }
         }
       }
-      // Fees: Bank 1% + Platform 5% = 6% total application cost
+      // Update monthly display to include rate and total
+      var monthlyDisplay=Number(usedData.monthly_installment).toLocaleString(undefined,{minimumFractionDigits:1, maximumFractionDigits:1});
+      var totalPay=usedData.monthly_installment * period;
+      var elM=document.getElementById('aiMonthly');
+      if(elM) elM.innerHTML='TZS '+monthlyDisplay+' <small style="font-size:10px; color:#6c7293;">@ '+Number(bankRateVal).toFixed(2)+'% | Total '+Math.round(totalPay).toLocaleString()+'</small>';
+      if(alertBox){
+        var dtiCat='';
+        var bg='', bd='', col='';
+        var disable=false;
+        if(dtiVal>50){
+          dtiCat='Very High Risk (DTI '+dtiVal.toFixed(1)+'%) — Not allowed to apply. DTI >50% is very high risk. Reduce loan or increase income.';
+          bg='rgba(252,66,74,0.12)'; bd='rgba(252,66,74,0.3)'; col='#fc424a'; disable=true;
+        } else if(dtiVal>40){
+          dtiCat='High Risk (DTI '+dtiVal.toFixed(1)+'%) — Not allowed to apply. DTI 41-50% high risk. Threshold is ≤40%.';
+          bg='rgba(252,66,74,0.12)'; bd='rgba(252,66,74,0.3)'; col='#fc424a'; disable=true;
+        } else if(dtiVal>30){
+          dtiCat='Good/Acceptable (DTI '+dtiVal.toFixed(1)+'%) — You can apply. DTI 31-40 good/acceptable.';
+          bg='rgba(255,193,7,0.12)'; bd='rgba(255,193,7,0.3)'; col='#ffc107'; disable=false;
+        } else {
+          dtiCat='Very Good (DTI '+dtiVal.toFixed(1)+'%) — You can apply, excellent affordability.';
+          bg='rgba(0,210,91,0.12)'; bd='rgba(0,210,91,0.3)'; col='#00d25b'; disable=false;
+        }
+        // Also check affordability/risk
+        if(usedData.affordability_score<40 || usedData.risk_score>70){
+          dtiCat+=' <br><small>Affordability '+Number(usedData.affordability_score).toFixed(1)+'% / Risk '+Number(usedData.risk_score).toFixed(1)+'% — consider adjusting loan.</small>';
+          if(usedData.affordability_score<30 || usedData.risk_score>80) disable=true;
+        }
+        alertBox.style.display='block';
+        alertBox.innerHTML='<i class="mdi mdi-information-outline"></i> '+dtiCat;
+        alertBox.style.background=bg; alertBox.style.border='1px solid '+bd; alertBox.style.color=col;
+        // Disable submit if high risk
+        if(submitBtn){
+          submitBtn.disabled=disable;
+          submitBtn.style.opacity=disable?'0.5':'1';
+          submitBtn.title=disable?'High risk — adjust loan to enable submit':'Submit Application';
+        }
+        // Also handle nextBtn? keep enabled but show warning
+      } else {
+        if(submitBtn){ submitBtn.disabled=false; submitBtn.style.opacity='1'; }
+      }
+      // Add download button if not exists and DTI good
+      if(dtiVal<=40){
+        var recBox=document.getElementById('aiRecommendation');
+        if(recBox && !document.getElementById('aiDownloadBtn')){
+          var dlBtn=document.createElement('button');
+          dlBtn.id='aiDownloadBtn';
+          dlBtn.className='btn btn-sm btn-outline-primary mt-2';
+          dlBtn.style.fontSize='11px';
+          dlBtn.innerHTML='<i class="mdi mdi-download me-1"></i> Download Form (PDF)';
+          dlBtn.onclick=function(){
+            var fd=new FormData(document.getElementById('wizardForm'));
+            var propOpt=document.querySelector('#applyProperty option[value="'+(fd.get('property')||'')+'"]');
+            var propTxt=propOpt?propOpt.textContent.trim():'—';
+            var bankVal=fd.get('bank')||document.getElementById('applyBank')?.value||'—';
+            var bankCard=document.querySelector('.bank-card[data-bank="'+bankVal+'"] h6');
+            var bankTxt=bankCard?bankCard.textContent.trim():bankVal;
+            var loan=fd.get('loan_amount')||'—';
+            var down=fd.get('down_payment')||'—';
+            var periodVal=fd.get('repayment_period')||'—';
+            var w=window.open('', '_blank');
+            w.document.write('<html><head><title>MorgiHome Application</title><style>body{font-family:Inter,sans-serif;padding:30px;color:#0A2B4E}h1{color:#0077B6}table{width:100%;border-collapse:collapse}td,th{border:1px solid #e2e8f0;padding:8px;font-size:13px}th{background:#f1f5f9;text-align:left}</style></head><body><h1>MorgiHome Mortgage Application</h1><p>Property: '+propTxt+'</p><p>Bank: '+bankTxt+'</p><table><tr><th>Loan Amount</th><td>TZS '+Number(loan).toLocaleString()+'</td></tr><tr><th>Down Payment (10%)</th><td>TZS '+Number(down).toLocaleString()+'</td></tr><tr><th>Period</th><td>'+periodVal+' months</td></tr><tr><th>Interest</th><td>'+Number(bankRateVal).toFixed(2)+'%</td></tr><tr><th>Monthly Payment</th><td>TZS '+Number(usedData.monthly_installment).toFixed(2)+'</td></tr><tr><th>Total Payment</th><td>TZS '+Math.round(totalPay).toLocaleString()+'</td></tr><tr><th>DTI</th><td>'+Number(dtiVal).toFixed(1)+'% ('+(dtiVal<=30?'Very Good':dtiVal<=40?'Good':dtiVal<=50?'High Risk':'Very High')+')</td></tr><tr><th>Affordability</th><td>'+Number(usedData.affordability_score).toFixed(1)+'%</td></tr><tr><th>Risk</th><td>'+Number(usedData.risk_score).toFixed(1)+'%</td></tr></table><p style="margin-top:20px;font-size:11px;color:#64748b;">Generated by MorgiHome • '+new Date().toLocaleString()+'</p></body></html>');
+            w.document.close(); w.print();
+          };
+          recBox.parentNode.insertBefore(dlBtn, recBox.nextSibling);
+        }
+      }
+      // Fees: use bank fee percent if available else 1%
       const feesBox=document.getElementById('aiFeesBox');
       if(feesBox && loan){
-        const bankFee = loan * 0.01;
-        const platformFee = loan * 0.05;
+        var feePct = 1.0;
+        if(bank){
+          var cardF=document.querySelector('.bank-card[data-bank="'+bank+'"]');
+          if(cardF){ var fp=parseFloat(cardF.getAttribute('data-fee')||''); if(!isNaN(fp) && fp>0) feePct=fp; }
+        }
+        const bankFee = loan * (feePct/100);
+        const platformFee = loan * 0.02;
         const totalFee = bankFee + platformFee;
         feesBox.style.display='block';
         feesBox.innerHTML = `<div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-          <span><i class="mdi mdi-cash-multiple" style="color:#0077B6;"></i> <strong>Bank Processing Fee (1%):</strong> TZS ${Math.round(bankFee).toLocaleString()}</span>
-          <span><i class="mdi mdi-office-building" style="color:#0A2B4E;"></i> <strong>Platform Fee (5%):</strong> TZS ${Math.round(platformFee).toLocaleString()}</span>
-          <span style="font-weight:800; color:#00d25b;"><i class="mdi mdi-calculator"></i> Total Fees (6%): TZS ${Math.round(totalFee).toLocaleString()}</span>
-        </div><small class="text-muted" style="font-size:11px;">Bank charges 1% of loan amount. MorgiHome platform charges 5%. Total 6% will be deducted/added to your application. This will be sent to the selected bank.</small>`;
+          <span><i class="mdi mdi-cash-multiple" style="color:#0077B6;"></i> <strong>Bank Processing Fee (${feePct}%):</strong> TZS ${Math.round(bankFee).toLocaleString()}</span>
+          <span><i class="mdi mdi-office-building" style="color:#0A2B4E;"></i> <strong>Platform Fee (2%):</strong> TZS ${Math.round(platformFee).toLocaleString()}</span>
+          <span style="font-weight:800; color:#00d25b;"><i class="mdi mdi-calculator"></i> Total Fees (${(feePct+2).toFixed(0)}%): TZS ${Math.round(totalFee).toLocaleString()}</span>
+        </div><small class="text-muted" style="font-size:11px;">Bank charges ${feePct}% of loan amount. MorgiHome platform charges 2%. Total ${(feePct+2).toFixed(0)}% will be deducted/added to your application. This will be sent to the selected bank.</small>`;
       }
     } else {
-      // Show error if API failed
       console.warn('AI calc no data', data);
       const el1=document.getElementById('aiMonthly'); if(el1) el1.textContent='—';
       const el2=document.getElementById('aiAfford'); if(el2) el2.textContent='—';
       const el3=document.getElementById('aiRisk'); if(el3) el3.textContent='—';
       const el4=document.getElementById('aiDti'); if(el4) el4.textContent='—';
+      var rec2=document.getElementById('aiRecommendation'); if(rec2) rec2.style.display='none';
     }
   }catch(e){
     console.error('recalcAI error', e);
+    // local fallback
+    try{
+      var annualRate2=0.12;
+      var used2=calculateLocalAI(loan, annualRate2, period, income, expenses, employment);
+      const el1=document.getElementById('aiMonthly'); if(el1) el1.textContent='TZS '+Number(used2.monthly_installment).toLocaleString(undefined,{minimumFractionDigits:1, maximumFractionDigits:1});
+      const el2=document.getElementById('aiAfford'); if(el2) el2.textContent=Number(used2.affordability_score).toFixed(2)+'/100';
+      const b1=document.getElementById('aiAffordBar'); if(b1) b1.style.width=used2.affordability_score+'%';
+      const el3=document.getElementById('aiRisk'); if(el3) el3.textContent=Number(used2.risk_score).toFixed(2)+'/100';
+      const b2=document.getElementById('aiRiskBar'); if(b2) b2.style.width=used2.risk_score+'%';
+      const el4=document.getElementById('aiDti'); if(el4) el4.textContent=Number(used2.dti_ratio).toFixed(2)+'%';
+    }catch(e2){}
   }
 }
-['loanAmount','downPayment','repaymentPeriod','monthlyIncome','monthlyExpenses','employmentStatus','applyBank'].forEach(id=>{
+['loanAmount','downPayment','repaymentPeriod','monthlyIncome','monthlyExpenses','employmentStatus','applyBank','annualIncome','businessRegNo','businessType'].forEach(id=>{
   const el=document.getElementById(id);
   if(el){ el.addEventListener('input', recalcAI); el.addEventListener('change', recalcAI); }
 });
@@ -1575,8 +2482,30 @@ document.getElementById('wizardForm').addEventListener('submit', async function(
   })();
   if(guardFail) return;
   try{
-    const token=localStorage.getItem('access');
-    const res=await fetch('/api/mortgages/',{method:'POST', headers: token?{'Authorization':'Bearer '+token}:{}, body: fd, credentials:'same-origin'});
+    // Build headers with valid token or session fallback
+    var submitToken=localStorage.getItem('access') || localStorage.getItem('access_token') || '';
+    var submitHeaders={};
+    var submitCsrf=getCookie('csrftoken');
+    if(submitCsrf) submitHeaders['X-CSRFToken']=submitCsrf;
+    if(submitToken && !isJwtExpired(submitToken)) submitHeaders['Authorization']='Bearer '+submitToken;
+    // Add CSRF via FormData fallback already included, but need header for session auth
+    var res=await fetch('/api/mortgages/',{method:'POST', headers: submitHeaders, body: fd, credentials:'same-origin'});
+    // If 401 try refresh then retry once
+    if(res.status===401){
+      var refreshedSub = await tryRefreshToken();
+      if(refreshedSub){
+        submitToken=localStorage.getItem('access')||'';
+        submitHeaders={};
+        if(submitCsrf) submitHeaders['X-CSRFToken']=submitCsrf;
+        if(submitToken && !isJwtExpired(submitToken)) submitHeaders['Authorization']='Bearer '+submitToken;
+        res=await fetch('/api/mortgages/',{method:'POST', headers: submitHeaders, body: fd, credentials:'same-origin'});
+      } else {
+        // retry without Authorization (session cookie may still be valid)
+        submitHeaders={};
+        if(submitCsrf) submitHeaders['X-CSRFToken']=submitCsrf;
+        res=await fetch('/api/mortgages/',{method:'POST', headers: submitHeaders, body: fd, credentials:'same-origin'});
+      }
+    }
     const text=await res.text();
     let data={}; try{data=JSON.parse(text)}catch{data={detail:text}}
     if(res.ok){
@@ -1600,16 +2529,28 @@ document.getElementById('wizardForm').addEventListener('submit', async function(
       let msg=data.detail||data.error||JSON.stringify(data).slice(0,300);
       if(data.property) msg=data.property[0]||data.property;
       if(data.loan_amount) msg='Loan: '+data.loan_amount;
+      if(data.repayment_period) msg='Period: '+data.repayment_period;
+      if(data.non_field_errors) msg=data.non_field_errors[0]||data.non_field_errors;
       // also handle duplicate property error nicely
       if(msg.includes('Already applied')) {
         if(typeof Swal!=='undefined') Swal.fire({icon:'info', title:'Already Applied', text: msg});
         else alert(msg);
         return;
       }
-      if(typeof Swal!=='undefined') Swal.fire({icon:'error', title:'Submission failed', text: msg});
+      // Friendly token/ auth errors
+      if(res.status===401 || msg.toLowerCase().includes('not valid for any token') || msg.toLowerCase().includes('authentication credentials') || msg.toLowerCase().includes('token not valid')){
+        if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Session expired', text: 'Your login session has expired. Please log in again to continue your application (your draft is saved).', confirmButtonText: 'Go to Login'}).then(()=>{ window.location.href='/login/?next='+encodeURIComponent(window.location.pathname+window.location.search); });
+        else alert('Session expired, please log in again');
+        return;
+      }
+      if(res.status===403 && msg.toLowerCase().includes('customer')){
+        msg='Only customers can submit mortgage applications. Please log in as a customer.';
+      }
+      if(typeof Swal!=='undefined') Swal.fire({icon:'error', title:'Submission failed', text: msg || 'Please check your details and try again'});
+      else alert(msg);
     }
   }catch(err){
-    if(typeof Swal!=='undefined') Swal.fire({icon:'error', title:'Network error', text: err.message || 'Check internet connection'});
+    if(typeof Swal!=='undefined') Swal.fire({icon:'error', title:'Network error', text: err.message || 'Check internet connection - your draft is saved'});
   }
 });
 
@@ -1762,6 +2703,11 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     // re-apply disabled after stepper update
     setTimeout(updateEmploymentBusinessDisabled, 300);
   }
+  // Bind new extras for DOB/NIDA/marriage/downpayment/period
+  try{ bindCustomerApplyExtras(); }catch(e){}
+  toggleMarriageCert();
+  updateDownPaymentCustomer();
+  populatePeriodsCustomer();
   // Property optional UI - update when loan type changes
   const loanTypeEl=document.getElementById('loanType');
   if(loanTypeEl){ loanTypeEl.addEventListener('change', updatePropertyOptionalUI); loanTypeEl.addEventListener('input', updatePropertyOptionalUI); }
@@ -1769,7 +2715,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   // NIDA digits only
   const nidaEl=document.getElementById('nidaInput');
   if(nidaEl){
-    nidaEl.addEventListener('input', function(){ this.value=this.value.replace(/\D/g,'').slice(0,15); document.getElementById('nidaError').style.display='none'; this.classList.remove('is-invalid'); });
+    nidaEl.addEventListener('input', function(){ this.value=this.value.replace(/\D/g,'').slice(0,20); document.getElementById('nidaError').style.display='none'; this.classList.remove('is-invalid'); });
   }
   // Live green/red feedback: when user types, turn green if filled else keep red handling via next button
   document.getElementById('wizardForm').querySelectorAll('input, select, textarea').forEach(el=>{

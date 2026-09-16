@@ -184,6 +184,7 @@ class BankListView(APIView):
                 'processing_fee': str(b.processing_fee) if b.processing_fee else None,
                 'min_loan_amount': str(b.min_loan_amount) if b.min_loan_amount else None,
                 'max_loan_amount': str(b.max_loan_amount) if b.max_loan_amount else None,
+                'max_repayment_period': b.max_repayment_period,
                 'bank_requirements': b.bank_requirements,
             })
         return Response(data)
@@ -240,6 +241,7 @@ class CustomerNotificationsApiView(APIView):
         return Response({'message': 'All marked as read', 'unread': 0})
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class RealEstateNotificationsApiView(APIView):
     """GET /api/auth/notifications/realestate/ - real events for the logged-in
     real-estate company: new applications on own listings + contract updates."""
@@ -272,10 +274,27 @@ class RealEstateNotificationsApiView(APIView):
                 'link': '/realestate/contracts/',
                 'read': c.status == 'executed',
             })
-        unread = MortgageApplication.objects.filter(property__seller=user, status='pending').count()
+        # Use seen timestamp to determine unread - same as seller/customer
+        seen = getattr(user, 'notifications_seen_at', None)
+        if seen:
+            for it, obj in zip(items, list(MortgageApplication.objects.filter(property__seller=user).order_by('-created_at')[:5]) + list(Contract.objects.filter(seller=user).order_by('-created_at')[:3])):
+                try:
+                    if getattr(obj, 'created_at', None) and obj.created_at <= seen:
+                        it['read'] = True
+                except Exception:
+                    pass
+        unread = len([i for i in items if not i.get('read')])
         return Response({'notifications': items, 'unread': unread})
 
+    def post(self, request):
+        from django.utils import timezone
+        user = request.user
+        user.notifications_seen_at = timezone.now()
+        user.save(update_fields=['notifications_seen_at'])
+        return Response({'message': 'All marked as read', 'unread': 0})
 
+
+@method_decorator(csrf_exempt, name='dispatch')
 class SellerNotificationsApiView(APIView):
     """GET /api/auth/notifications/seller/ - real events for seller.
     POST marks all as read (persisted via notifications_seen_at)."""

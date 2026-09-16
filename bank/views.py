@@ -11,6 +11,7 @@ Mock data - replace with real queries from Application, Contract, Repayment mode
 from django.shortcuts import render
 from django.utils import timezone
 from datetime import timedelta
+from django.views.decorators.csrf import csrf_exempt
 
 
 REVIEW_STEP_ORDER = ['received', 'document_verification', 'crb_check', 'valuation', 'credit_assessment', 'approval_decision']
@@ -80,10 +81,40 @@ def _sync_property_status(app):
 
 
 def _bank_user(request):
-    """Return user if logged-in bank, otherwise None (view all data)."""
+    """Return user if logged-in bank, otherwise None (view all data).
+    Supports both session (request.user) and JWT Bearer token (localStorage)."""
     u = getattr(request, 'user', None)
     if u is not None and getattr(u, 'is_authenticated', False) and getattr(u, 'role', '') == 'bank':
         return u
+    # Try JWT Bearer token from Authorization header (for users logged in via localStorage)
+    try:
+        auth = request.headers.get('Authorization') or request.META.get('HTTP_AUTHORIZATION') or ''
+        if auth.startswith('Bearer '):
+            token = auth.split(' ', 1)[1].strip()
+            # Try DRF JWT authentication
+            try:
+                from rest_framework_simplejwt.authentication import JWTAuthentication
+                # Create a mock request with header for JWT auth
+                validated = JWTAuthentication().authenticate(request)
+                if validated:
+                    user, _ = validated
+                    if getattr(user, 'role', '') == 'bank':
+                        return user
+            except Exception:
+                pass
+            # Fallback: decode token directly
+            try:
+                from rest_framework_simplejwt.tokens import AccessToken
+                tok = AccessToken(token)
+                user_id = tok.get('user_id')
+                from accounts.models import User
+                user = User.objects.filter(id=user_id, role='bank').first()
+                if user and getattr(user, 'role', '') == 'bank':
+                    return user
+            except Exception:
+                pass
+    except Exception:
+        pass
     return None
 
 
@@ -214,6 +245,7 @@ def bank_applications(request):
     """
     from django.db.models import Q
     status_filter = request.GET.get("status", "")
+    risk_filter = request.GET.get("risk", "")
     search_q = request.GET.get("q", "")
     qs = _scoped_apps(request).order_by('-created_at')
     total_all = qs.count()
@@ -223,6 +255,12 @@ def bank_applications(request):
         qs = qs.filter(status__in=PENDING_STATUSES)
     elif status_filter:
         qs = qs.filter(status=status_filter)
+    if risk_filter == 'low':
+        qs = qs.filter(risk_score__lt=40)
+    elif risk_filter == 'medium':
+        qs = qs.filter(risk_score__gte=40, risk_score__lt=70)
+    elif risk_filter == 'high':
+        qs = qs.filter(risk_score__gte=70)
     if search_q:
         qs = qs.filter(Q(customer__email__icontains=search_q) | Q(customer__first_name__icontains=search_q) | Q(customer__last_name__icontains=search_q) | Q(property__title__icontains=search_q))
         try:
@@ -230,7 +268,15 @@ def bank_applications(request):
         except (ValueError, TypeError):
             pass
     apps = [_app_dict(app) for app in qs[:50]]
-    context = {"applications": apps, "status_filter": status_filter, "search_q": search_q,
+    # Risk breakdown for header when filtered
+    risk_info = ''
+    if risk_filter == 'low':
+        risk_info = 'Low Risk — DTI ≤30 Very Good, Afford ≥80, Risk <40'
+    elif risk_filter == 'medium':
+        risk_info = 'Medium Risk — DTI 31-40 Good/Acceptable, Risk 40-70'
+    elif risk_filter == 'high':
+        risk_info = 'High Risk — DTI 41-50 High, >50 Very High, Risk ≥70'
+    context = {"applications": apps, "status_filter": status_filter, "risk_filter": risk_filter, "risk_info": risk_info, "search_q": search_q,
                "total_count": qs.count(), "total_all": total_all, "pending_count": pending_count}
     return render(request, "bank/bank_applications.html", context)
 
@@ -290,8 +336,11 @@ def _correction_dicts(app):
     return out
 
 
-def _advance_application(app, stage, user=None, note=''):
-    """Bank confirms one step. Updates status + review_stage and logs timeline so customer sees it live."""
+def _advance_application(app, stage, user=None, note='', next_stage=''):
+    """Bank confirms one step. Updates status + review_stage and logs timeline so customer sees it live.
+    After confirming `stage`, review_stage advances to `next_stage` (or next in REVIEW_STEP_ORDER)
+    so returning to the app shows stage 2, not stage 1 again.
+    """
     from mortgages.models import ApplicationTimelineEvent, REVIEW_STAGE_MESSAGES
     status_map = {
         'document_verification': 'document_verification',
@@ -301,16 +350,49 @@ def _advance_application(app, stage, user=None, note=''):
         'approval_decision': 'credit_assessment',
         'received': 'pending',
     }
+    # Status for the stage just confirmed (customer sees "Bank is now at X" for next, not this)
+    # We first set to stage's status, then advance to next_stage for DB.
     app.review_stage = stage
     if stage in status_map:
         app.status = status_map[stage]
     if note:
         app.review_note = note
+    # Determine next stage to advance to (so DB reflects "now at next")
+    advance_to = ''
+    if next_stage and next_stage in REVIEW_STEP_ORDER:
+        try:
+            cur_idx = REVIEW_STEP_ORDER.index(stage)
+            nxt_idx = REVIEW_STEP_ORDER.index(next_stage)
+            if nxt_idx > cur_idx:
+                advance_to = next_stage
+        except ValueError:
+            pass
+    if not advance_to:
+        try:
+            cur_idx = REVIEW_STEP_ORDER.index(stage)
+            if cur_idx + 1 < len(REVIEW_STEP_ORDER):
+                candidate = REVIEW_STEP_ORDER[cur_idx + 1]
+                # Only auto-advance if not already beyond candidate
+                if (app.review_stage or '') != candidate:
+                    advance_to = candidate
+        except ValueError:
+            pass
+    if advance_to:
+        # Move review_stage + status to next stage so stepper shows next as active
+        app.review_stage = advance_to
+        if advance_to in status_map:
+            app.status = status_map[advance_to]
+        elif advance_to == 'received':
+            app.status = 'pending'
     app.save(update_fields=['review_stage', 'status', 'review_note', 'updated_at'])
     msg = REVIEW_STAGE_MESSAGES.get(stage, stage)
     if note:
         msg = f"{msg} — Bank note: {note}"
     ApplicationTimelineEvent.log(app, stage, message=msg, user=user)
+    # Also log advancement so customer sees "Bank is now at next stage" if we auto-advanced
+    if advance_to and advance_to != stage:
+        nxt_msg = REVIEW_STAGE_MESSAGES.get(advance_to, advance_to)
+        ApplicationTimelineEvent.log(app, advance_to, message=nxt_msg, user=user)
     try:
         _sync_property_status(app)
     except Exception:
@@ -324,11 +406,33 @@ def _real_application_detail(pk):
         from mortgages.models import MortgageApplication
         app = MortgageApplication.objects.select_related('customer', 'property', 'bank').prefetch_related('document_files', 'repayment_schedule', 'timeline_events').get(pk=pk)
         docs = []
+        # Map doc_type to friendly title
+        DOC_TYPE_TITLES = {
+            'id_passport': 'ID / Passport',
+            'payslip': 'Pay Slip',
+            'bank_statement': 'Bank Statement',
+            'tax_clearance': 'Tax Clearance',
+            'other': 'Other Document',
+        }
         for d in app.document_files.all():
             fname = (d.file.name.split('/')[-1] if d.file else d.get_doc_type_display())
             ext = (fname.rsplit('.', 1)[-1] if '.' in fname else '').lower()
-            docs.append({"name": fname, "size": "", "verified": True, "url": d.file.url if d.file else "#",
-                         "type": d.get_doc_type_display(), "ext": ext,
+            title = DOC_TYPE_TITLES.get(d.doc_type, d.get_doc_type_display())
+            # If still Other but filename hints type, improve
+            if d.doc_type == 'other' and fname:
+                low = fname.lower()
+                if 'payslip' in low or 'pay' in low:
+                    title = 'Pay Slip'
+                elif 'bank' in low and 'statement' in low:
+                    title = 'Bank Statement'
+                elif 'nida' in low or 'id' in low or 'passport' in low:
+                    title = 'ID / Passport'
+                elif 'deed' in low or 'title' in low:
+                    title = 'Title Deed'
+                elif 'hat' in low:
+                    title = 'Property Document'
+            docs.append({"name": fname, "title": title, "size": "", "verified": True, "url": d.file.url if d.file else "#",
+                         "type": title, "ext": ext,
                          "is_pdf": ext == 'pdf',
                          "is_image": ext in ('jpg', 'jpeg', 'png', 'webp', 'gif')})
         # No mock documents - empty list if none (template shows empty state)
@@ -367,6 +471,33 @@ def _real_application_detail(pk):
                 "napa": getattr(prop, 'napa', '') or '',
                 "seller": prop.seller.get_full_name() if getattr(prop, 'seller', None) else '',
             }
+        # Extract CRB-related extra info from draft_data (has_existing_loan etc)
+        crb_info = {}
+        try:
+            dd = app.draft_data or {}
+            crb_info = {
+                'has_existing_loan': dd.get('has_existing_loan') or dd.get('has_existing_loan') or '',
+                'existing_loan_bank': dd.get('existing_loan_bank') or '',
+                'existing_loan_amount': dd.get('existing_loan_amount') or '',
+                'existing_loan_repayment': dd.get('existing_loan_repayment') or '',
+                'existing_loan_balance': dd.get('existing_loan_balance') or '',
+                'dob': dd.get('dob') or '',
+                'gender': dd.get('gender') or '',
+                'marital_status': dd.get('marital_status') or '',
+                'dependents': dd.get('dependents') or '',
+                'nida': dd.get('nin') or dd.get('nida') or '',
+                'contract_type': dd.get('contract_type') or '',
+                'years_employed': dd.get('years_employed') or '',
+                'job_title': dd.get('job_title') or '',
+                'employer_name': dd.get('employer_name') or '',
+                'business_name': dd.get('business_name') or '',
+                'business_type': dd.get('business_type') or '',
+            }
+            # Also try direct fields if draft_data missing
+            if not crb_info['has_existing_loan']:
+                crb_info['has_existing_loan'] = getattr(app, 'has_existing_loan', '') or '—'
+        except Exception:
+            crb_info = {}
         # Bank-side timeline: skip the 'received'/'Sent to bank' event - the
         # static "Application Submitted — sent directly to bank" row already
         # covers it, otherwise it shows twice and confuses officers.
@@ -402,9 +533,11 @@ def _real_application_detail(pk):
             else:
                 # Confirmed out of order (has an event) counts as done.
                 state = 'done' if s in confirmed_at else 'pending'
+            nxt = REVIEW_STEP_ORDER[i+1] if i+1 < len(REVIEW_STEP_ORDER) else ''
             steps.append({"key": s, "label": REVIEW_STEP_LABELS.get(s, s),
                           "short": STAGE_SHORT.get(s, s),
                           "state": state,
+                          "next_key": nxt,
                           "confirmed_at": confirmed_at.get(s, '')})
         return {
             "id": app.id,
@@ -429,7 +562,8 @@ def _real_application_detail(pk):
             "ai_risk": "Low" if risk < 40 else ("High" if risk > 70 else "Medium"),
             "risk_score": risk,
             "dti": f"{float(app.dti_ratio or 0):.1f}%",
-            "interest": "13%",
+            "interest": f"{float(app.bank.interest_rate):.1f}%" if getattr(app, 'bank', None) and getattr(app.bank, 'interest_rate', None) else "13%",
+            "processing_fee_percent": f"{float(app.bank.processing_fee):.1f}%" if getattr(app, 'bank', None) and getattr(app.bank, 'processing_fee', None) else "2.0%",
             "monthly_payment": float(app.monthly_installment or 0),
             "status": app.status,
             "review_stage": getattr(app, 'review_stage', 'received') or 'received',
@@ -445,6 +579,7 @@ def _real_application_detail(pk):
             "corrections": _correction_dicts(app),
             "pending_corrections": app.corrections.filter(status='pending').count(),
             "answered_corrections": app.corrections.filter(status='resolved').order_by('-resolved_at')[:3],
+            "crb_info": crb_info,
             "next_stage": next((s["key"] for s in steps if s["state"] == 'pending'), ''),
             "next_stage_label": next((s["label"] for s in steps if s["state"] == 'pending'), ''),
             "step_order": REVIEW_STEP_ORDER,
@@ -495,14 +630,33 @@ def bank_application_review(request, pk):
             if action in ('document_verification', 'crb_check', 'valuation', 'credit_assessment', 'approval_decision') or request.POST.get("stage"):
                 stage = request.POST.get("stage") or action
                 note = request.POST.get("note", "") or request.POST.get("notes", "")
+                do_exit = request.POST.get("exit") == "1"
                 if stage not in REVIEW_STEP_ORDER:
                     messages.error(request, "Unknown stage.")
                     return redirect("bank_application_detail", pk=pk)
-                if (app.review_stage or '') == stage and not note.strip():
-                    messages.info(request, "Already at this stage.")
-                    return redirect("bank_application_detail", pk=pk)
-                msg = _advance_application(app, stage, user=user, note=note)
+                # Allow confirming the active stage; only block if this stage already passed (behind current)
+                try:
+                    cur_idx_chk = REVIEW_STEP_ORDER.index(app.review_stage or 'received')
+                    st_idx_chk = REVIEW_STEP_ORDER.index(stage)
+                    if st_idx_chk < cur_idx_chk and not note.strip():
+                        messages.info(request, "Stage already confirmed.")
+                        return redirect("bank_application_detail", pk=pk) if do_exit else redirect("bank_application_review", pk=pk)
+                except ValueError:
+                    pass
+                nxt_stage = request.POST.get("next_stage") or ""
+                msg = _advance_application(app, stage, user=user, note=note, next_stage=nxt_stage)
                 messages.success(request, STAGE_SUCCESS_MESSAGES.get(stage, "Stage confirmed successfully."))
+                if do_exit:
+                    return redirect("bank_dashboard")
+                nxt = nxt_stage
+                if nxt and nxt in REVIEW_STEP_ORDER:
+                    try:
+                        idx = REVIEW_STEP_ORDER.index(nxt)
+                        return redirect(f"/bank/applications/{pk}/review/#bsSeg{idx}")
+                    except: pass
+                    return redirect(f"/bank/applications/{pk}/review/#segment-{nxt}")
+                elif nxt:
+                    return redirect(f"/bank/applications/{pk}/review/#segment-{nxt}")
                 return redirect("bank_application_review", pk=pk)
             decision = request.POST.get("decision")  # approve | reject
             reason = request.POST.get("reason", "")
@@ -601,11 +755,13 @@ def bank_application_correction(request, pk):
 
 
 def bank_application_stage(request, pk):
-    """POST /bank/applications/<id>/stage/ - Bank confirms one review step (CRB etc)."""
+    """POST /bank/applications/<id>/stage/ - Bank confirms one review step (CRB etc).
+    Supports ?next=detail or form field exit=1 to return to detail page (Confirm & Exit)."""
     from django.contrib import messages
     from django.shortcuts import redirect
     if request.method != "POST":
         return redirect("bank_application_detail", pk=pk)
+    do_exit = request.POST.get("exit") == "1" or request.GET.get("next") == "detail"
     try:
         from mortgages.models import MortgageApplication
         app = MortgageApplication.objects.get(pk=pk)
@@ -615,13 +771,29 @@ def bank_application_stage(request, pk):
         if stage not in REVIEW_STEP_ORDER:
             messages.error(request, "Unknown stage.")
             return redirect("bank_application_detail", pk=pk)
-        if (app.review_stage or '') == stage and not note.strip():
-            messages.info(request, "Already at this stage.")
-            return redirect("bank_application_detail", pk=pk)
-        msg = _advance_application(app, stage, user=user, note=note)
+        try:
+            cur_idx_chk = REVIEW_STEP_ORDER.index(app.review_stage or 'received')
+            st_idx_chk = REVIEW_STEP_ORDER.index(stage)
+            if st_idx_chk < cur_idx_chk and not note.strip():
+                messages.info(request, "Stage already confirmed.")
+                return redirect("bank_application_detail", pk=pk) if do_exit else redirect("bank_application_review", pk=pk)
+        except ValueError:
+            pass
+        nxt_stage = request.POST.get("next_stage") or ""
+        msg = _advance_application(app, stage, user=user, note=note, next_stage=nxt_stage)
         messages.success(request, STAGE_SUCCESS_MESSAGES.get(stage, "Stage confirmed successfully."))
     except Exception as e:
         messages.error(request, "Failed to update stage.")
+    if do_exit:
+        return redirect("bank_dashboard")
+    # Stay on review but jump to next stage if provided
+    nxt = request.POST.get("next_stage") or ""
+    if nxt and nxt in REVIEW_STEP_ORDER:
+        try:
+            idx = REVIEW_STEP_ORDER.index(nxt)
+            return redirect(f"/bank/applications/{pk}/review/#bsSeg{idx}")
+        except: pass
+        return redirect(f"/bank/applications/{pk}/review/#segment-{nxt}")
     return redirect("bank_application_review", pk=pk)
 
 
@@ -762,6 +934,57 @@ def bank_application_pdf(request, pk):
     story.append(Paragraph('Mortgage Application Summary', h1))
     story.append(Paragraph(f"Application Code: <b>{detail.get('ref')}</b> &nbsp;|&nbsp; Status: <b>{str(detail.get('status','')).title()}</b> &nbsp;|&nbsp; Date: {detail.get('date','')}", normal))
     story.append(Spacer(1, 2*mm))
+
+    # Customer profile picture in PDF - MUST show (photo or initials fallback)
+    try:
+        from reportlab.lib.utils import ImageReader
+        cust_photo_path = None
+        cust_initials = (detail.get('full_name') or 'C')[:1].upper()
+        _app_obj = _MA2.objects.select_related('customer').get(pk=pk)
+        _cust = getattr(_app_obj, 'customer', None)
+        if _cust and getattr(_cust, 'profile_image', None):
+            try:
+                cust_photo_path = _cust.profile_image.path
+            except Exception:
+                cust_photo_path = None
+        has_photo = cust_photo_path and os.path.exists(cust_photo_path)
+        if has_photo:
+            try:
+                c_img = RLImage(cust_photo_path, width=22*mm, height=22*mm)
+                # Try to make it circular-like via border
+                cust_header = [[c_img, Paragraph(f"<b>{detail.get('full_name') or 'Customer'}</b><br/><font size=8 color='#6b7280'>{detail.get('email') or ''} • {detail.get('phone') or ''}</font><br/><font size=7 color='#0077B6'>Customer Profile</font>", normal)]]
+                ct = Table(cust_header, colWidths=[24*mm, 146*mm])
+                ct.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('LEFTPADDING', (0,0), (-1,-1), 2), ('RIGHTPADDING', (0,0), (-1,-1), 2), ('BOX', (0,0), (0,0), 0.5, colors.HexColor('#0077B6'))]))
+                story.append(ct)
+                story.append(Spacer(1, 3*mm))
+            except Exception:
+                has_photo = False
+        if not has_photo:
+            # Fallback: show initials in a colored box + customer info - ensures PDF always has profile picture area
+            initials_style = ParagraphStyle('initials', parent=normal, fontSize=14, leading=16, textColor=colors.white, alignment=1)
+            # Create a table with initials placeholder
+            try:
+                # Draw initials box using Table with background
+                init_para = Paragraph(f"<b>{cust_initials}</b>", initials_style)
+                init_table = Table([[init_para]], colWidths=[22*mm], rowHeights=[22*mm])
+                init_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#0077B6')),
+                    ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                    ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+                    ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor('#0077B6')),
+                    ('ROUNDEDCORNERS', [4,4,4,4]),
+                ]))
+                cust_header2 = [[init_table, Paragraph(f"<b>{detail.get('full_name') or 'Customer'}</b><br/><font size=8 color='#6b7280'>{detail.get('email') or ''} • {detail.get('phone') or ''}</font><br/><font size=7 color='#6b7280'>Profile photo: {cust_initials} (no photo uploaded)</font>", normal)]]
+                ct2 = Table(cust_header2, colWidths=[24*mm, 146*mm])
+                ct2.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('LEFTPADDING', (0,0), (-1,-1), 2), ('RIGHTPADDING', (0,0), (-1,-1), 2)]))
+                story.append(ct2)
+                story.append(Spacer(1, 3*mm))
+            except Exception:
+                # Last fallback: just text
+                story.append(Paragraph(f"<b>{detail.get('full_name') or 'Customer'}</b> — {detail.get('email') or ''} • {detail.get('phone') or ''}", normal))
+                story.append(Spacer(1, 2*mm))
+    except Exception:
+        pass
 
     def _row(k, v):
         return [Paragraph(f"<b>{k}</b>", normal), Paragraph(str(v or '-'), normal)]
@@ -1080,13 +1303,19 @@ def bank_settings(request):
             def _dec(val):
                 val = (val or '').strip()
                 return val or None
+            def _int(val):
+                v=(val or '').strip()
+                if not v: return None
+                try: return int(float(v))
+                except: return None
             user.interest_rate = _dec(request.POST.get('interest_rate'))
             user.processing_fee = _dec(request.POST.get('processing_fee'))
             user.min_loan_amount = _dec(request.POST.get('min_loan_amount'))
             user.max_loan_amount = _dec(request.POST.get('max_loan_amount'))
+            user.max_repayment_period = _int(request.POST.get('max_repayment_period'))
             user.bank_requirements = request.POST.get('bank_requirements', '').strip() or None
             try:
-                user.save(update_fields=['interest_rate', 'processing_fee', 'min_loan_amount', 'max_loan_amount', 'bank_requirements'])
+                user.save(update_fields=['interest_rate', 'processing_fee', 'min_loan_amount', 'max_loan_amount', 'max_repayment_period', 'bank_requirements'])
                 messages.success(request, 'Loan terms saved successfully.')
             except Exception as e:
                 messages.error(request, 'Could not save terms.')
@@ -1213,6 +1442,7 @@ def _notifications_data(request):
     return notifications
 
 
+@csrf_exempt
 def bank_notifications_api(request):
     """GET /bank/api/notifications/ - persistent per-bank data."""
     from django.http import JsonResponse
@@ -1221,6 +1451,7 @@ def bank_notifications_api(request):
     return JsonResponse({"notifications": notifications, "unread": unread})
 
 
+@csrf_exempt
 def bank_notifications(request):
     """GET /bank/notifications/ - Notifications page (persistent, stored in DB)."""
     notifications = _notifications_data(request)
@@ -1228,6 +1459,7 @@ def bank_notifications(request):
     return render(request, "bank/bank_notifications.html", {"notifications": notifications, "unread": unread})
 
 
+@csrf_exempt
 def bank_notifications_read(request):
     """POST /bank/notifications/read/ - mark one (id) or all as read. Persisted in DB."""
     from django.contrib import messages

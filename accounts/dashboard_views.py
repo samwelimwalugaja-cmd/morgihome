@@ -188,7 +188,7 @@ class RealEstateProfileView(ProfileView):
         from transactions.models import Contract
         user = self.request.user
         if user.is_authenticated and user.role == 'realestate':
-            ctx['my_properties_count'] = Property.objects.filter(seller=user).count()
+            ctx['my_properties_count'] = Property.objects.filter(is_deleted=False, seller=user).count()
             ctx['my_applications_count'] = MortgageApplication.objects.filter(property__seller=user).count()
             ctx['my_contracts_count'] = Contract.objects.filter(seller=user).count()
             ctx['my_pending_count'] = MortgageApplication.objects.filter(property__seller=user, status='pending').count()
@@ -210,7 +210,7 @@ class CustomerDashboardView(NoCacheMixin, TemplateView):
 
         # Real counts
         try:
-            total_props = Property.objects.filter(status='available').count()
+            total_props = Property.objects.filter(is_deleted=False, status='available').count()
         except: total_props = 0
 
         if user.is_authenticated and getattr(user, 'role', '') == 'customer':
@@ -247,7 +247,7 @@ class CustomerDashboardView(NoCacheMixin, TemplateView):
             ctx['latest_application'] = None
 
         try:
-            ctx['recommended_properties'] = Property.objects.filter(status='available').order_by('-created_at')[:6]
+            ctx['recommended_properties'] = Property.objects.filter(is_deleted=False, status='available').order_by('-created_at')[:6]
         except:
             ctx['recommended_properties'] = []
         return ctx
@@ -260,7 +260,7 @@ class CustomerPropertiesView(NoCacheMixin, TemplateView):
         q = self.request.GET.get('q','').strip()
         ptype = self.request.GET.get('property_type','')
         location = self.request.GET.get('location','')
-        qs = Property.objects.filter(status='available')
+        qs = Property.objects.filter(is_deleted=False, status='available')
         if q:
             qs = qs.filter(Q(title__icontains=q)|Q(location__icontains=q)|Q(description__icontains=q))
         if ptype:
@@ -273,7 +273,7 @@ class CustomerPropertiesView(NoCacheMixin, TemplateView):
         ctx['property_type'] = ptype
         ctx['location'] = location
         try:
-            ctx['locations'] = Property.objects.values_list('location', flat=True).distinct()[:20]
+            ctx['locations'] = Property.objects.filter(is_deleted=False).values_list('location', flat=True).distinct()[:20]
         except:
             ctx['locations'] = []
         return ctx
@@ -287,7 +287,7 @@ class CustomerApplyViewApex(NoCacheMixin, TemplateView):
         prop_id = self.request.GET.get('property')
         bank_param = self.request.GET.get('bank','').strip()
         mortgage_type_param = self.request.GET.get('type') or self.request.GET.get('mortgage_type')
-        ctx['properties'] = Property.objects.filter(status='available').order_by('-created_at')[:100]
+        ctx['properties'] = Property.objects.filter(is_deleted=False, status='available').order_by('-created_at')[:100]
         # Deduplicate banks - keep one per canonical bank name (CRDB/NMB/NCBA/NBC/TCB/MWANQA)
         raw_banks = list(User.objects.filter(role='bank', is_active=True).order_by('id'))
         seen = set()
@@ -315,7 +315,7 @@ class CustomerApplyViewApex(NoCacheMixin, TemplateView):
         # If less than 6, ensure sample banks are included
         ctx['banks'] = deduped
         if prop_id:
-            try: ctx['selected_property'] = Property.objects.get(id=prop_id)
+            try: ctx['selected_property'] = Property.objects.get(id=prop_id, is_deleted=False)
             except: ctx['selected_property'] = None
         else:
             ctx['selected_property'] = None
@@ -547,7 +547,7 @@ class CustomerNotificationsView(NoCacheMixin, TemplateView):
                     app_no = f"APP-{ev.application_id}"
                 items.append({
                     'id': f"ev-{ev.id}",
-                    'title': f"{ev.title} — {app_no}",
+                    'title': f"{ev.title} - {app_no}",
                     'message': ev.message,
                     'time': naturaltime(ev.created_at),
                     'read': False,
@@ -576,7 +576,7 @@ class CustomerSearchView(NoCacheMixin, TemplateView):
         from transactions.models import Contract
         results = []
         # Properties
-        for p in Property.objects.filter(Q(title__icontains=q)|Q(location__icontains=q)|Q(description__icontains=q)).order_by('-created_at')[:10]:
+        for p in Property.objects.filter(Q(title__icontains=q)|Q(location__icontains=q)|Q(description__icontains=q), is_deleted=False).order_by('-created_at')[:10]:
             results.append({'type':'Property','title':p.title,'desc':p.location + ' • TZS ' + str(p.price),'url':f'/properties/{p.id}/','icon':'mdi-home','badged':'Property'})
         # Applications (only for this user)
         if self.request.user.is_authenticated:
@@ -656,7 +656,7 @@ class SellerDashboardView(NoCacheMixin, TemplateView):
         user = self.request.user
         ctx['today'] = timezone.now()
         if user.is_authenticated and user.role in ['seller','realestate']:
-            qs = Property.objects.filter(seller=user)
+            qs = Property.objects.filter(is_deleted=False, seller=user)
             ctx['stats'] = {
                 'total': qs.count(),
                 'available': qs.filter(status='available').count(),
@@ -679,7 +679,7 @@ class SellerPropertiesView(NoCacheMixin, TemplateView):
         from properties.models import Property
         user = self.request.user
         if user.is_authenticated and user.role in ['seller','realestate']:
-            qs = Property.objects.filter(seller=user).order_by('-created_at')
+            qs = Property.objects.filter(is_deleted=False, seller=user).order_by('-created_at')
             q = self.request.GET.get('q', '').strip()
             if q:
                 qs = qs.filter(Q(title__icontains=q) | Q(location__icontains=q))
@@ -818,7 +818,7 @@ class SellerEditPropertyView(NoCacheMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         from properties.models import Property
         pk = kwargs.get('id')
-        prop = get_object_or_404(Property, id=pk)
+        prop = get_object_or_404(Property, is_deleted=False, id=pk)
         ctx['property'] = prop
         # Default display: plot -> plot; building -> apartment/commercial/house based on property_type
         if (prop.property_category or 'house') == 'plot':
@@ -840,7 +840,7 @@ class SellerEditPropertyView(NoCacheMixin, TemplateView):
         from django.contrib import messages
         from properties.models import Property
         user = request.user
-        prop = get_object_or_404(Property, id=kwargs.get('id'))
+        prop = get_object_or_404(Property, is_deleted=False, id=kwargs.get('id'))
         if not user.is_authenticated or prop.seller != user:
             messages.error(request, "You can only edit your properties.")
             return redirect('/seller/properties/')
@@ -989,7 +989,7 @@ class RealEstateDashboardView(NoCacheMixin, TemplateView):
         ctx['today'] = timezone.now()
         # RealEstate sees only its houses (My Properties), Customer sees all
         if user.is_authenticated and user.role == 'realestate':
-            qs_props = Property.objects.filter(seller=user)
+            qs_props = Property.objects.filter(is_deleted=False, seller=user)
             qs_apps = MortgageApplication.objects.filter(property__seller=user)
             qs_contracts = Contract.objects.filter(seller=user)
             ctx['stats'] = {
@@ -1003,14 +1003,14 @@ class RealEstateDashboardView(NoCacheMixin, TemplateView):
             ctx['all_properties_count'] = qs_props.count()
         else:
             ctx['stats'] = {
-                'total_properties': Property.objects.count(),
+                'total_properties': Property.objects.filter(is_deleted=False).count(),
                 'total_applications': MortgageApplication.objects.count(),
                 'pending_applications': MortgageApplication.objects.filter(status='pending').count(),
                 'total_contracts': Contract.objects.count(),
             }
-            ctx['recent_properties'] = Property.objects.select_related('seller').order_by('-created_at')[:4]
+            ctx['recent_properties'] = Property.objects.filter(is_deleted=False).select_related('seller').order_by('-created_at')[:4]
             ctx['recent_applications'] = MortgageApplication.objects.select_related('customer','property').order_by('-created_at')[:5]
-            ctx['all_properties_count'] = Property.objects.count()
+            ctx['all_properties_count'] = Property.objects.filter(is_deleted=False).count()
         return ctx
 
 class RealEstatePropertiesView(NoCacheMixin, TemplateView):
@@ -1023,9 +1023,9 @@ class RealEstatePropertiesView(NoCacheMixin, TemplateView):
         status_f = self.request.GET.get('status','')
         # RealEstate sees My Properties only, Customer sees all (as requested)
         if user.is_authenticated and user.role == 'realestate':
-            qs = Property.objects.filter(seller=user).select_related('seller')
+            qs = Property.objects.filter(is_deleted=False, seller=user).select_related('seller')
         else:
-            qs = Property.objects.all().select_related('seller')
+            qs = Property.objects.filter(is_deleted=False).select_related('seller')
         if q:
             qs = qs.filter(Q(title__icontains=q)|Q(location__icontains=q))
         if status_f:
@@ -1259,11 +1259,11 @@ class RealEstateReportsView(NoCacheMixin, TemplateView):
         from django.db.models import Count
         user = self.request.user
         if user.is_authenticated and user.role == 'realestate':
-            props = Property.objects.filter(seller=user)
+            props = Property.objects.filter(is_deleted=False, seller=user)
             apps = MortgageApplication.objects.filter(property__seller=user)
             contracts = Contract.objects.filter(seller=user)
         else:
-            props = Property.objects.all()
+            props = Property.objects.filter(is_deleted=False)
             apps = MortgageApplication.objects.all()
             contracts = Contract.objects.all()
         ctx['stats'] = {
@@ -1337,7 +1337,7 @@ class RealEstateSearchView(NoCacheMixin, TemplateView):
             return ctx
         user = self.request.user
         is_re = user.is_authenticated and user.role == 'realestate'
-        props = Property.objects.filter(seller=user) if is_re else Property.objects.all()
+        props = Property.objects.filter(is_deleted=False, seller=user) if is_re else Property.objects.filter(is_deleted=False)
         ctx['properties'] = list(props.filter(Q(title__icontains=q) | Q(location__icontains=q) | Q(description__icontains=q)).order_by('-created_at')[:10])
         apps = MortgageApplication.objects.filter(property__seller=user) if is_re else MortgageApplication.objects.all()
         ctx['buyers'] = list(apps.filter(
@@ -1360,7 +1360,7 @@ class PublicPropertyDetailView(NoCacheMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         from properties.models import Property
         prop_id = kwargs.get('id')
-        prop = get_object_or_404(Property, id=prop_id)
+        prop = get_object_or_404(Property, is_deleted=False, id=prop_id)
         user = self.request.user
         # RealEstate sees only its own, Customer sees all
         if user.is_authenticated and user.role == 'realestate' and prop.seller != user:
@@ -1408,7 +1408,7 @@ class CustomerPropertyDetailView(NoCacheMixin, TemplateView):
         from properties.models import Property
         from django.shortcuts import get_object_or_404
         prop_id = kwargs.get('id')
-        prop = get_object_or_404(Property, id=prop_id)
+        prop = get_object_or_404(Property, is_deleted=False, id=prop_id)
         user = self.request.user
         ctx['property'] = prop
         ctx['is_owner'] = prop.seller == user
@@ -1425,7 +1425,7 @@ class RealEstateEditPropertyView(NoCacheMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         from properties.models import Property
         pk = kwargs.get('id')
-        prop = get_object_or_404(Property, id=pk)
+        prop = get_object_or_404(Property, is_deleted=False, id=pk)
         ctx['property'] = prop
         if (prop.property_category or 'house') == 'plot':
             default_cat = 'plot'
@@ -1443,7 +1443,7 @@ class RealEstateEditPropertyView(NoCacheMixin, TemplateView):
         from django.shortcuts import redirect
         from django.contrib import messages
         user = request.user
-        prop = get_object_or_404(Property, id=kwargs.get('id'))
+        prop = get_object_or_404(Property, is_deleted=False, id=kwargs.get('id'))
         if not user.is_authenticated or prop.seller_id != user.id:
             messages.error(request, "You can only edit your properties.")
             return redirect('/realestate/properties/')
@@ -1523,7 +1523,7 @@ class SellerPropertyDetailView(NoCacheMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         from properties.models import Property
-        prop = get_object_or_404(Property, id=kwargs.get('id'))
+        prop = get_object_or_404(Property, is_deleted=False, id=kwargs.get('id'))
         user = self.request.user
         ctx['property'] = prop
         ctx['is_owner'] = prop.seller_id == getattr(user, 'id', None)
@@ -1532,6 +1532,82 @@ class SellerPropertyDetailView(NoCacheMixin, TemplateView):
         ctx['not_owned'] = False
         return ctx
 
+
+def _block_property_delete(prop):
+    """Raise message if property cannot be deleted due to mortgage. Returns error string or None."""
+    from mortgages.models import MortgageApplication
+    from transactions.models import Contract
+    if prop.status in ('sold', 'rented'):
+        return f"Cannot delete '{prop.title}' - it has already been sold/completed (status: {prop.get_status_display()})."
+    if Contract.objects.filter(mortgage__property=prop).exists():
+        return f"Cannot delete '{prop.title}' - it already has an active mortgage contract."
+    active_qs = MortgageApplication.objects.filter(property=prop).exclude(status__in=('draft', 'rejected'))
+    if active_qs.filter(status__in=('approved', 'disbursed')).exists():
+        return f"Cannot delete '{prop.title}' - it already has an approved/disbursed mortgage."
+    if active_qs.exists():
+        first = active_qs.select_related('customer').first()
+        name = ""
+        try:
+            name = (first.customer.get_full_name() or first.customer.email) if first and first.customer else ""
+        except Exception:
+            name = ""
+        status_lbl = first.get_status_display() if first else ""
+        if name:
+            return f"Cannot delete '{prop.title}' - customer {name} has already started a mortgage application (status: {status_lbl}). Deletion is not allowed while there are ongoing applications."
+        return f"Cannot delete '{prop.title}' - a customer has already started a mortgage application (status: {status_lbl})."
+    return None
+
+class SellerPropertyDeleteView(NoCacheMixin, TemplateView):
+    """Seller soft-deletes own property - POST only. Hides from customers. Blocks if mortgage active."""
+    def post(self, request, *args, **kwargs):
+        from django.shortcuts import redirect
+        from django.contrib import messages
+        from properties.models import Property
+        from django.utils import timezone
+        user = request.user
+        if not user.is_authenticated or user.role not in ['seller','realestate']:
+            messages.error(request, "Please login as seller.")
+            return redirect('/login/')
+        prop = get_object_or_404(Property, is_deleted=False, id=kwargs.get('id'))
+        if prop.seller_id != user.id:
+            messages.error(request, "You can only delete your own property.")
+            return redirect('/seller/properties/')
+        block_msg = _block_property_delete(prop)
+        if block_msg:
+            messages.error(request, block_msg)
+            return redirect('/seller/properties/')
+        prop.is_deleted = True
+        prop.deleted_at = timezone.now()
+        prop.save(update_fields=['is_deleted','deleted_at','updated_at'])
+        messages.success(request, f"'{prop.title}' deleted successfully and is no longer visible to customers.")
+        return redirect('/seller/properties/')
+    def get(self, request, *args, **kwargs):
+        from django.shortcuts import redirect
+        return redirect('/seller/properties/')
+
+class RealEstatePropertyDeleteView(SellerPropertyDeleteView):
+    def post(self, request, *args, **kwargs):
+        from django.shortcuts import redirect
+        from django.contrib import messages
+        from properties.models import Property
+        from django.utils import timezone
+        user = request.user
+        if not user.is_authenticated or user.role not in ['realestate','seller']:
+            messages.error(request, "Please login.")
+            return redirect('/login/')
+        prop = get_object_or_404(Property, is_deleted=False, id=kwargs.get('id'))
+        if prop.seller_id != user.id:
+            messages.error(request, "You can only delete your own property.")
+            return redirect('/realestate/properties/')
+        block_msg = _block_property_delete(prop)
+        if block_msg:
+            messages.error(request, block_msg)
+            return redirect('/realestate/properties/')
+        prop.is_deleted = True
+        prop.deleted_at = timezone.now()
+        prop.save(update_fields=['is_deleted','deleted_at','updated_at'])
+        messages.success(request, f"'{prop.title}' deleted successfully.")
+        return redirect('/realestate/properties/')
 
 class SellerNotificationsView(NoCacheMixin, TemplateView):
     """Seller notifications page - real data + mark as read."""

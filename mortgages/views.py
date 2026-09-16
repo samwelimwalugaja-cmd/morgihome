@@ -63,21 +63,42 @@ class MortgageApplicationViewSet(viewsets.ModelViewSet):
                 prop.refresh_from_db()
             except Exception:
                 pass
-            if getattr(prop, 'status', '') in ('sold', 'verifying'):
+            if getattr(prop, 'status', '') in ('sold',):
                 from rest_framework.exceptions import ValidationError
-                raise ValidationError({'property': 'This property is no longer available (sold / under bank review).'})
-            # Block if another customer already has an active application on this property
-            taken = MortgageApplication.objects.filter(property=prop, status__in=['pending','document_verification','crb_check','valuation','credit_assessment','approved','disbursed']).exists()
-            if taken:
+                raise ValidationError({'property': 'This property is already SOLD. You cannot apply for a sold house.'})
+            if getattr(prop, 'status', '') in ('verifying',):
                 from rest_framework.exceptions import ValidationError
-                raise ValidationError({'property': 'This property is already applied / under bank review.'})
-            exists = MortgageApplication.objects.filter(customer=user, property=prop, status__in=['pending','document_verification','crb_check','valuation','credit_assessment','approved','disbursed']).exists()
-            if exists:
+                raise ValidationError({'property': 'This property is under bank verification (verifying). Please wait until review completes.'})
+            # Sophisticated duplicate check - same customer wants to re-apply?
+            new_bank = serializer.validated_data.get('bank')
+            existing_same = MortgageApplication.objects.filter(customer=user, property=prop, status__in=['pending','document_verification','crb_check','valuation','credit_assessment','approved','disbursed']).first()
+            if existing_same:
                 from rest_framework.exceptions import ValidationError
-                raise ValidationError({'property': 'You have already applied for this property. Check My Applications.'})
+                # If trying with same bank -> block, if different bank -> allow only with explicit confirm
+                existing_bank_name = existing_same.bank.get_full_name() if existing_same.bank else 'previous bank'
+                new_bank_name = new_bank.get_full_name() if new_bank else 'selected bank'
+                if existing_same.bank_id and new_bank and existing_same.bank_id == new_bank.id:
+                    raise ValidationError({'property': f'You have already applied for this house ({existing_same.application_number} with {existing_bank_name}). Status: {existing_same.status}. Check My Applications or wait for decision. If you want to apply again with same bank, please cancel the previous application first.'})
+                # Different bank - need explicit confirmation
+                confirm = self.request.data.get('confirm_duplicate') or self.request.data.get('allow_duplicate')
+                if str(confirm).lower() not in ('true','1','yes'):
+                    raise ValidationError({'property': f'You have already applied for this house ({existing_same.application_number} with {existing_bank_name}). Do you want to apply again with {new_bank_name}? Options: 1) Apply with different bank (add confirm_duplicate=true), 2) Wait for current application ({existing_same.status}), 3) Cancel previous and re-apply. Current request blocked to prevent duplicate.'})
+                # If confirm_duplicate=true and different bank, allow through (fall through)
+            # Block if another customer already has an active application on this property (different customer)
+            taken_other = MortgageApplication.objects.filter(property=prop, status__in=['pending','document_verification','crb_check','valuation','credit_assessment','approved','disbursed']).exclude(customer=user).exists()
+            if taken_other:
+                from rest_framework.exceptions import ValidationError
+                raise ValidationError({'property': 'This property is already applied / under bank review by another customer. Please choose another property.'})
         with transaction.atomic():
-            # Calculate monthly installment - use bank interest if selected (Steps 6-7)
+            # Auto down payment 10% - user does not fill, we calculate
             bank = serializer.validated_data.get('bank')
+            loan_amount_val = serializer.validated_data.get('loan_amount')
+            if loan_amount_val:
+                auto_down = float(loan_amount_val) * 0.10
+                serializer.validated_data['down_payment'] = auto_down
+                # Also update request data for draft cleanup
+                if hasattr(self.request.data, '_mutable'):
+                    self.request.data._mutable = True
             if bank and bank.interest_rate:
                 annual_interest_rate = float(bank.interest_rate) / 100.0
             else:
@@ -87,10 +108,129 @@ class MortgageApplicationViewSet(viewsets.ModelViewSet):
 
             monthly_installment = calculate_monthly_installment(loan_amount, annual_interest_rate, months)
 
-            # Calculate affordability
-            monthly_income = float(serializer.validated_data.get('monthly_income', 0))
+            # Calculate affordability - gross income for employee, annual for business
+            employment_status = serializer.validated_data.get('employment_status')
+            if employment_status in ('business_owner','business','self_employed'):
+                # Use annual_income if provided, else fallback to monthly_income*12
+                annual_inc = serializer.validated_data.get('annual_income')
+                if annual_inc:
+                    monthly_income = float(annual_inc) / 12.0
+                else:
+                    monthly_income = float(serializer.validated_data.get('monthly_income', 0))
+                    # also set annual for consistency
+                    serializer.validated_data['annual_income'] = monthly_income * 12
+            else:
+                monthly_income = float(serializer.validated_data.get('monthly_income', 0))
             monthly_expenses = float(serializer.validated_data.get('monthly_expenses', 0))
-            affordability_score, dti_ratio = calculate_affordability(monthly_income, monthly_expenses, monthly_installment)
+
+            # --- Statutory deductions (PSSSF 5% public only, HESLB 15%, PAYE 0-30%) ---
+            def _calc_paye(inc):
+                try:
+                    v = float(inc or 0)
+                except:
+                    return 0
+                if v <= 270000:
+                    return 0
+                elif v <= 520000:
+                    return (v - 270000) * 0.08
+                elif v <= 760000:
+                    return 20000 + (v - 520000) * 0.20
+                elif v <= 1000000:
+                    return 68000 + (v - 760000) * 0.25
+                else:
+                    return 128000 + (v - 1000000) * 0.30
+            def _truthy(v):
+                if v is True or v == 1:
+                    return True
+                s = str(v).lower().strip() if v is not None else ''
+                return s in ('true','1','yes','on','checked')
+            employment_sector = serializer.validated_data.get('employment_sector') or self.request.data.get('employment_sector')
+            raw_psssf = serializer.validated_data.get('deduction_psssf')
+            if raw_psssf is None:
+                raw_psssf = self.request.data.get('deduction_psssf') or self.request.data.get('has_psssf') or self.request.data.get('psssf')
+            raw_heslb = serializer.validated_data.get('deduction_heslb')
+            if raw_heslb is None:
+                raw_heslb = self.request.data.get('deduction_heslb') or self.request.data.get('has_heslb') or self.request.data.get('heslb')
+            raw_paye = serializer.validated_data.get('deduction_paye')
+            if raw_paye is None:
+                raw_paye = self.request.data.get('deduction_paye') or self.request.data.get('has_paye') or self.request.data.get('paye')
+            want_psssf = _truthy(raw_psssf)
+            want_heslb = _truthy(raw_heslb)
+            want_paye = _truthy(raw_paye)
+            # PSSSF only for employed public sector per spec - ignore for business owners
+            if employment_status in ('business_owner','business','self_employed'):
+                want_psssf = False
+            elif employment_sector and str(employment_sector).lower() != 'public':
+                # if private, psssf not applicable - but allow if user explicitly, we still ignore?
+                # Spec: 5% ya mshahara NA HII INAFANYA KAZI TU KWA wafanyakazi wa sekta ya umma
+                # So force false if private
+                if str(employment_sector).lower() == 'private':
+                    want_psssf = False
+            psssf_amt = float(monthly_income) * 0.05 if want_psssf else 0
+            heslb_amt = float(monthly_income) * 0.15 if want_heslb else 0
+            paye_amt = _calc_paye(monthly_income) if want_paye else 0
+            total_deds = psssf_amt + heslb_amt + paye_amt
+            net_income = float(monthly_income) - total_deds
+            if net_income < 0:
+                net_income = 0
+            # Persist computed deductions for bank view
+            serializer.validated_data['deduction_psssf'] = want_psssf
+            serializer.validated_data['deduction_heslb'] = want_heslb
+            serializer.validated_data['deduction_paye'] = want_paye
+            if employment_sector:
+                serializer.validated_data['employment_sector'] = employment_sector
+            serializer.validated_data['psssf_amount'] = round(psssf_amt, 2)
+            serializer.validated_data['heslb_amount'] = round(heslb_amt, 2)
+            serializer.validated_data['paye_amount'] = round(paye_amt, 2)
+            serializer.validated_data['total_deductions'] = round(total_deds, 2)
+            serializer.validated_data['net_monthly_income'] = round(net_income, 2)
+
+            # Other loan consolidation: if user has other loan and NOT consolidating, its monthly payment adds to expenses
+            has_other = serializer.validated_data.get('has_other_loan') or self.request.data.get('has_other_loan')
+            other_bank = serializer.validated_data.get('other_loan_bank') or self.request.data.get('other_loan_bank')
+            other_bal = serializer.validated_data.get('other_loan_balance') or self.request.data.get('other_loan_balance')
+            other_pay = serializer.validated_data.get('other_loan_monthly_payment') or self.request.data.get('other_loan_monthly_payment') or self.request.data.get('other_loan_repayment') or self.request.data.get('existing_loan_repayment')
+            other_consol = serializer.validated_data.get('other_loan_consolidate') or self.request.data.get('other_loan_consolidate')
+            # also legacy has_existing_loan mapping
+            if not has_other:
+                has_other = serializer.validated_data.get('has_existing_loan') or self.request.data.get('has_existing_loan')
+            if has_other:
+                serializer.validated_data['has_other_loan'] = str(has_other).lower() if str(has_other).lower() in ('yes','no') else ('yes' if _truthy(has_other) else 'no')
+                has_other_norm = str(serializer.validated_data['has_other_loan']).lower()
+            else:
+                has_other_norm = 'no'
+            if other_bank and not serializer.validated_data.get('other_loan_bank'):
+                serializer.validated_data['other_loan_bank'] = other_bank
+            if other_bal and not serializer.validated_data.get('other_loan_balance'):
+                try:
+                    serializer.validated_data['other_loan_balance'] = float(other_bal)
+                except:
+                    pass
+            if other_pay and not serializer.validated_data.get('other_loan_monthly_payment'):
+                try:
+                    serializer.validated_data['other_loan_monthly_payment'] = float(other_pay)
+                except:
+                    pass
+            if other_consol:
+                serializer.validated_data['other_loan_consolidate'] = str(other_consol).lower() if str(other_consol).lower() in ('yes','no') else ('yes' if _truthy(other_consol) else 'no')
+            # Effective income for affordability is net_income; effective expenses includes other loan if not consolidated
+            effective_income = net_income if total_deds > 0 else monthly_income
+            effective_expenses = monthly_expenses
+            other_pay_val = 0
+            if has_other_norm == 'yes' and str(serializer.validated_data.get('other_loan_consolidate') or other_consol or 'no').lower() == 'no':
+                effective_expenses += other_pay_val
+            affordability_score, dti_ratio = calculate_affordability(effective_income, effective_expenses, monthly_installment)
+            # If has other loan not consolidated, DTI should include existing repayment too (combined debt)
+            if has_other_norm == 'yes' and str(serializer.validated_data.get('other_loan_consolidate') or other_consol or 'no').lower() == 'no' and other_pay_val:
+                combined = monthly_installment + other_pay_val
+                if effective_income > 0:
+                    dti_ratio = (combined / effective_income) * 100
+
+            # DTI threshold: must be ≤40 to apply (≤30 Very Good, 31-40 Good, 41-50 High, >50 Very High)
+            if dti_ratio > 40:
+                from rest_framework.exceptions import ValidationError
+                cat = 'High Risk' if dti_ratio <= 50 else 'Very High Risk'
+                raise ValidationError({'dti_ratio': f'DTI {dti_ratio:.1f}% {cat} — haruhusiwi kuomba. Threshold ≤40% to apply (≤30 Very Good, 31-40 Good/Acceptable). Yours {dti_ratio:.1f}%. Reduce loan amount or extend period / increase income.'})
 
             # Calculate risk score
             employment_status = serializer.validated_data.get('employment_status')
@@ -183,6 +323,14 @@ class MortgageApplicationViewSet(viewsets.ModelViewSet):
                     from rest_framework.exceptions import ValidationError
                     raise ValidationError({'documents': f'Invalid file type for {f.name}. Only JPG, PNG, PDF allowed.'})
                 MortgageDocument.objects.create(mortgage=mortgage, file=f)
+            # Marriage certificate file if married
+            mfile = self.request.FILES.get('marriage_certificate_file') or self.request.FILES.get('marriage_certificate')
+            if mfile:
+                if mfile.size > 5242880:
+                    from rest_framework.exceptions import ValidationError
+                    raise ValidationError({'marriage_certificate_file': 'File too large. Maximum 5MB.'})
+                mortgage.marriage_certificate_file = mfile
+                mortgage.save(update_fields=['marriage_certificate_file'])
 
     @action(detail=False, methods=['post'], url_path='calculate', permission_classes=[permissions.IsAuthenticated])
     def calculate(self, request):
@@ -192,9 +340,71 @@ class MortgageApplicationViewSet(viewsets.ModelViewSet):
             down_payment = float(request.data.get('down_payment', 0))
             repayment_period = int(request.data.get('repayment_period', 0) or 0)
             monthly_income = float(request.data.get('monthly_income', 0))
+            annual_income = request.data.get('annual_income')
             monthly_expenses = float(request.data.get('monthly_expenses', 0))
             employment_status = request.data.get('employment_status')
             bank_id = request.data.get('bank') or request.data.get('bank_id')
+
+            # For business owner, convert annual to monthly if monthly not provided
+            if employment_status in ('business_owner','business','self_employed') and annual_income and not monthly_income:
+                try:
+                    monthly_income = float(annual_income) / 12.0
+                except:
+                    pass
+
+            # --- Deductions handling (same as perform_create) ---
+            def _calc_paye(inc):
+                try:
+                    v = float(inc or 0)
+                except:
+                    return 0
+                if v <= 270000:
+                    return 0
+                elif v <= 520000:
+                    return (v - 270000) * 0.08
+                elif v <= 760000:
+                    return 20000 + (v - 520000) * 0.20
+                elif v <= 1000000:
+                    return 68000 + (v - 760000) * 0.25
+                else:
+                    return 128000 + (v - 1000000) * 0.30
+            def _truthy(v):
+                if v is True or v == 1:
+                    return True
+                s = str(v).lower().strip() if v is not None else ''
+                return s in ('true','1','yes','on','checked')
+            employment_sector = request.data.get('employment_sector')
+            raw_psssf = request.data.get('deduction_psssf') if request.data.get('deduction_psssf') is not None else request.data.get('has_psssf')
+            raw_heslb = request.data.get('deduction_heslb') if request.data.get('deduction_heslb') is not None else request.data.get('has_heslb')
+            raw_paye = request.data.get('deduction_paye') if request.data.get('deduction_paye') is not None else request.data.get('has_paye')
+            want_psssf = _truthy(raw_psssf)
+            want_heslb = _truthy(raw_heslb)
+            want_paye = _truthy(raw_paye)
+            if employment_status in ('business_owner','business','self_employed'):
+                want_psssf = False
+            elif employment_sector and str(employment_sector).lower() == 'private':
+                want_psssf = False
+            psssf_amt = float(monthly_income) * 0.05 if want_psssf else 0
+            heslb_amt = float(monthly_income) * 0.15 if want_heslb else 0
+            paye_amt = _calc_paye(monthly_income) if want_paye else 0
+            total_deds = psssf_amt + heslb_amt + paye_amt
+            net_income = float(monthly_income) - total_deds
+            if net_income < 0:
+                net_income = 0
+            # Other loan
+            has_other = request.data.get('has_other_loan') or request.data.get('has_existing_loan')
+            other_pay_raw = request.data.get('other_loan_monthly_payment') or request.data.get('existing_loan_repayment') or request.data.get('other_loan_repayment')
+            other_consol = request.data.get('other_loan_consolidate')
+            has_other_norm = str(has_other).lower() if has_other and str(has_other).lower() in ('yes','no') else ('yes' if _truthy(has_other) else 'no')
+            effective_income = net_income if total_deds > 0 else monthly_income
+            effective_expenses = monthly_expenses
+            other_pay_val = 0
+            try:
+                other_pay_val = float(other_pay_raw or 0)
+            except:
+                other_pay_val = 0
+            if has_other_norm == 'yes' and str(other_consol or 'no').lower() == 'no':
+                effective_expenses += other_pay_val
 
             if not loan_amount or not repayment_period or not monthly_income:
                 return Response({'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)
@@ -211,24 +421,64 @@ class MortgageApplicationViewSet(viewsets.ModelViewSet):
                 except:
                     pass
             monthly_installment = calculate_monthly_installment(loan_amount, annual_rate, repayment_period)
-            affordability_score, dti_ratio = calculate_affordability(monthly_income, monthly_expenses, monthly_installment)
+            affordability_score, dti_ratio = calculate_affordability(effective_income, effective_expenses, monthly_installment)
+            if has_other_norm == 'yes' and str(other_consol or 'no').lower() == 'no' and other_pay_val:
+                combined = monthly_installment + other_pay_val
+                if effective_income > 0:
+                    dti_ratio = (combined / effective_income) * 100
             risk_score = calculate_risk_score(affordability_score, employment_status)
 
-            # Recommendation - English
-            if affordability_score < 80 or risk_score > 70 or dti_ratio > 40:
-                recommendation = "AI Advice: Reduce the loan amount or extend the repayment period to improve affordability."
+            # DTI categories: <=30 Very Good, 31-40 Good, 41-50 High, >50 Very High
+            if dti_ratio <= 30:
+                dti_category = 'Very Good'
+            elif dti_ratio <= 40:
+                dti_category = 'Good'
+            elif dti_ratio <= 50:
+                dti_category = 'High Risk'
             else:
-                recommendation = "AI Advice: You meet the criteria and can proceed with the application."
+                dti_category = 'Very High Risk'
+            # Threshold to allow is <=40
+            can_apply = dti_ratio <= 40 and affordability_score >= 40 and risk_score <= 80
 
+            # Recommendation - English + Swahili
+            if not can_apply or dti_ratio > 40:
+                if dti_ratio > 50:
+                    recommendation = f"AI Advice: DTI {dti_ratio:.1f}% Very High Risk (>50) — Haruhusiwi kuomba. Reduce loan or increase income."
+                elif dti_ratio > 40:
+                    recommendation = f"AI Advice: DTI {dti_ratio:.1f}% High Risk (41-50) — Haruhusiwi kuomba. Threshold ≤40%. DTI 31-40 Good, ≤30 Very Good."
+                else:
+                    recommendation = "AI Advice: Reduce the loan amount or extend the repayment period to improve affordability."
+            else:
+                recommendation = f"AI Advice: DTI {dti_ratio:.1f}% {dti_category} — You meet the criteria and can proceed. Total payment TZS {monthly_installment*repayment_period:,.0f} @ {annual_rate*100:.2f}%"
+
+            total_payment = monthly_installment * repayment_period
+            total_interest = total_payment - loan_amount
             return Response({
                 'monthly_installment': round(monthly_installment, 2),
+                'total_payment': round(total_payment, 2),
+                'total_interest': round(total_interest, 2),
                 'affordability_score': round(affordability_score, 2),
                 'risk_score': round(risk_score, 2),
                 'dti_ratio': round(dti_ratio, 2),
+                'dti_category': dti_category,
+                'can_apply': can_apply,
                 'annual_rate': round(annual_rate*100, 2),
                 'bank_name': bank_name,
                 'recommendation': recommendation,
                 'employment_status': employment_status,
+                'deductions': {
+                    'gross_income': round(float(monthly_income), 2),
+                    'psssf_amount': round(psssf_amt, 2),
+                    'heslb_amount': round(heslb_amt, 2),
+                    'paye_amount': round(paye_amt, 2),
+                    'total_deductions': round(total_deds, 2),
+                    'net_income': round(net_income, 2),
+                    'want_psssf': want_psssf,
+                    'want_heslb': want_heslb,
+                    'want_paye': want_paye,
+                },
+                'effective_income': round(effective_income, 2),
+                'effective_expenses': round(effective_expenses, 2),
             })
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -357,6 +607,15 @@ class MortgageApplicationViewSet(viewsets.ModelViewSet):
         mortgage.review_stage = 'approval_decision'
         mortgage.save(update_fields=['status', 'review_stage', 'updated_at'])
         ApplicationTimelineEvent.log(mortgage, 'approved', user=request.user)
+        # Sync property to sold (badge Available -> Sold automatically)
+        try:
+            if mortgage.property_id:
+                prop = mortgage.property
+                if prop and prop.status != 'sold':
+                    prop.status = 'sold'
+                    prop.save(update_fields=['status', 'updated_at'])
+        except Exception:
+            pass
 
         # Generate repayment schedule
         schedules, monthly_installment = generate_repayment_schedule(mortgage)
@@ -388,6 +647,18 @@ class MortgageApplicationViewSet(viewsets.ModelViewSet):
             message=f"The bank has finished review — this application was rejected. Reason: {reason}" if reason else REVIEW_STAGE_MESSAGES.get('rejected', ''),
             user=request.user,
         )
+        # If property has no other active applications, revert to available (others can apply)
+        try:
+            if mortgage.property_id:
+                prop = mortgage.property
+                if prop:
+                    active = MortgageApplication.objects.filter(property=prop).exclude(pk=mortgage.pk).filter(
+                        status__in=['pending', 'document_verification', 'crb_check', 'valuation', 'credit_assessment', 'approved', 'disbursed']).exists()
+                    if not active and prop.status != 'available':
+                        prop.status = 'available'
+                        prop.save(update_fields=['status', 'updated_at'])
+        except Exception:
+            pass
         return Response({'status': 'rejected', 'message': 'Mortgage rejected'})
 
     @action(detail=False, methods=['get', 'post', 'patch'], url_path='draft')
@@ -485,14 +756,32 @@ class MortgageApplicationViewSet(viewsets.ModelViewSet):
                         draft.bank = bk
                 except:
                     pass
-            # Try to parse numeric fields if present
-            for fld in ['loan_amount', 'down_payment', 'repayment_period', 'monthly_income', 'monthly_expenses']:
+            # Try to parse numeric / text fields if present (including new deduction & other loan fields)
+            for fld in ['loan_amount', 'down_payment', 'repayment_period', 'monthly_income', 'monthly_expenses',
+                        'annual_income', 'business_type', 'business_registration_number',
+                        'employment_sector', 'has_other_loan', 'other_loan_bank', 'other_loan_amount', 'other_loan_balance', 'other_loan_monthly_payment', 'other_loan_consolidate',
+                        'has_existing_loan', 'existing_loan_bank', 'existing_loan_amount', 'existing_loan_repayment', 'existing_loan_balance',
+                        'nida_number', 'dob', 'marital_status', 'marriage_certificate_number']:
                 val = data.get(fld)
                 if val not in [None, '']:
                     try:
-                        setattr(draft, fld, val)
+                        # booleans: deduction_* are stored as bool but come as string true/false
+                        if fld in ('deduction_psssf','deduction_heslb','deduction_paye'):
+                            v = str(val).lower() in ('true','1','yes','on')
+                            setattr(draft, fld, v)
+                        else:
+                            setattr(draft, fld, val)
                     except:
                         pass
+            # deduction booleans also may be named differently
+            for bfield, keys in [('deduction_psssf',['deduction_psssf','has_psssf','psssf']), ('deduction_heslb',['deduction_heslb','has_heslb','heslb']), ('deduction_paye',['deduction_paye','has_paye','paye'])]:
+                for k in keys:
+                    if data.get(k) not in [None,'']:
+                        try:
+                            setattr(draft, bfield, str(data.get(k)).lower() in ('true','1','yes','on','checked'))
+                            break
+                        except:
+                            pass
             emp = data.get('employment_status')
             if emp:
                 draft.employment_status = emp
@@ -527,10 +816,25 @@ class MortgageApplicationViewSet(viewsets.ModelViewSet):
                         create_data['bank'] = bk
                 except:
                     pass
-            for fld in ['loan_amount', 'down_payment', 'repayment_period', 'monthly_income', 'monthly_expenses', 'employment_status']:
+            for fld in ['loan_amount', 'down_payment', 'repayment_period', 'monthly_income', 'monthly_expenses',
+                        'annual_income', 'business_type', 'business_registration_number',
+                        'employment_sector', 'has_other_loan', 'other_loan_bank', 'other_loan_amount', 'other_loan_balance', 'other_loan_monthly_payment', 'other_loan_consolidate',
+                        'has_existing_loan', 'existing_loan_bank', 'existing_loan_amount', 'existing_loan_repayment', 'existing_loan_balance',
+                        'employment_status', 'nida_number', 'dob', 'marital_status', 'marriage_certificate_number',
+                        'deduction_psssf','deduction_heslb','deduction_paye']:
                 val = data.get(fld)
                 if val not in [None, '']:
-                    create_data[fld] = val
+                    if fld in ('deduction_psssf','deduction_heslb','deduction_paye'):
+                        create_data[fld] = str(val).lower() in ('true','1','yes','on','checked')
+                    else:
+                        create_data[fld] = val
+            # alias keys
+            for bfield, keys in [('deduction_psssf',['has_psssf','psssf']), ('deduction_heslb',['has_heslb','heslb']), ('deduction_paye',['has_paye','paye'])]:
+                if bfield not in create_data:
+                    for k in keys:
+                        if data.get(k) not in [None,'']:
+                            create_data[bfield] = str(data.get(k)).lower() in ('true','1','yes','on','checked')
+                            break
             draft = MortgageApplication.objects.create(customer=user, **create_data)
             self._dedupe_drafts(user, draft)
             serializer = MortgageApplicationSerializer(draft)

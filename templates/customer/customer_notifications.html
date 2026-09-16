@@ -73,13 +73,29 @@ function getCookie(name){
   var v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
   return v ? v.pop() : '';
 }
+function getAuthHeaders(){
+  var h = {'X-CSRFToken': getCookie('csrftoken'), 'X-Requested-With': 'XMLHttpRequest'};
+  try{ var t = localStorage.getItem('access') || localStorage.getItem('token'); if(t) h['Authorization'] = 'Bearer ' + t; }catch(e){}
+  return h;
+}
 function persistRead(){
   // Save read state on the server so the bell number clears and STAYS cleared.
-  fetch('/api/auth/notifications/', {method:'POST', credentials:'same-origin', headers:{'X-CSRFToken': getCookie('csrftoken')}}).catch(function(){});
-  var badge = document.getElementById('custNotifCount');
-  if(badge){ badge.style.display='none'; }
-  var total = document.getElementById('newCount');
-  if(total){ total.textContent = '0 total'; }
+  fetch('/api/auth/notifications/', {method:'POST', credentials:'same-origin', headers: getAuthHeaders()})
+    .then(function(r){ if(!r.ok) throw new Error('failed'); return r.json().catch(function(){return {};}); })
+    .then(function(){
+      var badge = document.getElementById('custNotifCount');
+      if(badge){ badge.style.display='none'; }
+      var total = document.getElementById('newCount');
+      if(total){ total.textContent = '0 total'; }
+      try{ localStorage.setItem('cust_notif_read_at', Date.now().toString()); }catch(e){}
+    }).catch(function(){
+      // Even if server fails, hide locally and remember so badge doesn't return on navigation
+      var badge = document.getElementById('custNotifCount');
+      if(badge){ badge.style.display='none'; }
+      var total = document.getElementById('newCount');
+      if(total){ total.textContent = '0 total'; }
+      try{ localStorage.setItem('cust_notif_read_at', Date.now().toString()); }catch(e){}
+    });
 }
 function markRead(btn){
   var item = btn.closest('.notif-item');

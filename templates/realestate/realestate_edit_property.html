@@ -26,7 +26,7 @@
           <a href="?category=house" class="btn btn-sm {% if category == 'house' %}btn-primary{% else %}btn-outline-primary{% endif %}" {% if category == 'house' %}style="background:#0077B6; border-color:#0077B6;"{% endif %}><i class="mdi mdi-home"></i> House</a>
           <a href="?category=apartment" class="btn btn-sm {% if category == 'apartment' %}btn-primary{% else %}btn-outline-primary{% endif %}" {% if category == 'apartment' %}style="background:#0077B6; border-color:#0077B6;"{% endif %}><i class="mdi mdi-city-variant"></i> Apartment</a>
           <a href="?category=commercial" class="btn btn-sm {% if category == 'commercial' %}btn-primary{% else %}btn-outline-primary{% endif %}" {% if category == 'commercial' %}style="background:#0077B6; border-color:#0077B6;"{% endif %}><i class="mdi mdi-domain"></i> Commercial</a>
-          <a href="?category=plot" class="btn btn-sm {% if category == 'plot' %}btn-primary{% else %}btn-outline-primary{% endif %}" {% if category == 'plot' %}style="background:#0077B6; border-color:#0077B6;"{% endif %}><i class="mdi mdi-map"></i> Plot</a>
+          
         </div>
       </div>
     </div>
@@ -35,97 +35,15 @@
 
 <form method="post" enctype="multipart/form-data" class="forms-sample">
   {% csrf_token %}
-  <input type="hidden" name="property_category" value="{% if category == 'plot' %}plot{% else %}house{% endif %}">
+  <input type="hidden" name="property_category" value="house">
 
-  {% if category == 'plot' %}
-  <!-- ==================== PLOT (prefilled) ==================== -->
-  <div class="row">
-    <div class="col-12 grid-margin stretch-card">
-      <div class="card">
-        <div class="card-body">
-          <h4 class="card-title d-flex align-items-center gap-2"><span class="d-inline-flex align-items-center justify-content-center text-white" style="width:28px; height:28px; border-radius:50%; background:#0077B6; font-size:13px; font-weight:800;">1</span> PLOT DETAILS</h4>
-          <div class="row">
-            <div class="col-md-6"><div class="form-group"><label>Plot Name (Title) <span class="text-danger">*</span></label><input type="text" name="title" value="{{ property.title }}" class="form-control" required></div></div>
-            <div class="col-md-6"><div class="form-group"><label>Price (TZS) <span class="text-danger">*</span></label><input type="number" name="price" value="{{ property.price }}" class="form-control" required></div></div>
-          </div>
-          <div class="form-group"><label>Description <span class="text-danger">*</span></label><textarea name="description" class="form-control" rows="3" required>{{ property.description }}</textarea></div>
-          <div class="row">
-            <div class="col-md-4"><div class="form-group"><label>Land Type</label>
-              <select name="land_type" class="form-control">
-                <option value="">-- Select --</option>
-                <option value="residential" {% if property.land_type == 'residential' %}selected{% endif %}>Residential</option>
-                <option value="commercial" {% if property.land_type == 'commercial' %}selected{% endif %}>Commercial</option>
-                <option value="agricultural" {% if property.land_type == 'agricultural' %}selected{% endif %}>Agricultural</option>
-                <option value="mixed" {% if property.land_type == 'mixed' %}selected{% endif %}>Mixed Use</option>
-              </select></div></div>
-            <div class="col-md-4"><div class="form-group"><label>Status</label>
-              <select name="status" class="form-control">
-                <option value="available" {% if property.status == 'available' %}selected{% endif %}>Available</option>
-                <option value="sold" {% if property.status == 'sold' %}selected{% endif %}>Sold</option>
-                <option value="pending" {% if property.status == 'pending' %}selected{% endif %}>Pending</option>
-                <option value="rented" {% if property.status == 'rented' %}selected{% endif %}>Rented</option>
-                <option value="reserved" {% if property.status == 'reserved' %}selected{% endif %}>Reserved</option>
-              </select></div></div>
-            <div class="col-md-4"><div class="form-group"><label>Plot No. (NaPa)</label><input type="text" name="napa" value="{{ property.napa|default:'' }}" class="form-control"></div></div>
-          </div>
-          <div class="row">
-            <div class="col-md-6"><div class="form-group"><label>Location <span class="text-danger">*</span></label><input type="text" name="location" value="{{ property.location }}" class="form-control" required></div></div>
-            <div class="col-md-6"><div class="form-group"><label>Size (Area, sqm) <span class="text-danger">*</span></label><input type="number" name="area" value="{{ property.area }}" class="form-control" required></div></div>
-          </div>
-          <div class="row">
-            <div class="col-md-4"><div class="form-group"><label>Dimensions</label><input type="text" name="plot_dimensions" value="{{ property.plot_dimensions|default:'' }}" class="form-control"></div></div>
-            <div class="col-md-4"><div class="form-group"><label>Land Use</label>
-              <select name="land_use" class="form-control">
-                <option value="">-- Select --</option>
-                <option value="residential" {% if property.land_use == 'residential' %}selected{% endif %}>Residential</option>
-                <option value="commercial" {% if property.land_use == 'commercial' %}selected{% endif %}>Commercial</option>
-                <option value="agricultural" {% if property.land_use == 'agricultural' %}selected{% endif %}>Agricultural</option>
-                <option value="mixed" {% if property.land_use == 'mixed' %}selected{% endif %}>Mixed Use</option>
-              </select></div></div>
-            <div class="col-md-4"><div class="form-group"><label>Zoning</label>
-              <select name="zoning" class="form-control">
-                <option value="">-- Select --</option>
-                <option value="residential" {% if property.zoning == 'residential' %}selected{% endif %}>Residential</option>
-                <option value="commercial" {% if property.zoning == 'commercial' %}selected{% endif %}>Commercial</option>
-                <option value="industrial" {% if property.zoning == 'industrial' %}selected{% endif %}>Industrial</option>
-                <option value="agricultural" {% if property.zoning == 'agricultural' %}selected{% endif %}>Agricultural</option>
-              </select></div></div>
-          </div>
-          <div class="form-group">
-            <label>Infrastructure</label>
-            <div class="row">
-              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_road" class="form-check-input" {% if property.infrastructure_road %}checked{% endif %}> Road</label></div></div>
-              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_electricity" class="form-check-input" {% if property.infrastructure_electricity %}checked{% endif %}> Electricity</label></div></div>
-              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_water" class="form-check-input" {% if property.infrastructure_water %}checked{% endif %}> Water</label></div></div>
-              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_sewage" class="form-check-input" {% if property.infrastructure_sewage %}checked{% endif %}> Sewage</label></div></div>
-              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_internet" class="form-check-input" {% if property.infrastructure_internet %}checked{% endif %}> Internet</label></div></div>
-              <div class="col-md-4"><div class="form-check"><label class="form-check-label"><input type="checkbox" name="infrastructure_fenced" class="form-check-input" {% if property.infrastructure_fenced %}checked{% endif %}> Fenced</label></div></div>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6"><div class="form-group"><label>Title Deed Available?</label>
-              <div>
-                <div class="form-check"><label class="form-check-label"><input type="radio" name="title_deed_available" value="yes" class="form-check-input" {% if property.title_deed_available == 'yes' %}checked{% endif %}> Yes</label></div>
-                <div class="form-check"><label class="form-check-label"><input type="radio" name="title_deed_available" value="no" class="form-check-input" {% if property.title_deed_available == 'no' %}checked{% endif %}> No</label></div>
-                <div class="form-check"><label class="form-check-label"><input type="radio" name="title_deed_available" value="in_process" class="form-check-input" {% if property.title_deed_available == 'in_process' %}checked{% endif %}> In Process</label></div>
-              </div></div></div>
-            <div class="col-md-6"><div class="form-group"><label>Survey Plan Available?</label>
-              <div>
-                <div class="form-check"><label class="form-check-label"><input type="radio" name="survey_plan_available" value="yes" class="form-check-input" {% if property.survey_plan_available == 'yes' %}checked{% endif %}> Yes</label></div>
-                <div class="form-check"><label class="form-check-label"><input type="radio" name="survey_plan_available" value="no" class="form-check-input" {% if property.survey_plan_available == 'no' %}checked{% endif %}> No</label></div>
-              </div></div></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  {% else %}
+  
   <!-- ==================== BUILDING (prefilled) ==================== -->
   <div class="row">
     <div class="col-12 grid-margin stretch-card">
       <div class="card">
         <div class="card-body">
-          <h4 class="card-title d-flex align-items-center gap-2"><span class="d-inline-flex align-items-center justify-content-center text-white" style="width:28px; height:28px; border-radius:50%; background:#0077B6; font-size:13px; font-weight:800;">1</span> {% if category == 'apartment' %}APARTMENT{% elif category == 'commercial' %}COMMERCIAL BUILDING{% else %}HOUSE{% endif %} DETAILS</h4>
+          <h4 class="card-title d-flex align-items-center gap-2"><span class="d-inline-flex align-items-center justify-content-center text-white" style="width:28px; height:28px; border-radius:50%; background:#0077B6; font-size:13px; font-weight:800;">1</span> {% if category == 'apartment' %}APARTMENT{% elif category == 'commercial' %}COMMERCIAL BUILDING{% else %}HOUSE DETAILS</h4>
           <div class="form-group"><label>Name (Title) <span class="text-danger">*</span></label><input type="text" name="title" value="{{ property.title }}" class="form-control" required></div>
           <div class="form-group"><label>Description <span class="text-danger">*</span></label><textarea name="description" class="form-control" rows="3" required>{{ property.description }}</textarea></div>
           <div class="row">

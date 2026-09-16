@@ -72,14 +72,18 @@ class MortgageApplicationDetailSerializer(serializers.ModelSerializer):
         return obj.customer.get_full_name() if obj.customer else None
 
     def validate(self, attrs):
-        # Same guards as the web serializer: bank min/max + purchase loan capped at property value.
+        # Same guards as the web serializer: bank min/max + purchase loan capped at property value + max period.
         bank = attrs.get('bank') or (self.instance.bank if self.instance else None)
         loan = attrs.get('loan_amount')
+        period = attrs.get('repayment_period') or (self.instance.repayment_period if self.instance else None)
         if bank and loan:
             if bank.min_loan_amount and loan < bank.min_loan_amount:
-                raise serializers.ValidationError({'loan_amount': f"Loan below bank minimum {bank.min_loan_amount} TZS"})
+                raise serializers.ValidationError({'loan_amount': f"Loan below bank minimum {bank.min_loan_amount:,.0f} TZS"})
             if bank.max_loan_amount and loan > bank.max_loan_amount:
-                raise serializers.ValidationError({'loan_amount': f"Loan exceeds bank maximum {bank.max_loan_amount} TZS"})
+                raise serializers.ValidationError({'loan_amount': f"Loan exceeds bank maximum {bank.max_loan_amount:,.0f} TZS"})
+        if bank and period and getattr(bank, 'max_repayment_period', None):
+            if period > bank.max_repayment_period:
+                raise serializers.ValidationError({'repayment_period': f"Repayment period exceeds bank maximum {bank.max_repayment_period} months ({bank.max_repayment_period/12:.0f} years)"})
         prop = attrs.get('property') or (self.instance.property if self.instance else None)
         mtype = attrs.get('mortgage_type') or (self.instance.mortgage_type if self.instance else None)
         if prop and loan and mtype in ('residential', 'commercial', 'land'):

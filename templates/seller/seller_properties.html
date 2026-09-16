@@ -111,6 +111,10 @@
           <div class="d-flex gap-1">
             <a href="/seller/properties/{{ prop.id }}/" class="btn btn-outline-secondary btn-sm" title="View"><i class="mdi mdi-eye"></i></a>
             <a href="/seller/properties/edit/{{ prop.id }}/" class="btn btn-primary btn-sm" style="background:#0077B6; border-color:#0077B6;" title="Edit"><i class="mdi mdi-pencil"></i></a>
+            <form method="post" action="/seller/properties/delete/{{ prop.id }}/" class="d-inline" onsubmit="return confirmDelete(this, '{{ prop.title|escapejs }}')">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete"><i class="mdi mdi-delete"></i></button>
+            </form>
           </div>
         </div>
       </div>
@@ -129,4 +133,26 @@
   </div>
   {% endfor %}
 </div>
+<script>
+function confirmDelete(form, title){
+  event.preventDefault();
+  if(typeof Swal !== 'undefined'){
+    Swal.fire({
+      title: 'Delete "' + title + '"?',
+      text: 'This property will be deleted and will no longer be visible to customers. Are you sure?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e53e3e',
+      cancelButtonColor: '#6c7293',
+      confirmButtonText: 'Yes, Delete',
+      cancelButtonText: 'Cancel'
+    }).then((res)=>{
+      if(res.isConfirmed) form.submit();
+    });
+  } else {
+    if(confirm('Are you sure you want to delete \"'+title+'\"? It will no longer be visible to customers.')) form.submit();
+  }
+  return false;
+}
+</script>
 {% endblock %}

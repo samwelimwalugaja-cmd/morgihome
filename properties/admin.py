@@ -8,8 +8,8 @@ class PropertyImageInline(admin.TabularInline):
 
 @admin.register(Property)
 class PropertyAdmin(admin.ModelAdmin):
-    list_display = ('title', 'price', 'location', 'property_type', 'property_category', 'status', 'seller', 'bedrooms', 'bathrooms', 'area', 'created_at')
-    list_filter = ('status', 'property_type', 'property_category', 'land_type')
+    list_display = ('title', 'price', 'location', 'property_type', 'property_category', 'status', 'seller', 'bedrooms', 'bathrooms', 'area', 'is_deleted', 'created_at')
+    list_filter = ('is_deleted', 'status', 'property_type', 'property_category', 'land_type')
     search_fields = ('title', 'location', 'description', 'seller__email')
     list_editable = ()
     fieldsets = (

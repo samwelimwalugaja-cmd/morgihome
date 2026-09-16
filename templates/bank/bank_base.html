@@ -19,8 +19,8 @@
     })();
   </script>
 
-  <!-- Tailwind Production Build - no CDN warning anymore | cache-bust v=3 -->
-  <link rel="stylesheet" href="{% static 'bank/css/tailwind.css' %}?v=20260903-3">
+  <!-- Tailwind Production Build - cache-bust v=4 (fix Confirm buttons + receipt + property sold) -->
+  <link rel="stylesheet" href="{% static 'bank/css/tailwind.css' %}?v=20260903-4">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- Lucide Icons -->
@@ -33,8 +33,8 @@
   <link href="{% static 'images/apple-touch-icon.png' %}?v=4" rel="apple-touch-icon" type="image/png">
 
   <!-- MorgiHome Custom CSS + Special Bank Template (spec: #0077B6/#0A2B4E, not corona) -->
-  <link rel="stylesheet" href="{% static 'bank/css/morgihome.css' %}?v=20260903-3">
-  <link rel="stylesheet" href="{% static 'bank/css/bank.css' %}?v=20260909-6">
+  <link rel="stylesheet" href="{% static 'bank/css/morgihome.css' %}?v=20260903-4">
+  <link rel="stylesheet" href="{% static 'bank/css/bank.css' %}?v=20260912-1">
   <style>
     * { font-family: 'Inter', sans-serif; }
     /* Fallback if static not loaded */
@@ -248,7 +248,7 @@
 
       <!-- Footer -->
       <footer class="border-t border-[var(--morgi-border)] bg-[var(--morgi-card)] px-6 py-3 text-center text-xs text-[var(--morgi-muted)] hidden lg:block">
-        © 2026 MorgiHome • Bank Portal • Built with Shadcn Admin Template
+        © 2026 MorgiHome • Bank Portal • Brain-Wave Group of Innovation
       </footer>
     </div>
   </div>
@@ -271,7 +271,7 @@
 
   <!-- Scripts -->
   <script src="{% static 'bank/js/theme.js' %}"></script>
-  <script src="{% static 'bank/js/bank.js' %}?v=20260908-1"></script>
+  <script src="{% static 'bank/js/bank.js' %}?v=20260912-1"></script>
   <script>
     function morgiRenderIcons(){
       try{
@@ -336,12 +336,34 @@
       const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
       return v ? v.pop() : '';
     }
+    function bankAuthHeaders(){
+      const h = {'X-CSRFToken': bankGetCookie('csrftoken'), 'X-Requested-With': 'XMLHttpRequest'};
+      try{
+        const t = localStorage.getItem('access') || localStorage.getItem('token');
+        if(t) h['Authorization'] = 'Bearer ' + t;
+      }catch(e){}
+      return h;
+    }
     window.bankMarkAllRead = function(){
       // Persist on the server so the count clears and STAYS cleared.
-      fetch("{% url 'bank_notifications_read' %}", {method:'POST', headers:{'X-CSRFToken': bankGetCookie('csrftoken'), 'X-Requested-With': 'XMLHttpRequest'}}).catch(function(){});
-      const nc = document.getElementById('notifCount'); if(nc) nc.style.display='none';
-      const sb = document.getElementById('sidebarNotifBadge'); if(sb) sb.style.display='none';
-      const nd = document.getElementById('notifDropdown'); if(nd) nd.classList.add('hidden');
+      const hdr = bankAuthHeaders();
+      fetch("{% url 'bank_notifications_read' %}", {method:'POST', credentials:'same-origin', headers: hdr})
+        .then(function(r){ if(!r.ok) throw new Error('mark failed'); return r.json().catch(function(){return {};}); })
+        .then(function(){
+          const nc = document.getElementById('notifCount'); if(nc) nc.style.display='none';
+          const sb = document.getElementById('sidebarNotifBadge'); if(sb) sb.style.display='none';
+          const nd = document.getElementById('notifDropdown'); if(nd) nd.classList.add('hidden');
+          try{ localStorage.setItem('bank_notif_read_at', Date.now().toString()); }catch(e){}
+          // Re-fetch to confirm server state
+          fetch("{% url 'bank_notifications_api' %}", {credentials:'same-origin', headers: bankAuthHeaders()})
+            .then(r=>r.json()).then(d=>{ bankNotifApply(d.unread||0); }).catch(function(){});
+        }).catch(function(){
+          // Even if server fails, hide locally and remember in localStorage so badge doesn't return on navigation
+          const nc = document.getElementById('notifCount'); if(nc) nc.style.display='none';
+          const sb = document.getElementById('sidebarNotifBadge'); if(sb) sb.style.display='none';
+          const nd = document.getElementById('notifDropdown'); if(nd) nd.classList.add('hidden');
+          try{ localStorage.setItem('bank_notif_read_at', Date.now().toString()); }catch(e){}
+        });
       return false;
     };
     function bankNotifApply(unread){
@@ -352,10 +374,25 @@
       if(sb){ sb.textContent = unread; sb.style.display=''; }
     }
     // Load count as soon as the page opens (do not wait for a click)
-    fetch("{% url 'bank_notifications_api' %}")
-      .then(r=>r.json())
-      .then(data=>{ bankNotifApply(data.unread||0); })
-      .catch(()=>{});
+    (function(){
+      // If recently marked read, don't show badge until new notifications arrive after that time
+      let recentlyRead = false;
+      try{ const t = localStorage.getItem('bank_notif_read_at'); if(t && (Date.now() - parseInt(t)) < 86400000) recentlyRead = true; }catch(e){}
+      fetch("{% url 'bank_notifications_api' %}", {credentials:'same-origin', headers: bankAuthHeaders()})
+        .then(r=>r.json())
+        .then(data=>{
+          let unread = data.unread||0;
+          // If marked recently and server still returns unread due to timing, respect local hide
+          if(recentlyRead && unread>0){
+            // Check if any notification is newer than read time
+            const readAt = parseInt(localStorage.getItem('bank_notif_read_at')||'0');
+            const hasNew = (data.notifications||[]).some(function(n){ try{ return new Date(n.time) > new Date(readAt); }catch(e){ return false; }});
+            if(!hasNew) unread = 0;
+          }
+          bankNotifApply(unread);
+        })
+        .catch(()=>{});
+    })();
     const notifBtn = document.getElementById('notifBtn');
     const notifDropdown = document.getElementById('notifDropdown');
     const notifList = document.getElementById('notifList');
@@ -365,7 +402,7 @@
         e.stopPropagation();
         notifDropdown.classList.toggle('hidden');
         if(!notifDropdown.classList.contains('hidden') && notifList){
-          fetch("{% url 'bank_notifications_api' %}")
+          fetch("{% url 'bank_notifications_api' %}", {credentials:'same-origin', headers: bankAuthHeaders()})
             .then(r=>r.json())
             .then(data=>{
               if(data.notifications){

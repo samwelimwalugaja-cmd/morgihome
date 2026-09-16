@@ -55,7 +55,7 @@ function avatarHtml(user, size){
   if(hasImage){
     var url=user.avatar_url || user.profile_image;
     var wh = size==='lg' ? '96px' : size==='sidebar' ? '64px' : '36px';
-    // MOJA TU: kama picha ipo onyesha picha pekee, herufi isionekane. onerror badilisha na herufi
+    // ONLY ONE: if image exists show image only, letters hidden. onerror switch to initials
     var img='<img src="'+url+'" alt="'+(user.username||'')+'" class="rounded-circle" style="width:'+wh+';height:'+wh+';object-fit:cover;border-radius:50%;" onerror="this.outerHTML=\'<span class=\\\''+cls+'\\\'\'>'+initials+'</span>\'">';
     return img;
   } else {

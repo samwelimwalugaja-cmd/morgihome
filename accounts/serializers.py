@@ -20,7 +20,7 @@ class UserSerializer(serializers.ModelSerializer):
                   'verification_level', 'verification_level_display',
                   'profile_image', 'avatar_url', 'initials',
                   'business_license_verified', 'tax_clearance_verified', 'company_registration_verified',
-                  'interest_rate', 'processing_fee', 'min_loan_amount', 'max_loan_amount', 'bank_requirements']
+                  'interest_rate', 'processing_fee', 'min_loan_amount', 'max_loan_amount', 'max_repayment_period', 'bank_requirements']
         read_only_fields = ['id', 'verification_level',
                             'verification_level_display', 'avatar_url', 'initials', 'full_name',
                             'business_license_verified', 'tax_clearance_verified', 'company_registration_verified']
