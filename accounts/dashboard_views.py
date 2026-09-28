@@ -23,6 +23,9 @@ class DashboardRedirectView(NoCacheMixin, TemplateView):
     """ /dashboard/ -> redirect based on role, so customer doesn't see old template (plainadmin) """
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated:
+            # New social (Google) users must pick their role first
+            if getattr(request.user, 'role_selection_pending', False):
+                return redirect('/select-role/')
             role = getattr(request.user, 'role', 'customer')
             if role == 'customer':
                 return redirect('/customer/dashboard/')
@@ -218,16 +221,28 @@ class CustomerDashboardView(NoCacheMixin, TemplateView):
                 apps = MortgageApplication.objects.filter(customer=user).exclude(status='draft')
                 drafts = MortgageApplication.objects.filter(customer=user, status='draft')
                 pending_qs = apps.filter(status__in=['pending','document_verification','valuation','credit_assessment'])
-                # Pending card includes drafts (incomplete) as pending - where user sees his pending drafts
+                # Active mortgage = approved or disbursed (the one customer is paying for)
+                active_mortgage = apps.filter(status__in=['approved','disbursed']).order_by('-updated_at').first()
+                # Payments count based on the active mortgage's repayment schedule
+                if active_mortgage:
+                    payments_paid = RepaymentSchedule.objects.filter(mortgage=active_mortgage, status='paid').count()
+                    payments_total = RepaymentSchedule.objects.filter(mortgage=active_mortgage).count()
+                    monthly_payment = active_mortgage.monthly_installment
+                else:
+                    payments_paid = 0
+                    payments_total = 0
+                    monthly_payment = None
+                # Drafts stay in Draft - Pending counts only submitted applications received by the bank
                 ctx['stats'] = {
                     'properties': total_props,
                     'applications': apps.count() + drafts.count(),
-                    'pending_applications': pending_qs.count() + drafts.count(),
+                    'pending_applications': pending_qs.count(),
                     'drafts_count': drafts.count(),
                     'pending_only': pending_qs.count(),
-                    'active_mortgage': apps.filter(status__in=['approved','disbursed']).first().property.title if apps.filter(status__in=['approved','disbursed']).exists() else None,
-                    'payments_paid': RepaymentSchedule.objects.filter(mortgage__customer=user, status='paid').count(),
-                    'payments_total': RepaymentSchedule.objects.filter(mortgage__customer=user).count(),
+                    'active_mortgage': active_mortgage.property.title if active_mortgage else None,
+                    'payments_paid': payments_paid,
+                    'payments_total': payments_total,
+                    'monthly_payment': monthly_payment,
                 }
                 # Recent includes drafts first so user sees pending drafts on dashboard
                 recent_submitted = list(apps.select_related('property')[:5])
@@ -238,11 +253,11 @@ class CustomerDashboardView(NoCacheMixin, TemplateView):
                 ctx['applications_count'] = apps.count() + drafts.count()
                 ctx['draft_applications'] = drafts.select_related('property')[:5]
             except:
-                ctx['stats'] = {'properties': total_props, 'applications': 0, 'pending_applications': 0, 'drafts_count': 0, 'pending_only': 0, 'active_mortgage': None, 'payments_paid': 0, 'payments_total': 0}
+                ctx['stats'] = {'properties': total_props, 'applications': 0, 'pending_applications': 0, 'drafts_count': 0, 'pending_only': 0, 'active_mortgage': None, 'payments_paid': 0, 'payments_total': 0, 'monthly_payment': None}
                 ctx['recent_applications'] = []
                 ctx['latest_application'] = None
         else:
-            ctx['stats'] = {'properties': total_props, 'applications': 0, 'pending_applications': 0, 'active_mortgage': None, 'payments_paid': 0, 'payments_total': 0}
+            ctx['stats'] = {'properties': total_props, 'applications': 0, 'pending_applications': 0, 'active_mortgage': None, 'payments_paid': 0, 'payments_total': 0, 'monthly_payment': None}
             ctx['recent_applications'] = []
             ctx['latest_application'] = None
 
@@ -365,7 +380,8 @@ class CustomerApplicationsView(NoCacheMixin, TemplateView):
             ctx['status_filter'] = status_f
             all_qs = MortgageApplication.objects.filter(customer=user).exclude(status='draft')
             ctx['total_count'] = all_qs.count() + drafts_qs.count()
-            ctx['pending_count'] = all_qs.filter(status__in=['pending','document_verification','valuation','credit_assessment']).count() + drafts_qs.count()
+            # Pending = only submitted + received by bank. Drafts are incomplete, shown under Draft.
+            ctx['pending_count'] = all_qs.filter(status__in=['pending','document_verification','valuation','credit_assessment']).count()
             ctx['approved_count'] = all_qs.filter(status='approved').count()
             ctx['disbursed_count'] = all_qs.filter(status='disbursed').count()
             ctx['status_choices'] = [c for c in MortgageApplication.STATUS_CHOICES if c[0] != 'draft']
@@ -536,6 +552,7 @@ class CustomerNotificationsView(NoCacheMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         from mortgages.models import ApplicationTimelineEvent
         from django.contrib.humanize.templatetags.humanize import naturaltime
+        from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
         user = self.request.user
         items = []
         if user.is_authenticated:
@@ -554,10 +571,19 @@ class CustomerNotificationsView(NoCacheMixin, TemplateView):
                     'icon': 'mdi-bank',
                     'app_id': ev.application_id,
                 })
-        ctx['notifications'] = items
-        ctx['page_obj'] = None
-        ctx['paginator'] = None
-        ctx['is_paginated'] = False
+        # Pagination — 10 per page (was no pagination before)
+        paginator = Paginator(items, 10)
+        page = self.request.GET.get('page')
+        try:
+            page_obj = paginator.page(page)
+        except PageNotAnInteger:
+            page_obj = paginator.page(1)
+        except EmptyPage:
+            page_obj = paginator.page(paginator.num_pages)
+        ctx['notifications'] = page_obj.object_list if paginator.count else []
+        ctx['page_obj'] = page_obj
+        ctx['paginator'] = paginator
+        ctx['is_paginated'] = paginator.num_pages > 1
         ctx['has_notifications'] = bool(items)
         return ctx
 
@@ -626,6 +652,28 @@ class CustomerRepaymentView(NoCacheMixin, TemplateView):
                 schedules = RepaymentSchedule.objects.filter(mortgage=mortgage).order_by('installment_number')
         ctx['mortgage'] = mortgage
         ctx['schedules'] = schedules
+        # Disbursed figure must never read zero for a completed loan: fall back to
+        # loan amount + executed contract/transaction totals when schedules are missing.
+        try:
+            _disb = 0
+            if mortgage is not None:
+                _disb = float(getattr(mortgage, 'loan_amount', 0) or 0)
+                try:
+                    from transactions.models import Contract, Transaction
+                    _c = Contract.objects.filter(mortgage=mortgage).first()
+                    if _c is not None:
+                        _t = Transaction.objects.filter(contract=_c, transaction_type='mortgage_disbursement').aggregate(s=Sum('amount'))['s']
+                        if _t:
+                            _disb = float(_t)
+                        elif _c.status == 'executed':
+                            _disb = float(getattr(mortgage, 'loan_amount', 0) or 0)
+                except Exception:
+                    pass
+            ctx['disbursed_amount'] = _disb
+            ctx['disbursement_status'] = (mortgage.status if mortgage is not None else '')
+        except Exception:
+            ctx['disbursed_amount'] = 0
+            ctx['disbursement_status'] = ''
         if schedules:
             ctx['total_installments'] = schedules.count()
             ctx['paid_count'] = schedules.filter(status='paid').count()
@@ -698,15 +746,18 @@ class SellerPropertiesView(NoCacheMixin, TemplateView):
 SELLER_PROPERTY_CATEGORIES = ['house', 'apartment', 'commercial', 'plot']
 SELLER_BUILDING_TYPES = ['house', 'apartment', 'townhouse', 'villa', 'bungalow', 'duplex', 'commercial']
 
-MAX_PROPERTY_IMAGES = 5
+MAX_PROPERTY_IMAGES = 20
+MIN_PROPERTY_IMAGES = 10
 MAX_IMAGE_SIZE = 2 * 1024 * 1024  # 2MB each
 
 
 def _validate_property_images(files_list, existing_count=0):
-    """Returns (ok, error_msg). Max 5 total, each <=2MB."""
+    """Returns (ok, error_msg). Min 10, max 20 total, each <=2MB."""
     total = existing_count + len(files_list)
     if total > MAX_PROPERTY_IMAGES:
-        return False, "Maximum 5 photos allowed."
+        return False, "Maximum 20 photos allowed."
+    if total < MIN_PROPERTY_IMAGES:
+        return False, f"Minimum {MIN_PROPERTY_IMAGES} photos required (you have {total})."
     for f in files_list:
         if getattr(f, 'size', 0) > MAX_IMAGE_SIZE:
             return False, f"Photo '{getattr(f, 'name', 'file')}' exceeds 2MB."
@@ -736,13 +787,13 @@ class SellerAddPropertyViewApex(NoCacheMixin, TemplateView):
             category = 'house'
         title = data.get('title', '').strip()
         description = data.get('description', '').strip()
-        price = data.get('price') or 0
+        price = str(data.get('price') or 0).replace(',', '').strip() or 0
         location = data.get('location', '').strip()
         area = data.get('area') or 0
         if not title or not description or not location:
             messages.error(request, "Title, description and location required.")
             return redirect(f'/seller/properties/add/?category={category}')
-        # Validate photos: max 5, each <=2MB
+        # Validate photos: min 10, max 20, each <=2MB
         new_images = list(files.getlist('images'))
         ok, err = _validate_property_images(new_images, existing_count=0)
         if not ok:
@@ -862,7 +913,8 @@ class SellerEditPropertyView(NoCacheMixin, TemplateView):
             # Common
             prop.title = data.get('title', prop.title).strip() or prop.title
             prop.description = data.get('description', prop.description).strip() or prop.description
-            prop.price = data.get('price') or prop.price
+            _pr = str(data.get('price') or '').replace(',', '').strip()
+            prop.price = _pr or prop.price
             prop.location = data.get('location', prop.location).strip() or prop.location
             prop.area = data.get('area') or prop.area
             prop.property_category = category
@@ -1067,7 +1119,7 @@ class RealEstateAddPropertyView(NoCacheMixin, TemplateView):
         # Common
         title = data.get('title', '').strip()
         description = data.get('description', '').strip()
-        price = data.get('price') or 0
+        price = str(data.get('price') or 0).replace(',', '').strip() or 0
         location = data.get('location', '').strip()
         area = data.get('area') or 0
         # Seller selection for plot
@@ -1132,7 +1184,7 @@ class RealEstateAddPropertyView(NoCacheMixin, TemplateView):
             if 'image' in files:
                 prop.image = files['image']
                 prop.save()
-            # Handle gallery images (max 5, cover selectable)
+            # Handle gallery images (min 10, max 20, cover selectable)
             try:
                 cover_idx_re = int(data.get('cover_index', '0') or 0)
             except (ValueError, TypeError):
@@ -1464,7 +1516,8 @@ class RealEstateEditPropertyView(NoCacheMixin, TemplateView):
         try:
             prop.title = data.get('title', prop.title).strip() or prop.title
             prop.description = data.get('description', prop.description).strip() or prop.description
-            prop.price = data.get('price') or prop.price
+            _pr = str(data.get('price') or '').replace(',', '').strip()
+            prop.price = _pr or prop.price
             prop.location = data.get('location', prop.location).strip() or prop.location
             prop.area = data.get('area') or prop.area
             prop.property_category = category

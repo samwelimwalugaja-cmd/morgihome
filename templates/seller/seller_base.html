@@ -10,9 +10,7 @@
   <link rel="stylesheet" href="{% static 'corona/vendors/css/vendor.bundle.base.css' %}">
   <link rel="stylesheet" href="{% static 'corona/vendors/font-awesome/css/font-awesome.min.css' %}">
   <link rel="stylesheet" href="{% static 'corona/css/style.css' %}">
-  <link href="{% static 'images/favicon.ico' %}?v=4" rel="icon" sizes="48x48">
-  <link href="{% static 'images/favicon-32x32.png' %}?v=4" rel="icon" type="image/png" sizes="32x32">
-  <link href="{% static 'images/favicon-16x16.png' %}?v=4" rel="icon" type="image/png" sizes="16x16">
+  <link href="{% static 'images/favicon.png' %}?v=5" rel="icon" type="image/png">
   <link href="{% static 'images/apple-touch-icon.png' %}?v=4" rel="apple-touch-icon" type="image/png">
   <style>
     html, body { background:#000 !important; margin:0 !important; }
@@ -123,9 +121,6 @@
         <li class="nav-item menu-items {% if request.path == '/seller/sales/' %}active{% endif %}">
           <a class="nav-link" href="/seller/sales/"><span class="menu-icon"><i class="mdi mdi-cash-multiple"></i></span><span class="menu-title">Sales</span></a>
         </li>
-        <li class="nav-item menu-items {% if request.path == '/seller/notifications/' %}active{% endif %}">
-          <a class="nav-link" href="/seller/notifications/"><span class="menu-icon"><i class="mdi mdi-bell"></i></span><span class="menu-title">Notifications</span></a>
-        </li>
         <li class="nav-item nav-category"><span class="nav-link">System</span></li>
         <li class="nav-item menu-items {% if request.path == '/seller/profile/' or request.path == '/profile/' %}active{% endif %}">
           <a class="nav-link" href="/seller/profile/"><span class="menu-icon"><i class="mdi mdi-account"></i></span><span class="menu-title">Profile</span></a>
@@ -235,23 +230,29 @@
             }catch(e){}
           }
           if(dot) dot.style.display = unread ? 'block' : 'none';
-          if(list && items.length){
-            var esc = function(s){ var d=document.createElement('div'); d.textContent=(s||''); return d.innerHTML; };
-            list.innerHTML = items.slice(0,5).map(function(n){
-              return '<a class="dropdown-item preview-item" href="' + esc(n.link || '/seller/notifications/') + '">' +
-                '<div class="preview-thumbnail"><div class="preview-icon rounded-circle" style="background:rgba(0,119,182,0.15);"><i class="mdi mdi-bell" style="color:#0077B6;"></i></div></div>' +
-                '<div class="preview-item-content"><p class="preview-subject mb-1">' + esc(n.title) + '</p>' +
-                '<p class="text-muted ellipsis mb-0" style="font-size:12px;">' + esc(n.message).substring(0,80) + '</p></div></a>';
-            }).join('');
+          if(list){
+            if(!items.length || unread===0){
+              list.innerHTML = '<div class="p-4 text-center text-sm text-[var(--morgi-muted)]">No notifications.<br>You are all caught up.</div>';
+            } else {
+              var esc = function(s){ var d=document.createElement('div'); d.textContent=(s||''); return d.innerHTML; };
+              list.innerHTML = items.slice(0,5).map(function(n){
+                return '<a class="dropdown-item preview-item" href="' + esc(n.link || '/seller/notifications/') + '">' +
+                  '<div class="preview-thumbnail"><div class="preview-icon rounded-circle" style="background:rgba(0,119,182,0.15);"><i class="mdi mdi-bell" style="color:#0077B6;"></i></div></div>' +
+                  '<div class="preview-item-content"><p class="preview-subject mb-1">' + esc(n.title) + '</p>' +
+                  '<p class="text-muted ellipsis mb-0" style="font-size:12px;">' + esc(n.message).substring(0,80) + '</p></div></a>';
+              }).join('');
+            }
           }
         })
         .catch(function(){});
     }
     function sellerMarkAllRead(){
+      var listEl = document.getElementById('sellerNotifList');
+      function clearBell(){ if(listEl) listEl.innerHTML = '<div class="p-4 text-center text-sm text-[var(--morgi-muted)]">No notifications.<br>You are all caught up.</div>'; }
       fetch('/api/auth/notifications/seller/', {method:'POST', credentials:'same-origin', headers: sellerAuthHeaders()})
         .then(function(r){ if(!r.ok) throw 0; return r.json().catch(function(){return {};}); })
-        .then(function(){ var dot=document.getElementById('sellerNotifDot'); if(dot) dot.style.display='none'; try{ localStorage.setItem('seller_notif_read_at', Date.now().toString()); }catch(e){} })
-        .catch(function(){ var dot=document.getElementById('sellerNotifDot'); if(dot) dot.style.display='none'; try{ localStorage.setItem('seller_notif_read_at', Date.now().toString()); }catch(e){} });
+        .then(function(){ var dot=document.getElementById('sellerNotifDot'); if(dot) dot.style.display='none'; clearBell(); try{ localStorage.setItem('seller_notif_read_at', Date.now().toString()); }catch(e){} })
+        .catch(function(){ var dot=document.getElementById('sellerNotifDot'); if(dot) dot.style.display='none'; clearBell(); try{ localStorage.setItem('seller_notif_read_at', Date.now().toString()); }catch(e){} });
       return false;
     }
     document.addEventListener('DOMContentLoaded', sellerNotifRefresh);

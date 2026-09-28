@@ -90,10 +90,22 @@ class MortgageApplication(models.Model):
     marital_status = models.CharField(max_length=20, blank=True, null=True, choices=(('single','Single'),('married','Married')), help_text="Single or Married")
     dob = models.DateField(blank=True, null=True, help_text="Birth date - must be 18-57 years, must match NIDA")
     nida_number = models.CharField(max_length=30, blank=True, null=True, help_text="NIDA number 20 digits - first 8 encode DOB YYYYMMDD")
+    gender = models.CharField(max_length=10, blank=True, null=True, choices=(('male','Male'),('female','Female')), help_text="Gender")
+    dependents = models.IntegerField(blank=True, null=True, default=0, help_text="Number of dependents")
+    # --- Employment details (persisted so bank always sees them, not only draft_data) ---
+    employer_name = models.CharField(max_length=200, blank=True, null=True)
+    job_title = models.CharField(max_length=200, blank=True, null=True)
+    years_employed = models.IntegerField(blank=True, null=True)
+    contract_type = models.CharField(max_length=20, blank=True, null=True, choices=(('permanent','Permanent'),('contract','Contract')))
+    # --- Bank account details (Step 5 - required) ---
+    bank_account_number = models.CharField(max_length=50, blank=True, null=True, help_text="Customer account number at the selected bank")
+    bank_account_name = models.CharField(max_length=200, blank=True, null=True, help_text="Account holder name at the selected bank")
     marriage_certificate_number = models.CharField(max_length=50, blank=True, null=True, help_text="Marriage certificate card number (if married)")
     marriage_certificate_file = models.FileField(upload_to='mortgage_documents/marriage/', blank=True, null=True)
 
     # --- Business / employment extra ---
+    business_name = models.CharField(max_length=200, blank=True, null=True, help_text="Business name")
+    business_years = models.IntegerField(blank=True, null=True, help_text="Years in business")
     business_type = models.CharField(max_length=20, blank=True, null=True, choices=(('wholesale','Wholesale'),('retail','Retail')), help_text="Wholesale or Retail only")
     business_registration_number = models.CharField(max_length=50, blank=True, null=True, help_text="BRELA BRL-... or Halmashauri LIC-... number")
     annual_income = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True, help_text="Average annual income for business owner")
@@ -300,6 +312,27 @@ class RepaymentSchedule(models.Model):
 
     def __str__(self):
         return f"{self.mortgage} - Instalment #{self.installment_number}"
+
+
+class MortgageHousePhoto(models.Model):
+    """Semi-Finish / Renovation applicant uploads photos of their own house
+    at lintel stage. Min 10, max 20. One is chosen as cover."""
+    mortgage = models.ForeignKey(MortgageApplication, on_delete=models.CASCADE, related_name='house_photos')
+    image = models.ImageField(upload_to='mortgage_houses/')
+    is_cover = models.BooleanField(default=False, help_text="Cover photo shown to the bank")
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'created_at']
+
+    def __str__(self):
+        return f"House photo {self.id} for mortgage {self.mortgage_id} {'(Cover)' if self.is_cover else ''}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.is_cover:
+            MortgageHousePhoto.objects.filter(mortgage=self.mortgage).exclude(id=self.id).update(is_cover=False)
 
 
 class MortgageDocument(models.Model):

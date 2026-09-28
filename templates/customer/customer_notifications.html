@@ -9,11 +9,11 @@
         <div class="d-flex justify-content-between align-items-center">
           <h4 class="card-title mb-0" style="font-weight:700;">Notifications</h4>
           <div class="d-flex gap-2">
-            <button onclick="markAllRead()" class="btn btn-sm btn-outline-secondary" style="border-radius:20px; font-size:12px; {% if not notifications %}opacity:0.4; pointer-events:none;{% endif %}"><i class="mdi mdi-check-all"></i> Mark all as read</button>
-            <span class="badge bg-primary" style="border-radius:20px; padding:6px 12px;" id="newCount">{% if notifications %}{{ notifications|length }} total{% else %}0 total{% endif %}</span>
+            <button onclick="markAllRead()" class="btn btn-sm btn-outline-secondary" style="border-radius:20px; font-size:12px; {% if not has_notifications %}opacity:0.4; pointer-events:none;{% endif %}"><i class="mdi mdi-check-all"></i> Mark all as read</button>
+            <span class="badge bg-primary" style="border-radius:20px; padding:6px 12px;" id="newCount">{% if paginator %}{{ paginator.count }} total{% elif notifications %}{{ notifications|length }} total{% else %}0 total{% endif %}</span>
           </div>
         </div>
-        <p class="text-muted" style="font-size:13px;">In-app notifications only • No email{% if notifications %} • {{ notifications|length }} notification{{ notifications|length|pluralize }}{% endif %}</p>
+        <p class="text-muted" style="font-size:13px;">In-app notifications only • No email{% if paginator and paginator.count %} • {{ paginator.count }} notification{{ paginator.count|pluralize }}{% elif notifications %} • {{ notifications|length }} notification{{ notifications|length|pluralize }}{% endif %}</p>
         <div class="list-group mt-4" id="notifList">
           {% if notifications %}
             {% for n in notifications %}
@@ -80,6 +80,12 @@ function getAuthHeaders(){
 }
 function persistRead(){
   // Save read state on the server so the bell number clears and STAYS cleared.
+  // Also clear the bell dropdown list (user requested: after Mark as Read, dropdown should have no message)
+  function clearBellDropdown(){
+    var bellList = document.getElementById('custNotifList');
+    if(bellList) bellList.innerHTML = '<div class="text-center py-4"><i class="mdi mdi-bell-off-outline" style="font-size:32px; color:#6c7293;"></i><p class="text-muted mt-2 mb-0" style="font-size:13px;">No notifications</p><small class="text-muted" style="font-size:11px;">You are all caught up.</small></div>';
+    try{ if(window.custMarkAllRead) window.custMarkAllRead = function(){ var b=document.getElementById('custNotifCount'); if(b) b.style.display='none'; clearBellDropdown(); return Promise.resolve(); }; }catch(e){}
+  }
   fetch('/api/auth/notifications/', {method:'POST', credentials:'same-origin', headers: getAuthHeaders()})
     .then(function(r){ if(!r.ok) throw new Error('failed'); return r.json().catch(function(){return {};}); })
     .then(function(){
@@ -87,6 +93,7 @@ function persistRead(){
       if(badge){ badge.style.display='none'; }
       var total = document.getElementById('newCount');
       if(total){ total.textContent = '0 total'; }
+      clearBellDropdown();
       try{ localStorage.setItem('cust_notif_read_at', Date.now().toString()); }catch(e){}
     }).catch(function(){
       // Even if server fails, hide locally and remember so badge doesn't return on navigation
@@ -94,6 +101,7 @@ function persistRead(){
       if(badge){ badge.style.display='none'; }
       var total = document.getElementById('newCount');
       if(total){ total.textContent = '0 total'; }
+      clearBellDropdown();
       try{ localStorage.setItem('cust_notif_read_at', Date.now().toString()); }catch(e){}
     });
 }

@@ -1,10 +1,15 @@
 from django.contrib import admin
-from .models import ApplicationCorrection, ApplicationTimelineEvent, BankNotification, MortgageApplication, RepaymentSchedule, MortgageDocument
+from .models import ApplicationCorrection, ApplicationTimelineEvent, BankNotification, MortgageApplication, MortgageHousePhoto, RepaymentSchedule, MortgageDocument
 
 class MortgageDocumentInline(admin.TabularInline):
     model = MortgageDocument
     extra = 0
     readonly_fields = ('uploaded_at',)
+
+class MortgageHousePhotoInline(admin.TabularInline):
+    model = MortgageHousePhoto
+    extra = 0
+    readonly_fields = ('created_at',)
 
 class RepaymentScheduleInline(admin.TabularInline):
     model = RepaymentSchedule
@@ -26,10 +31,12 @@ class MortgageApplicationAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {'fields': ('application_number', 'customer', 'property', 'bank', 'status', 'review_stage', 'review_note', 'mortgage_type', 'loan_type', 'current_step')}),
         ('Financials', {'fields': ('loan_amount', 'down_payment', 'repayment_period', 'monthly_income', 'monthly_expenses', 'monthly_installment', 'affordability_score', 'risk_score', 'dti_ratio')}),
-        ('Employment', {'fields': ('employment_status',)}),
+        ('Employment', {'fields': ('employment_status', 'employer_name', 'job_title', 'years_employed', 'contract_type', 'employment_sector', 'business_name', 'business_years', 'business_type', 'business_registration_number', 'annual_income')}),
+        ('Identity', {'fields': ('gender', 'dob', 'nida_number', 'marital_status', 'dependents', 'marriage_certificate_number', 'marriage_certificate_file')}),
+        ('Bank account', {'fields': ('bank_account_number', 'bank_account_name')}),
         ('Documents', {'fields': ('documents', 'notes')}),
     )
-    inlines = [MortgageDocumentInline, RepaymentScheduleInline, TimelineInline]
+    inlines = [MortgageDocumentInline, MortgageHousePhotoInline, RepaymentScheduleInline, TimelineInline]
 
 @admin.register(RepaymentSchedule)
 class RepaymentScheduleAdmin(admin.ModelAdmin):

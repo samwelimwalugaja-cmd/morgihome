@@ -51,10 +51,56 @@ class MortgageApplicationViewSet(viewsets.ModelViewSet):
             return MortgageApplication.objects.filter(property__seller=user).exclude(status='draft')
         return MortgageApplication.objects.none()
 
+    def _num(self, v, default=0):
+        try:
+            if v in (None, ''):
+                return default
+            return float(str(v).replace(',', '').strip() or default)
+        except (TypeError, ValueError):
+            return default
+
     def perform_create(self, serializer):
         # As requested: don't block apply because of verification - badge only shows verified/not verified
         # Bank/realestate/lawyer will see badge on application
         user = self.request.user
+        # Strip thousand-separator commas from all money fields (form sends formatted values)
+        for _f in ['loan_amount', 'down_payment', 'monthly_income', 'monthly_expenses',
+                   'annual_income', 'other_loan_amount', 'other_loan_balance',
+                   'other_loan_monthly_payment', 'existing_loan_amount',
+                   'existing_loan_repayment', 'existing_loan_balance',
+                   'psssf_amount', 'heslb_amount', 'paye_amount',
+                   'total_deductions', 'net_monthly_income']:
+            try:
+                if _f in serializer.validated_data and serializer.validated_data[_f] not in (None, ''):
+                    serializer.validated_data[_f] = self._num(serializer.validated_data[_f])
+            except Exception:
+                pass
+        # Also normalise the same keys coming only via request.data (unbound fields)
+        try:
+            _d = self.request.data
+            _mutable = getattr(_d, '_mutable', None)
+            if _mutable is False:
+                _d._mutable = True
+        except Exception:
+            pass
+        # Monthly Expenses was removed from Step 3/4 UI - default to 0 so affordability still works
+        if serializer.validated_data.get('monthly_expenses') in (None, ''):
+            try:
+                _raw_exp = self.request.data.get('monthly_expenses') if hasattr(self.request.data, 'get') else None
+                serializer.validated_data['monthly_expenses'] = self._num(_raw_exp, 0)
+            except Exception:
+                serializer.validated_data['monthly_expenses'] = 0
+        # Persist fields that the form sends but that may only live in draft_data/request
+        for _f in ['gender', 'dependents', 'employer_name', 'job_title', 'years_employed',
+                   'contract_type', 'business_name', 'business_years',
+                   'bank_account_number', 'bank_account_name']:
+            try:
+                if not serializer.validated_data.get(_f) and hasattr(self.request.data, 'get'):
+                    _v = self.request.data.get(_f)
+                    if _v not in (None, ''):
+                        serializer.validated_data[_f] = _v
+            except Exception:
+                pass
         # Prevent duplicate pending for one property - one property one active application
         prop = serializer.validated_data.get('property')
         if prop:
@@ -113,15 +159,27 @@ class MortgageApplicationViewSet(viewsets.ModelViewSet):
             if employment_status in ('business_owner','business','self_employed'):
                 # Use annual_income if provided, else fallback to monthly_income*12
                 annual_inc = serializer.validated_data.get('annual_income')
-                if annual_inc:
-                    monthly_income = float(annual_inc) / 12.0
+                if annual_inc not in (None, ''):
+                    try:
+                        monthly_income = float(annual_inc) / 12.0
+                    except:
+                        monthly_income = 0
                 else:
-                    monthly_income = float(serializer.validated_data.get('monthly_income', 0))
+                    try:
+                        monthly_income = float(serializer.validated_data.get('monthly_income') or 0)
+                    except:
+                        monthly_income = 0
                     # also set annual for consistency
                     serializer.validated_data['annual_income'] = monthly_income * 12
             else:
-                monthly_income = float(serializer.validated_data.get('monthly_income', 0))
-            monthly_expenses = float(serializer.validated_data.get('monthly_expenses', 0))
+                try:
+                    monthly_income = float(serializer.validated_data.get('monthly_income') or 0)
+                except:
+                    monthly_income = 0
+            try:
+                monthly_expenses = float(serializer.validated_data.get('monthly_expenses') or 0)
+            except:
+                monthly_expenses = 0
 
             # --- Statutory deductions (PSSSF 5% public only, HESLB 15%, PAYE 0-30%) ---
             def _calc_paye(inc):
@@ -203,12 +261,12 @@ class MortgageApplicationViewSet(viewsets.ModelViewSet):
                 serializer.validated_data['other_loan_bank'] = other_bank
             if other_bal and not serializer.validated_data.get('other_loan_balance'):
                 try:
-                    serializer.validated_data['other_loan_balance'] = float(other_bal)
+                    serializer.validated_data['other_loan_balance'] = self._num(other_bal)
                 except:
                     pass
             if other_pay and not serializer.validated_data.get('other_loan_monthly_payment'):
                 try:
-                    serializer.validated_data['other_loan_monthly_payment'] = float(other_pay)
+                    serializer.validated_data['other_loan_monthly_payment'] = self._num(other_pay)
                 except:
                     pass
             if other_consol:
@@ -216,7 +274,7 @@ class MortgageApplicationViewSet(viewsets.ModelViewSet):
             # Effective income for affordability is net_income; effective expenses includes other loan if not consolidated
             effective_income = net_income if total_deds > 0 else monthly_income
             effective_expenses = monthly_expenses
-            other_pay_val = 0
+            other_pay_val = self._num(serializer.validated_data.get('other_loan_monthly_payment') or other_pay, 0)
             if has_other_norm == 'yes' and str(serializer.validated_data.get('other_loan_consolidate') or other_consol or 'no').lower() == 'no':
                 effective_expenses += other_pay_val
             affordability_score, dti_ratio = calculate_affordability(effective_income, effective_expenses, monthly_installment)
@@ -331,24 +389,69 @@ class MortgageApplicationViewSet(viewsets.ModelViewSet):
                     raise ValidationError({'marriage_certificate_file': 'File too large. Maximum 5MB.'})
                 mortgage.marriage_certificate_file = mfile
                 mortgage.save(update_fields=['marriage_certificate_file'])
+            # Snapshot full form into draft_data so the bank always sees NIDA/gender/etc.
+            try:
+                _snap = {}
+                for _k, _v in (self.request.data.items() if hasattr(self.request.data, 'items') else []):
+                    if _k in ('csrfmiddlewaretoken', 'documents', 'house_photos'):
+                        continue
+                    _snap[_k] = _v
+                if _snap:
+                    mortgage.draft_data = {**(mortgage.draft_data or {}), **_snap}
+                    mortgage.save(update_fields=['draft_data'])
+            except Exception:
+                pass
+            # Semi-Finish house photos (min 10, max 20, one cover)
+            try:
+                from .models import MortgageHousePhoto
+                hfiles = self.request.FILES.getlist('house_photos')
+                if hfiles:
+                    if len(hfiles) < 10:
+                        from rest_framework.exceptions import ValidationError
+                        raise ValidationError({'house_photos': f'Minimum 10 house photos required for Semi-Finish (you uploaded {len(hfiles)}).'})
+                    if len(hfiles) > 20:
+                        from rest_framework.exceptions import ValidationError
+                        raise ValidationError({'house_photos': 'Maximum 20 house photos allowed.'})
+                    try:
+                        _cover = int(self.request.data.get('house_cover_index') or 0)
+                    except (TypeError, ValueError):
+                        _cover = 0
+                    for _i, _f in enumerate(hfiles[:20]):
+                        if getattr(_f, 'size', 0) > 5 * 1024 * 1024:
+                            from rest_framework.exceptions import ValidationError
+                            raise ValidationError({'house_photos': f'Photo {_f.name} exceeds 5MB.'})
+                        MortgageHousePhoto.objects.create(
+                            mortgage=mortgage, image=_f,
+                            is_cover=(_i == _cover), order=_i)
+            except Exception as _he:
+                from rest_framework.exceptions import ValidationError as _VE
+                if isinstance(_he, _VE):
+                    raise
 
     @action(detail=False, methods=['post'], url_path='calculate', permission_classes=[permissions.IsAuthenticated])
     def calculate(self, request):
         """Live AI calculation without saving - for form preview"""
+        def _n(v, d=0):
+            try:
+                if v in (None, ''):
+                    return d
+                return float(str(v).replace(',', '').strip() or d)
+            except (TypeError, ValueError):
+                return d
         try:
-            loan_amount = float(request.data.get('loan_amount', 0))
-            down_payment = float(request.data.get('down_payment', 0))
-            repayment_period = int(request.data.get('repayment_period', 0) or 0)
-            monthly_income = float(request.data.get('monthly_income', 0))
+            loan_amount = _n(request.data.get('loan_amount', 0))
+            down_payment = _n(request.data.get('down_payment', 0))
+            repayment_period = int(str(request.data.get('repayment_period', 0) or 0).replace(',', '') or 0)
+            monthly_income = _n(request.data.get('monthly_income', 0))
             annual_income = request.data.get('annual_income')
-            monthly_expenses = float(request.data.get('monthly_expenses', 0))
+            monthly_expenses = _n(request.data.get('monthly_expenses', 0))
             employment_status = request.data.get('employment_status')
             bank_id = request.data.get('bank') or request.data.get('bank_id')
 
             # For business owner, convert annual to monthly if monthly not provided
             if employment_status in ('business_owner','business','self_employed') and annual_income and not monthly_income:
                 try:
-                    monthly_income = float(annual_income) / 12.0
+                    monthly_income = _n(annual_income) / 12.0
                 except:
                     pass
 
@@ -758,10 +861,12 @@ class MortgageApplicationViewSet(viewsets.ModelViewSet):
                     pass
             # Try to parse numeric / text fields if present (including new deduction & other loan fields)
             for fld in ['loan_amount', 'down_payment', 'repayment_period', 'monthly_income', 'monthly_expenses',
-                        'annual_income', 'business_type', 'business_registration_number',
+                        'annual_income', 'business_name', 'business_years', 'business_type', 'business_registration_number',
                         'employment_sector', 'has_other_loan', 'other_loan_bank', 'other_loan_amount', 'other_loan_balance', 'other_loan_monthly_payment', 'other_loan_consolidate',
                         'has_existing_loan', 'existing_loan_bank', 'existing_loan_amount', 'existing_loan_repayment', 'existing_loan_balance',
-                        'nida_number', 'dob', 'marital_status', 'marriage_certificate_number']:
+                        'nida_number', 'dob', 'gender', 'dependents', 'marital_status', 'marriage_certificate_number',
+                        'employer_name', 'job_title', 'years_employed', 'contract_type',
+                        'bank_account_number', 'bank_account_name']:
                 val = data.get(fld)
                 if val not in [None, '']:
                     try:
@@ -769,6 +874,11 @@ class MortgageApplicationViewSet(viewsets.ModelViewSet):
                         if fld in ('deduction_psssf','deduction_heslb','deduction_paye'):
                             v = str(val).lower() in ('true','1','yes','on')
                             setattr(draft, fld, v)
+                        elif fld in ('loan_amount','down_payment','monthly_income','monthly_expenses',
+                                    'annual_income','other_loan_amount','other_loan_balance',
+                                    'other_loan_monthly_payment','existing_loan_amount',
+                                    'existing_loan_repayment','existing_loan_balance'):
+                            setattr(draft, fld, str(val).replace(',', '').strip() or None)
                         else:
                             setattr(draft, fld, val)
                     except:
@@ -817,15 +927,22 @@ class MortgageApplicationViewSet(viewsets.ModelViewSet):
                 except:
                     pass
             for fld in ['loan_amount', 'down_payment', 'repayment_period', 'monthly_income', 'monthly_expenses',
-                        'annual_income', 'business_type', 'business_registration_number',
+                        'annual_income', 'business_name', 'business_years', 'business_type', 'business_registration_number',
                         'employment_sector', 'has_other_loan', 'other_loan_bank', 'other_loan_amount', 'other_loan_balance', 'other_loan_monthly_payment', 'other_loan_consolidate',
                         'has_existing_loan', 'existing_loan_bank', 'existing_loan_amount', 'existing_loan_repayment', 'existing_loan_balance',
-                        'employment_status', 'nida_number', 'dob', 'marital_status', 'marriage_certificate_number',
+                        'employment_status', 'nida_number', 'dob', 'gender', 'dependents', 'marital_status', 'marriage_certificate_number',
+                        'employer_name', 'job_title', 'years_employed', 'contract_type',
+                        'bank_account_number', 'bank_account_name',
                         'deduction_psssf','deduction_heslb','deduction_paye']:
                 val = data.get(fld)
                 if val not in [None, '']:
                     if fld in ('deduction_psssf','deduction_heslb','deduction_paye'):
                         create_data[fld] = str(val).lower() in ('true','1','yes','on','checked')
+                    elif fld in ('loan_amount','down_payment','monthly_income','monthly_expenses',
+                                 'annual_income','other_loan_amount','other_loan_balance',
+                                 'other_loan_monthly_payment','existing_loan_amount',
+                                 'existing_loan_repayment','existing_loan_balance'):
+                        create_data[fld] = str(val).replace(',', '').strip() or None
                     else:
                         create_data[fld] = val
             # alias keys

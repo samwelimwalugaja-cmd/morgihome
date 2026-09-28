@@ -15,6 +15,8 @@ from accounts.views import (
     BankDocumentUploadView,
     BankListView,
     BankVerificationPageView,
+    SelectRoleView,
+    VerifyEmailView,
     rate_limit_exceeded,
 )
 from accounts.dashboard_views import (
@@ -30,9 +32,12 @@ urlpatterns = [
     path(os.getenv('ADMIN_URL', 'admin-secure/'), admin.site.urls),
     path('rate-limit/', rate_limit_exceeded, name='rate_limit_exceeded'),
     path('accounts/lockout/', TemplateView.as_view(template_name='accounts/lockout.html'), name='lockout'),
-    # Verification Pages - ZIMEONDOLEWA Email/Phone/NIN -> zimebaki Bank tu
-    # ONDOLEWA: verify/email/<token>/, verify/phone/, verify/identity/, verify/status/, verify/account/
-    # ZINAZOSALIA: verify/bank/, verify/admin/
+    # Verification Pages - Email verification re-enabled for customer/seller signup.
+    # Phone/NIN verification remains removed.
+    path('verify/email/sent/', TemplateView.as_view(template_name='verify_email_sent.html'), name='verify_email_sent'),
+    path('verify/email/<str:token>/', VerifyEmailView.as_view(), name='verify_email'),
+    path('verify/email/success/', TemplateView.as_view(template_name='verify_email_success.html'), name='verify_email_success'),
+    path('select-role/', SelectRoleView.as_view(), name='select_role'),
     path('verify/bank/', BankVerificationPageView.as_view(), name='bank_verification_page'),
     # Verification API - ONDOLEWA Email/Phone/NIN -> inabaki bank docs tu
     path('api/verify/bank/<str:doc_type>/', BankDocumentUploadView.as_view(), name='api_bank_doc_upload'),
@@ -45,6 +50,9 @@ urlpatterns = [
     path('login/', TemplateView.as_view(template_name='login.html'), name='login_page'),
     path('signup/', TemplateView.as_view(template_name='signup.html'), name='signup_page'),
     path('signup/seller/', TemplateView.as_view(template_name='signup.html'), name='signup_seller_page'),
+    path('forgot-password/', TemplateView.as_view(template_name='forgot_password.html'), name='forgot_password_page'),
+    path('resend-verification/', TemplateView.as_view(template_name='resend_verification.html'), name='resend_verification_page'),
+    path('reset-password/<str:uidb64>/<str:token>/', TemplateView.as_view(template_name='reset_password.html'), name='reset_password_page'),
     path('dashboard/', DashboardRedirectView.as_view(), name='dashboard'),
     # ========== Corona Dashboard - Customer (REAL DATA, Corona theme kama ilivyo, data tu) ==========
     path('customer/dashboard/', CustomerDashboardView.as_view(), name='customer_dashboard_apex'),
@@ -112,6 +120,7 @@ urlpatterns = [
     path('customer/<path:path>', TemplateView.as_view(template_name='dashboard.html'), name='customer_dashboard_legacy'),
     path('seller/<path:path>', TemplateView.as_view(template_name='dashboard.html'), name='seller_dashboard_legacy'),
     path('realestate/<path:path>', TemplateView.as_view(template_name='dashboard.html'), name='realestate_dashboard_legacy'),
+    path('accounts/', include('allauth.urls')),
     path('api/auth/', include('accounts.urls')),
     path('api/', include('properties.urls')),
     path('api/', include('mortgages.urls')),

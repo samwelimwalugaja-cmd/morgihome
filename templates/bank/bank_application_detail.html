@@ -38,6 +38,117 @@
       </div>
     </div>
 
+    <!-- Personal & Identity (NIDA, DOB, Marital) - high contrast so bank always reads them -->
+    <div class="morgi-card p-5 lg:p-6 border-l-4" style="border-left-color:#0077B6">
+      <h3 class="font-semibold mb-4 flex items-center gap-2"><i data-lucide="badge-check" class="w-4 h-4" style="color:#0077B6"></i> Personal & Identity Details {% if application.customer_is_verified %}<span class="ml-2 px-2 py-1 rounded-full text-xs font-bold" style="background:#dcfce7; color:#15803d;">✓ Verified Customer</span>{% else %}<span class="ml-2 px-2 py-1 rounded-full text-xs font-bold" style="background:#fef9c3; color:#854d0e;">Unverified Customer</span>{% endif %}</h3>
+      <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+        <div class="p-3 rounded-lg" style="background:#eff6ff; border:1px solid #0077B6;"><p class="text-xs uppercase tracking-wide" style="color:#0A2B4E; font-weight:700;">NIDA Number</p><p class="mt-1 font-mono text-sm break-all" style="color:#0A2B4E; font-weight:700;">{{ application.crb_info.nida_number|default:application.crb_info.nida|default:"-" }}</p></div>
+        <div class="p-3 rounded-lg" style="background:#eff6ff; border:1px solid #0077B6;"><p class="text-xs uppercase tracking-wide" style="color:#0A2B4E; font-weight:700;">Gender</p><p class="mt-1 text-sm" style="color:#0A2B4E; font-weight:700;">{{ application.crb_info.gender|default:"-"|title }}</p></div>
+        <div class="p-3 rounded-lg" style="background:#eff6ff; border:1px solid #0077B6;"><p class="text-xs uppercase tracking-wide" style="color:#0A2B4E; font-weight:700;">Date of Birth</p><p class="mt-1 text-sm" style="color:#0A2B4E; font-weight:700;">{{ application.crb_info.dob|default:"-" }}</p></div>
+        <div><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">Marital Status</p><p class="font-semibold mt-1">{{ application.crb_info.marital_status|default:"-"|title }}</p></div>
+        <div><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">Dependents</p><p class="font-semibold mt-1">{{ application.crb_info.dependents|default:"-" }}</p></div>
+        {% if application.crb_info.marriage_certificate_number %}<div><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">Marriage Cert No</p><p class="font-semibold mt-1 font-mono text-xs">{{ application.crb_info.marriage_certificate_number }}</p></div>{% endif %}
+      </div>
+    </div>
+
+    <!-- Employment / Business -->
+    <div class="morgi-card p-5 lg:p-6">
+      <h3 class="font-semibold mb-4 flex items-center gap-2"><i data-lucide="briefcase" class="w-4 h-4" style="color:#0077B6"></i> {% if application.employer|lower == "business owner" or application.crb_info.business_name %}Business Details{% else %}Employment Details{% endif %}</h3>
+      {% if application.crb_info.business_name or application.employer|lower == "business owner" %}
+      <div class="grid grid-cols-2 gap-4 text-sm">
+        <div><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">Business Name</p><p class="font-semibold mt-1">{{ application.crb_info.business_name|default:"-" }}</p></div>
+        <div><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">Business Type</p><p class="font-semibold mt-1">{{ application.crb_info.business_type|default:"-"|title }} {% if application.crb_info.business_registration_number %}<span class="text-xs font-mono text-[var(--morgi-muted)]">({{ application.crb_info.business_registration_number }})</span>{% endif %}</p></div>
+        <div><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">Years in Business</p><p class="font-semibold mt-1">{{ application.crb_info.business_years|default:"-" }}</p></div>
+        <div><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">Annual Income</p><p class="font-bold mt-1" style="color:#0077B6">TZS {{ application.crb_info.annual_income|default:0|floatformat:0|intcomma }}</p><p class="text-xs text-[var(--morgi-muted)]">Monthly equiv: TZS {{ application.income|floatformat:0|intcomma }}</p></div>
+      </div>
+      {% else %}
+      <div class="grid grid-cols-2 gap-4 text-sm">
+        <div><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">Employer</p><p class="font-semibold mt-1">{{ application.crb_info.employer_name|default:application.employer|default:"-" }}</p></div>
+        <div><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">Job Title</p><p class="font-semibold mt-1">{{ application.crb_info.job_title|default:"-" }}</p></div>
+        <div><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">Years Employed</p><p class="font-semibold mt-1">{{ application.crb_info.years_employed|default:"-" }}</p></div>
+        <div><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">Contract Type</p><p class="font-semibold mt-1">{{ application.crb_info.contract_type|default:"-"|title }}</p></div>
+        <div><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">Gross Monthly Income</p><p class="font-bold mt-1" style="color:#0077B6">TZS {{ application.income|floatformat:0|intcomma }}</p></div>
+        <div><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">Monthly Expenses</p><p class="font-semibold mt-1">TZS {{ application.crb_info.monthly_expenses|default:"0"|floatformat:0|intcomma }}{% if application.crb_info.dependents %} • Dependents: {{ application.crb_info.dependents }}{% endif %}</p></div>
+      </div>
+      {% endif %}
+      <div class="mt-4 p-3 rounded-lg bg-[var(--morgi-border)]/20 flex items-center gap-2 text-xs">
+        <i data-lucide="building-2" class="w-4 h-4 text-[var(--morgi-muted)]"></i>
+        <span class="text-[var(--morgi-muted)]">Employment Sector:</span>
+        <span class="font-semibold px-2 py-1 rounded-full text-xs {% if application.crb_info.employment_sector == 'public' %}bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300{% elif application.crb_info.employment_sector == 'private' %}bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300{% else %}bg-[var(--morgi-border)] text-[var(--morgi-muted)]{% endif %}">{{ application.crb_info.employment_sector|default:"-"|title }}</span>
+        <span class="ml-auto text-[var(--morgi-muted)]">Status: <strong>{{ application.employer|default:"-" }}</strong></span>
+      </div>
+    </div>
+
+    <!-- Statutory Deductions — Professional Breakdown -->
+    <div class="morgi-card p-5 lg:p-6 border-t-4" style="border-top-color:#7c3aed">
+      <h3 class="font-semibold mb-1 flex items-center gap-2"><i data-lucide="receipt" class="w-4 h-4" style="color:#7c3aed"></i> Statutory Deductions & Net Income</h3>
+      <p class="text-xs text-[var(--morgi-muted)] mb-4">PSSSF 5% (public only) • HESLB 15% • PAYE 0–30% per Tanzania brackets — all calculated on gross monthly income</p>
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <div class="p-3 rounded-lg text-center border {% if application.crb_info.deduction_psssf %}bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800{% else %}bg-[var(--morgi-border)]/20 border-[var(--morgi-border)] opacity-60{% endif %}">
+          <p class="text-xs font-bold {% if application.crb_info.deduction_psssf %}text-blue-700 dark:text-blue-300{% else %}text-[var(--morgi-muted)]{% endif %}">PSSSF</p>
+          <p class="text-xs mt-1">5% of salary</p>
+          <p class="text-xs mt-1 {% if application.crb_info.deduction_psssf %}font-semibold text-blue-700{% endif %}">{% if application.crb_info.deduction_psssf %}✓ Applied{% else %}— Not applied{% endif %}</p>
+          {% if application.crb_info.psssf_amount %}<p class="text-xs font-mono mt-1">TZS {{ application.crb_info.psssf_amount|floatformat:0|intcomma }}</p>{% endif %}
+        </div>
+        <div class="p-3 rounded-lg text-center border {% if application.crb_info.deduction_heslb %}bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800{% else %}bg-[var(--morgi-border)]/20 border-[var(--morgi-border)] opacity-60{% endif %}">
+          <p class="text-xs font-bold {% if application.crb_info.deduction_heslb %}text-amber-700 dark:text-amber-300{% else %}text-[var(--morgi-muted)]{% endif %}">HESLB</p>
+          <p class="text-xs mt-1">15% of salary</p>
+          <p class="text-xs mt-1 {% if application.crb_info.deduction_heslb %}font-semibold text-amber-700{% endif %}">{% if application.crb_info.deduction_heslb %}✓ Applied{% else %}— Not applied{% endif %}</p>
+          {% if application.crb_info.heslb_amount %}<p class="text-xs font-mono mt-1">TZS {{ application.crb_info.heslb_amount|floatformat:0|intcomma }}</p>{% endif %}
+        </div>
+        <div class="p-3 rounded-lg text-center border {% if application.crb_info.deduction_paye %}bg-sky-50 dark:bg-sky-950/30 border-sky-200 dark:border-sky-800{% else %}bg-[var(--morgi-border)]/20 border-[var(--morgi-border)] opacity-60{% endif %}">
+          <p class="text-xs font-bold {% if application.crb_info.deduction_paye %}text-sky-700 dark:text-sky-300{% else %}text-[var(--morgi-muted)]{% endif %}">PAYE</p>
+          <p class="text-xs mt-1">0–30% bracket</p>
+          <p class="text-xs mt-1 {% if application.crb_info.deduction_paye %}font-semibold text-sky-700{% endif %}">{% if application.crb_info.deduction_paye %}✓ Applied{% else %}— Not applied{% endif %}</p>
+          {% if application.crb_info.paye_amount %}<p class="text-xs font-mono mt-1">TZS {{ application.crb_info.paye_amount|floatformat:0|intcomma }}</p>{% endif %}
+        </div>
+      </div>
+      <div class="grid grid-cols-3 gap-3 text-center">
+        <div class="p-3 rounded-lg bg-[var(--morgi-border)]/30"><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">Gross Monthly</p><p class="font-bold mt-1">TZS {{ application.income|floatformat:0|intcomma }}</p></div>
+        <div class="p-3 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800"><p class="text-xs text-red-600 dark:text-red-300 uppercase tracking-wide">Total Deductions</p><p class="font-bold mt-1 text-red-700 dark:text-red-300">TZS {{ application.crb_info.total_deductions|default:"0"|floatformat:0|intcomma }}</p></div>
+        <div class="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800"><p class="text-xs text-emerald-600 dark:text-emerald-300 uppercase tracking-wide">Net Monthly Income</p><p class="font-bold mt-1 text-emerald-700 dark:text-emerald-300">TZS {{ application.crb_info.net_monthly_income|default:application.income|floatformat:0|intcomma }}</p></div>
+      </div>
+      <details class="mt-4">
+        <summary class="text-xs font-semibold cursor-pointer text-[var(--morgi-muted)] hover:text-[var(--morgi-foreground)]">View PAYE brackets (Tanzania)</summary>
+        <div class="mt-2 overflow-x-auto">
+          <table class="w-full text-xs border border-[var(--morgi-border)] rounded-lg overflow-hidden">
+            <thead class="bg-[var(--morgi-border)]/30"><tr><th class="p-2 text-left">Monthly Income (TZS)</th><th class="p-2 text-left">Rate</th><th class="p-2 text-left">Formula</th></tr></thead>
+            <tbody>
+              <tr><td class="p-2 border-t">0 – 270,000</td><td class="p-2 border-t">0%</td><td class="p-2 border-t">Not taxed</td></tr>
+              <tr><td class="p-2 border-t">270,001 – 520,000</td><td class="p-2 border-t">8%</td><td class="p-2 border-t">(income − 270,000) × 8%</td></tr>
+              <tr><td class="p-2 border-t">520,001 – 760,000</td><td class="p-2 border-t">20%</td><td class="p-2 border-t">20,000 + (income − 520,000) × 20%</td></tr>
+              <tr><td class="p-2 border-t">760,001 – 1,000,000</td><td class="p-2 border-t">25%</td><td class="p-2 border-t">68,000 + (income − 760,000) × 25%</td></tr>
+              <tr><td class="p-2 border-t">&gt;1,000,000</td><td class="p-2 border-t">30%</td><td class="p-2 border-t">128,000 + (income − 1,000,000) × 30%</td></tr>
+            </tbody>
+          </table>
+          <p class="text-xs text-[var(--morgi-muted)] mt-2">Example: 900,000 → PAYE ≈ 103,000 (marginal 25% but avg ~11%). Max 30%.</p>
+        </div>
+      </details>
+    </div>
+
+    <!-- Bank Account (customer's account at this bank) -->
+    <div class="morgi-card p-5 lg:p-6 border-l-4" style="border-left-color:#00d25b">
+      <h3 class="font-semibold mb-4 flex items-center gap-2"><i data-lucide="credit-card" class="w-4 h-4" style="color:#00d25b"></i> Customer Bank Account</h3>
+      <div class="grid grid-cols-2 gap-4 text-sm">
+        <div class="p-3 rounded-lg" style="background:#f0fdf4; border:1px solid #00d25b;"><p class="text-xs uppercase tracking-wide" style="color:#14532d; font-weight:700;">Account Number</p><p class="mt-1 font-mono text-sm" style="color:#14532d; font-weight:700;">{{ application.crb_info.bank_account_number|default:"-" }}</p></div>
+        <div class="p-3 rounded-lg" style="background:#f0fdf4; border:1px solid #00d25b;"><p class="text-xs uppercase tracking-wide" style="color:#14532d; font-weight:700;">Account Name</p><p class="mt-1 text-sm" style="color:#14532d; font-weight:700;">{{ application.crb_info.bank_account_name|default:"-" }}</p></div>
+      </div>
+    </div>
+
+    <!-- Applicant house photos (Semi-Finish renovation) -->
+    {% if application.house_photos %}
+    <div class="morgi-card p-5 lg:p-6">
+      <h3 class="font-semibold mb-1 flex items-center gap-2"><i data-lucide="home" class="w-4 h-4" style="color:#00d25b"></i> Applicant House Photos ({{ application.house_photos|length }})</h3>
+      <p class="text-xs text-[var(--morgi-muted)] mb-4">Renovation / Semi-Finish - customer's own house at lintel stage. First photo is the Cover.</p>
+      {% if application.house_cover %}<img src="{{ application.house_cover }}" alt="cover" class="w-full h-48 rounded-lg object-cover mb-3" style="border:2px solid #00d25b;">{% endif %}
+      <div class="grid grid-cols-4 gap-2">
+        {% for img in application.house_photos|slice:":12" %}
+        <a href="{{ img }}" target="_blank"><img src="{{ img }}" alt="house photo" class="w-full h-20 rounded-lg object-cover"></a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
     <!-- Loan Details -->
     <div class="morgi-card p-5 lg:p-6">
       <h3 class="font-semibold mb-4 flex items-center gap-2"><i data-lucide="home" class="w-4 h-4" style="color:#0077B6"></i> Loan Details</h3>
@@ -51,6 +162,23 @@
         <div class="col-span-2 lg:col-span-3"><p class="text-xs text-[var(--morgi-muted)]">Property</p><p class="font-medium mt-1">{{ application.property_name|default:"-" }}{% if application.property_location %} • {{ application.property_location }}{% endif %}{% if application.property_value %} — Value TZS {{ application.property_value|floatformat:0|intcomma }}{% endif %}</p></div>
       </div>
     </div>
+
+    <!-- Existing Loan & Consolidation (Takeover) — Professional -->
+    {% if application.crb_info.has_other_loan == "yes" or application.crb_info.other_loan_bank %}
+    <div class="morgi-card p-5 lg:p-6 border-l-4" style="border-left-color:#f59e0b; background: linear-gradient(135deg, rgba(245,158,11,0.04), rgba(255,255,255,0));">
+      <h3 class="font-semibold mb-1 flex items-center gap-2"><i data-lucide="banknote" class="w-4 h-4" style="color:#f59e0b"></i> Existing Loan & Consolidation (Takeover)</h3>
+      <p class="text-xs text-[var(--morgi-muted)] mb-4">Customer disclosed another loan — bank must decide to consolidate (takeover) or keep separate for DTI</p>
+      <div class="grid grid-cols-2 gap-4 text-sm">
+        <div class="p-3 rounded-lg border {% if application.crb_info.has_other_loan == 'yes' %}bg-amber-50 dark:bg-amber-950/30 border-amber-200{% else %}bg-[var(--morgi-border)]/20{% endif %}"><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">Has Other Loan?</p><p class="font-bold mt-1 {% if application.crb_info.has_other_loan == 'yes' %}text-amber-700 dark:text-amber-300{% endif %}">{{ application.crb_info.has_other_loan|default:"-"|title }}{% if application.crb_info.has_other_loan == 'yes' %} <span class="text-xs">● Yes</span>{% endif %}</p></div>
+        <div class="p-3 rounded-lg border {% if application.crb_info.other_loan_consolidate == 'yes' %}bg-blue-50 dark:bg-blue-950/30 border-blue-200{% else %}bg-slate-50 dark:bg-slate-800/30{% endif %}"><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">Consolidate / Takeover?</p><p class="font-bold mt-1 {% if application.crb_info.other_loan_consolidate == 'yes' %}text-blue-700 dark:text-blue-300{% endif %}">{% if application.crb_info.other_loan_consolidate == 'yes' %}Yes — Takeover{% elif application.crb_info.other_loan_consolidate == 'no' %}No — Keep Separate{% else %}-{% endif %}</p><p class="text-xs text-[var(--morgi-muted)] mt-1">{% if application.crb_info.other_loan_consolidate == 'yes' %}Bank will pay old debt & add to this loan{% elif application.crb_info.other_loan_consolidate == 'no' %}DTI = (new + old monthly) / net income{% endif %}</p></div>
+        <div><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">Other Loan Bank</p><p class="font-semibold mt-1">{{ application.crb_info.other_loan_bank|default:"-" }}</p></div>
+        <div><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">Original Amount</p><p class="font-semibold mt-1">TZS {{ application.crb_info.other_loan_amount|default:"0"|floatformat:0|intcomma }}</p></div>
+        <div><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">Outstanding Balance</p><p class="font-bold mt-1" style="color:#f59e0b">TZS {{ application.crb_info.other_loan_balance|default:"0"|floatformat:0|intcomma }}</p></div>
+        <div><p class="text-xs text-[var(--morgi-muted)] uppercase tracking-wide">Monthly Payment (Old)</p><p class="font-semibold mt-1">TZS {{ application.crb_info.other_loan_monthly_payment|default:"0"|floatformat:0|intcomma }}</p></div>
+      </div>
+      {% if application.crb_info.existing_loan_bank %}<p class="text-xs text-[var(--morgi-muted)] mt-3">Legacy: {{ application.crb_info.existing_loan_bank }} — {{ application.crb_info.existing_loan_amount|default:"" }} ({{ application.crb_info.existing_loan_repayment|default:"" }}/mo)</p>{% endif %}
+    </div>
+    {% endif %}
 
     <!-- Property (REAL - the collateral the bank must see when viewing the application) -->
     {% if application.property_info %}
@@ -120,8 +248,22 @@
       <div class="space-y-3 text-sm">
         <div class="flex justify-between p-2.5 rounded-lg bg-[var(--morgi-border)]/30"><span class="text-[var(--morgi-muted)]">Affordability Score</span><span class="font-semibold">{{ application.score|default:0 }} / 100</span></div>
         <div class="flex justify-between p-2.5 rounded-lg bg-[var(--morgi-border)]/30"><span class="text-[var(--morgi-muted)]">DTI Ratio</span><span class="font-semibold">{{ application.dti|default:"-" }}</span></div>
-        <div class="flex justify-between p-2.5 rounded-lg bg-[var(--morgi-border)]/30"><span class="text-[var(--morgi-muted)]">Employment</span><span class="font-semibold">{{ application.employer|default:"-" }}</span></div>
-        <div class="flex justify-between p-2.5 rounded-lg bg-[var(--morgi-border)]/30"><span class="text-[var(--morgi-muted)]">Status</span><span class="font-semibold">{{ application.status|default:"-"|title }}</span></div>
+        {% with last_step=application.steps|last %}
+        <div class="flex justify-between p-2.5 rounded-lg bg-[var(--morgi-border)]/30">
+          <span class="text-[var(--morgi-muted)]">Employment</span>
+          <span class="font-semibold">{{ application.employer|default:"-" }}{% if last_step.state == 'done' or application.status == 'approved' or application.status == 'rejected' %} <span class="text-emerald-600 text-xs">✓ Confirmed</span>{% endif %}</span>
+        </div>
+        <div class="flex justify-between p-2.5 rounded-lg bg-[var(--morgi-border)]/30">
+          <span class="text-[var(--morgi-muted)]">Status</span>
+          <span class="font-semibold">
+            {% if last_step.state == 'done' and application.status != 'approved' and application.status != 'rejected' %}
+              <span class="text-emerald-600">✓ Review Confirmed</span>
+            {% else %}
+              {{ application.status|default:"-"|title }}
+            {% endif %}
+          </span>
+        </div>
+        {% endwith %}
       </div>
       <div class="mt-4 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 text-xs text-blue-700 dark:text-blue-300"><i data-lucide="info" class="w-3 h-3 inline"></i> Click this card to view detailed risk type: <strong>Very Good (≤30)</strong>, <strong>Good (31-40)</strong>, <strong>High (41-50)</strong>, <strong>Very High (>50)</strong> with DTI & affordability breakdown.</div>
       <div class="mt-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
@@ -160,6 +302,13 @@
       <h3 class="font-semibold mb-3">Actions</h3>
       {% if application.status == 'approved' %}
         <p class="text-sm px-3 py-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-semibold">✅ Approved</p>
+        <form method="post" action="{% url 'bank_application_disburse' application.id %}" class="mt-2">
+          {% csrf_token %}
+          <button type="submit" class="w-full px-4 py-2.5 rounded-lg text-sm font-bold text-white" style="background:#0077B6" onclick="return confirm('Mark this loan as disbursed? Repayment schedule and disbursement records will be created.')">Disburse Loan</button>
+        </form>
+        <a href="{% url 'bank_application_pdf' application.id %}" target="_blank" class="mt-2 block text-center px-4 py-2.5 rounded-lg text-sm font-bold text-white" style="background:#00a344">Download PDF</a>
+      {% elif application.status == 'disbursed' %}
+        <p class="text-sm px-3 py-2 rounded-lg font-semibold" style="background:rgba(0,119,182,0.15); color:#0077B6;">Disbursed ✓</p>
         <a href="{% url 'bank_application_pdf' application.id %}" target="_blank" class="mt-2 block text-center px-4 py-2.5 rounded-lg text-sm font-bold text-white" style="background:#00a344">Download PDF</a>
       {% elif application.status == 'rejected' %}
         <p class="text-sm px-3 py-2 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 font-semibold">❌ Rejected</p>

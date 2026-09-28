@@ -14,9 +14,9 @@ class PropertySerializer(serializers.ModelSerializer):
     seller_name = serializers.SerializerMethodField()
     gallery = PropertyImageSerializer(many=True, read_only=True)
     cover_image_url = serializers.ReadOnlyField()
-    # Seller can upload up to 5 photos and choose cover
+    # Seller can upload 10-20 photos and choose cover
     images = serializers.ListField(child=serializers.ImageField(), write_only=True, required=False, allow_empty=True)
-    cover_index = serializers.IntegerField(write_only=True, required=False, min_value=0, max_value=4)
+    cover_index = serializers.IntegerField(write_only=True, required=False, min_value=0, max_value=19)
 
     class Meta:
         model = Property
@@ -42,13 +42,20 @@ class PropertySerializer(serializers.ModelSerializer):
         return data
 
     def validate_price(self, value):
+        try:
+            if isinstance(value, str):
+                value = value.replace(',', '').strip()
+        except Exception:
+            pass
         if value <= 0:
             raise serializers.ValidationError("Price must be greater than zero.")
         return value
 
     def validate_images(self, value):
-        if len(value) > 5:
-            raise serializers.ValidationError("You can upload up to 5 photos only.")
+        if len(value) > 20:
+            raise serializers.ValidationError("You can upload up to 20 photos only.")
+        if len(value) < 10:
+            raise serializers.ValidationError("Minimum 10 photos required (max 20).")
         for f in value:
             if f.size > 5242880:
                 raise serializers.ValidationError(f"Photo {f.name} is too large (max 5MB).")
@@ -64,7 +71,7 @@ class PropertySerializer(serializers.ModelSerializer):
             # do not set main image here, gallery will handle cover
             pass
         prop = Property.objects.create(**validated_data)
-        for idx, img in enumerate(images[:5]):
+        for idx, img in enumerate(images[:20]):
             is_cover = (idx == cover_index)
             PropertyImage.objects.create(property=prop, image=img, is_cover=is_cover, order=idx)
             # If it is cover and no main image yet, also set as main image for backward compat
@@ -83,7 +90,7 @@ class PropertySerializer(serializers.ModelSerializer):
             # Delete old gallery if new one exists? Or append - for now delete and recreate if new
             if images:
                 instance.gallery.all().delete()
-                for idx, img in enumerate(images[:5]):
+                for idx, img in enumerate(images[:20]):
                     is_cover = (cover_index is not None and idx == cover_index) or (cover_index is None and idx==0)
                     PropertyImage.objects.create(property=instance, image=img, is_cover=is_cover, order=idx)
                     if is_cover and not instance.image:

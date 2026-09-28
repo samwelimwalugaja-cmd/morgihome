@@ -99,15 +99,15 @@
                 <p class="text-xs font-semibold mb-2">Customer — verify photo & NIDA</p>
                 <div class="flex items-center gap-3">
                   {% if application.customer_photo %}<img src="{{ application.customer_photo }}" class="w-12 h-12 rounded-full object-cover" style="border:2px solid #0077B6;">{% else %}<div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold" style="background: linear-gradient(135deg, #0077B6, #0A2B4E);">{{ application.customer_initials|default:"-" }}</div>{% endif %}
-                  <div><p class="font-semibold text-sm">{{ application.full_name }}</p><p class="text-xs text-[var(--morgi-muted)]">{{ application.email }}{% if application.phone %} • {{ application.phone }}{% endif %}</p>{% if application.crb_info.nida %}<p class="text-xs">NIDA: <strong>{{ application.crb_info.nida }}</strong></p>{% endif %}</div>
+                  <div><p class="font-semibold text-sm">{{ application.full_name }}</p><p class="text-xs text-[var(--morgi-muted)]">{{ application.email }}{% if application.phone %} • {{ application.phone }}{% endif %}</p>{% if application.crb_info.nida_number|default:application.crb_info.nida %}<p class="text-xs">NIDA: <strong>{{ application.crb_info.nida_number|default:application.crb_info.nida }}</strong> • Gender: <strong>{{ application.crb_info.gender|default:"—"|title }}</strong></p>{% endif %}</div>
                 </div>
               </div>
             {% elif st.key == 'crb_check' %}
               <h3 class="font-semibold text-sm">CRB / Credit History — verify with bureau</h3>
               <div class="p-4 rounded-lg border border-[var(--morgi-border)] space-y-2 text-sm">
                 <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">Full Name</span><span class="font-semibold">{{ application.full_name }}</span></div>
-                <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">NIDA</span><span class="font-semibold">{{ application.crb_info.nida|default:"—" }}</span></div>
-                <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">DOB / Gender</span><span class="font-semibold">{{ application.crb_info.dob|default:"—" }} • {{ application.crb_info.gender|default:"—" }}</span></div>
+                <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">NIDA</span><span class="font-semibold">{{ application.crb_info.nida_number|default:application.crb_info.nida|default:"—" }}</span></div>
+                <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">DOB / Gender</span><span class="font-semibold">{{ application.crb_info.dob|default:"—" }} • {{ application.crb_info.gender|default:"—"|title }}</span></div>
                 <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">Employment</span><span class="font-semibold">{{ application.crb_info.employer_name|default:application.employer|default:"-" }}</span></div>
                 <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">Monthly Income</span><span class="font-semibold">TZS {{ application.income|floatformat:0|intcomma }}</span></div>
                 <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">Loan Asked</span><span class="font-semibold">TZS {{ application.amount|floatformat:0|intcomma }}</span></div>
@@ -180,13 +180,13 @@
                   {% csrf_token %}
                   <input type="hidden" name="stage" value="{{ st.key }}">
                   <input type="hidden" name="next_stage" value="{{ st.next_key }}">
-                  <button type="submit" class="w-full py-3 rounded-lg text-sm font-bold text-white shadow-sm hover:opacity-90 transition" style="background:#0077B6">Confirm {{ st.short }} →</button>
+                  <button type="submit" class="hidden js-confirm-submit">Confirm {{ st.short }}</button>
                 </form>
                 <form method="post" action="{% url 'bank_application_stage' application.id %}" class="mt-2 js-confirm-exit-form" data-stage="{{ st.key }}" data-short="{{ st.short }}">
                   {% csrf_token %}
                   <input type="hidden" name="stage" value="{{ st.key }}">
                   <input type="hidden" name="exit" value="1">
-                  <button type="submit" class="w-full py-2.5 rounded-lg text-sm font-semibold border-2 border-[#0077B6] text-[#0077B6] bg-white hover:bg-blue-50 dark:bg-slate-800 dark:text-blue-300 dark:border-blue-400 dark:hover:bg-slate-700 transition shadow-sm">Confirm & Exit</button>
+                  <button type="submit" class="hidden js-confirm-exit-submit">Confirm & Exit</button>
                 </form>
                 <p class="text-[11px] text-[var(--morgi-muted)] mt-2">Exit keeps application as <strong>pending</strong> at this stage — saved, you can resume later.</p>
                 <div class="mt-3 pt-3 border-t border-[var(--morgi-border)]">
@@ -208,13 +208,13 @@
                   {% csrf_token %}
                   <input type="hidden" name="stage" value="{{ st.key }}">
                   <input type="hidden" name="next_stage" value="{{ st.next_key }}">
-                  <button type="submit" class="w-full py-2.5 rounded-lg text-sm font-semibold text-white hover:opacity-90 transition" style="background:#0077B6">Confirm {{ st.short }}</button>
+                  <button type="submit" class="hidden js-confirm-submit">Confirm {{ st.short }}</button>
                 </form>
                 <form method="post" action="{% url 'bank_application_stage' application.id %}" class="mt-2 js-confirm-exit-form" data-stage="{{ st.key }}" data-short="{{ st.short }}">
                   {% csrf_token %}
                   <input type="hidden" name="stage" value="{{ st.key }}">
                   <input type="hidden" name="exit" value="1">
-                  <button type="submit" class="w-full py-2.5 rounded-lg text-sm font-semibold border-2 border-[#0077B6] text-[#0077B6] bg-white hover:bg-blue-50 dark:bg-slate-800 dark:text-blue-300 dark:border-blue-400 dark:hover:bg-slate-700 transition shadow-sm">Confirm & Exit</button>
+                  <button type="submit" class="hidden js-confirm-exit-submit">Confirm & Exit</button>
                 </form>
               {% endif %}
             </div>
@@ -240,30 +240,63 @@
     {% endfor %}
 
     <!-- Decision quick link inside wizard -->
+    {% with last_step=application.steps|last %}
     <section class="bs-segment" data-segment="6" id="bsSeg6">
       <div class="morgi-card p-6">
-        <h2 class="font-bold text-base mb-3">Make Decision (after all steps)</h2>
-        <div class="mb-4 p-3 rounded-lg bg-[var(--morgi-border)]/30 text-sm space-y-1.5">
-          <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">Customer</span><span class="font-semibold">{{ application.full_name }}</span></div>
-          <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">Amount</span><span class="font-semibold">TZS {{ application.amount|floatformat:0|intcomma }}</span></div>
-          <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">AI Score</span><span class="font-bold text-emerald-600">{{ application.ai_score }} / 100 • {{ application.ai_risk }}</span></div>
-        </div>
-        {% if application.status == 'approved' or application.status == 'rejected' %}
-        <p class="text-sm px-3 py-2 rounded-lg font-semibold {% if application.status == 'approved' %}bg-emerald-100 text-emerald-700{% else %}bg-red-100 text-red-700{% endif %}">{% if application.status == 'approved' %}✅ Approved{% else %}❌ Rejected{% endif %}</p>
+        {% if last_step.state == 'done' or application.status == 'approved' or application.status == 'rejected' %}
+          <h2 class="font-bold text-base mb-3 text-emerald-600 flex items-center gap-2"><i data-lucide="check-circle" class="w-5 h-5"></i> All Review Confirmed</h2>
+          <p class="text-sm text-[var(--morgi-muted)] mb-4">Every review stage has been completed. You can now make the final decision.</p>
+          <div class="mb-4 p-3 rounded-lg bg-[var(--morgi-border)]/30 text-sm space-y-1.5">
+            <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">Customer</span><span class="font-semibold">{{ application.full_name }}</span></div>
+            <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">Amount</span><span class="font-semibold">TZS {{ application.amount|floatformat:0|intcomma }}</span></div>
+            <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">AI Score</span><span class="font-bold text-emerald-600">{{ application.ai_score }} / 100 • {{ application.ai_risk }}</span></div>
+          </div>
+          {% if application.status == 'approved' or application.status == 'rejected' %}
+            <p class="text-sm px-3 py-2 rounded-lg font-semibold {% if application.status == 'approved' %}bg-emerald-100 text-emerald-700{% else %}bg-red-100 text-red-700{% endif %}">{% if application.status == 'approved' %}✅ Approved{% else %}❌ Rejected{% endif %}</p>
+          {% else %}
+            <div class="grid grid-cols-2 gap-2">
+              <button onclick="openApproveModalWiz()" class="py-3 rounded-lg text-sm font-bold text-white" style="background:#28A745">Approve</button>
+              <button onclick="openRejectModalWiz()" class="py-3 rounded-lg text-sm font-bold text-white" style="background:#DC3545">Reject</button>
+            </div>
+          {% endif %}
         {% else %}
-        <div class="grid grid-cols-2 gap-2">
-          <button onclick="document.getElementById('approveModalWiz').classList.remove('hidden')" class="py-3 rounded-lg text-sm font-bold text-white" style="background:#28A745">Approve</button>
-          <button onclick="document.getElementById('rejectModalWiz').classList.remove('hidden')" class="py-3 rounded-lg text-sm font-bold text-white" style="background:#DC3545">Reject</button>
-        </div>
+          <h2 class="font-bold text-base mb-3">Review Summary</h2>
+          <p class="text-sm text-[var(--morgi-muted)] mb-4">Please confirm that all review stages are complete before making the final decision.</p>
+          <div class="mb-4 p-3 rounded-lg bg-[var(--morgi-border)]/30 text-sm space-y-1.5">
+            <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">Customer</span><span class="font-semibold">{{ application.full_name }}</span></div>
+            <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">Amount</span><span class="font-semibold">TZS {{ application.amount|floatformat:0|intcomma }}</span></div>
+            <div class="flex justify-between"><span class="text-[var(--morgi-muted)]">AI Score</span><span class="font-bold text-emerald-600">{{ application.ai_score }} / 100 • {{ application.ai_risk }}</span></div>
+          </div>
+          <form method="post" action="{% url 'bank_application_stage' application.id %}" class="js-confirm-review-form">
+            {% csrf_token %}
+            <input type="hidden" name="stage" value="approval_decision">
+            <button type="submit" class="hidden js-confirm-review-submit">Confirm Review</button>
+          </form>
         {% endif %}
       </div>
     </section>
+    {% endwith %}
 
-    <!-- Wizard Navigation -->
-    <div class="flex justify-between items-center mt-4">
+    <!-- Wizard Navigation / Confirm bar (inside form box) -->
+    <div class="morgi-card p-4 mt-4 flex flex-wrap items-center justify-between gap-3">
       <button type="button" onclick="prevBankStep()" id="bsPrev" class="px-5 py-2.5 rounded-lg text-sm font-medium border border-[var(--morgi-border)] bg-[var(--morgi-card)] hover:bg-[var(--morgi-border)]/30">← Previous</button>
-      <span class="text-xs text-[var(--morgi-muted)]" id="bsCounter">1 / 7</span>
-      <button type="button" onclick="nextBankStep()" id="bsNext" class="px-5 py-2.5 rounded-lg text-sm font-semibold text-white" style="background:#0077B6">Next →</button>
+      <div class="flex flex-wrap items-center gap-2 justify-center flex-1" id="bsConfirmActions">
+        <button type="button" onclick="confirmCurrentStage()" id="bsConfirm" class="px-5 py-2.5 rounded-lg text-sm font-bold text-white shadow-sm hover:opacity-90 transition" style="background:#0077B6">Confirm Stage</button>
+        <button type="button" onclick="confirmExitCurrentStage()" id="bsConfirmExit" class="px-5 py-2.5 rounded-lg text-sm font-semibold border-2 border-[#0077B6] text-[#0077B6] bg-white hover:bg-blue-50 dark:bg-slate-800 dark:text-blue-300 dark:border-blue-400 dark:hover:bg-slate-700 transition shadow-sm">Confirm & Exit</button>
+      </div>
+      <div class="flex flex-wrap items-center gap-2 justify-center flex-1" id="bsDecisionActions" style="display:none;">
+        {% with last_step=application.steps|last %}
+        {% if application.status == 'approved' or application.status == 'rejected' %}
+          <span class="px-4 py-2 rounded-lg text-sm font-semibold {% if application.status == 'approved' %}bg-emerald-100 text-emerald-700{% else %}bg-red-100 text-red-700{% endif %}">Decision: {{ application.status|title }}</span>
+        {% elif last_step.state == 'done' %}
+          <button type="button" onclick="openApproveModalWiz()" class="px-5 py-2.5 rounded-lg text-sm font-bold text-white shadow-sm hover:opacity-90 transition" style="background:#28A745">Approve Application</button>
+          <button type="button" onclick="openRejectModalWiz()" class="px-5 py-2.5 rounded-lg text-sm font-bold text-white shadow-sm hover:opacity-90 transition" style="background:#DC3545">Reject Application</button>
+        {% else %}
+          <button type="button" onclick="confirmReview()" id="bsConfirmReview" class="px-5 py-2.5 rounded-lg text-sm font-bold text-white shadow-sm hover:opacity-90 transition" style="background:#0077B6">Confirm Review</button>
+        {% endif %}
+        {% endwith %}
+      </div>
+      <button type="button" onclick="nextBankStep()" id="bsNext" class="px-5 py-2.5 rounded-lg text-sm font-semibold text-white" style="background:#0077B6" disabled>Next →</button>
     </div>
   </div>
 
@@ -316,7 +349,10 @@
   const appAmount = "TZS {{ application.amount|floatformat:0|escapejs }}";
   const appCustomer = "{{ application.full_name|escapejs }}";
   const pdfUrl = "{% url 'bank_application_pdf' application.id|default:0 %}";
-  // Find initial active index - respects hash from redirect after Confirm
+  function bsStorageKey(){ return 'bank_review_active_seg_{{ application.id|default:0 }}'; }
+  function saveBankReviewState(){ try{ localStorage.setItem(bsStorageKey(), String(bsCurrent)); }catch(e){} }
+  function loadBankReviewState(){ try{ return parseInt(localStorage.getItem(bsStorageKey())); }catch(e){ return null; } }
+  // Find initial active index - respects hash from redirect after Confirm, then localStorage, then DB stage
   (function(){
     const segs = document.querySelectorAll('.bs-segment');
     let activeIdx = 0;
@@ -327,16 +363,22 @@
     const cur = "{{ application.review_stage|default:'received'|escapejs }}";
     if(stageMap[cur] !== undefined) activeIdx = stageMap[cur];
     // Hash from backend redirect after Confirm (e.g. #bsSeg2 or #segment-crb_check)
+    let hashOverride = false;
     try{
       const h = window.location.hash || '';
       if(h.startsWith('#bsSeg')){
         const p = parseInt(h.replace('#bsSeg',''));
-        if(!isNaN(p) && p>=0 && p < segs.length) activeIdx = p;
+        if(!isNaN(p) && p>=0 && p < segs.length){ activeIdx = p; hashOverride = true; }
       } else if(h.startsWith('#segment-')){
         const key = h.replace('#segment-','');
-        if(stageMap[key] !== undefined) activeIdx = stageMap[key];
+        if(stageMap[key] !== undefined){ activeIdx = stageMap[key]; hashOverride = true; }
       }
     }catch(e){}
+    // If no hash from backend, restore last viewed segment from localStorage so officer returns to same place
+    if(!hashOverride){
+      const saved = loadBankReviewState();
+      if(saved !== null && !isNaN(saved) && saved >= 0 && saved < segs.length) activeIdx = saved;
+    }
     bsCurrent = activeIdx;
     showBankStep(bsCurrent);
   })();
@@ -358,12 +400,75 @@
     const cnt = document.getElementById('bsCounter'); if(cnt) cnt.textContent = (idx+1)+' / '+segs.length;
     const prev = document.getElementById('bsPrev'); if(prev) prev.style.visibility = idx===0 ? 'hidden' : 'visible';
     const next = document.getElementById('bsNext'); if(next) next.style.display = idx===segs.length-1 ? 'none' : 'inline-block';
+    updateBsNextState();
     const nowEl = document.getElementById('bsNowStage');
     if(nowEl){
       const key = document.querySelector('.bs-segment.active')?.id || '';
       nowEl.textContent = key.replace('bsSeg','Step ');
     }
+    saveBankReviewState();
     window.scrollTo({top:0, behavior:'smooth'});
+  }
+  function isCurrentStageConfirmed(){
+    const activeSeg = document.querySelector('.bs-segment.active');
+    if(!activeSeg) return false;
+    const doneText = activeSeg.querySelector('.text-emerald-600');
+    if(doneText && doneText.textContent.includes('Confirmed')) return true;
+    // Decision segment or approved/rejected has no confirm form - treat as confirmed for navigation
+    if(!activeSeg.querySelector('form.js-confirm-form')) return true;
+    return false;
+  }
+  function updateBsNextState(){
+    const segs = document.querySelectorAll('.bs-segment');
+    const next = document.getElementById('bsNext');
+    const confirm = document.getElementById('bsConfirm');
+    const confirmExit = document.getElementById('bsConfirmExit');
+    const confirmActions = document.getElementById('bsConfirmActions');
+    const decisionActions = document.getElementById('bsDecisionActions');
+    const activeSeg = document.querySelector('.bs-segment.active');
+    const hasConfirmForm = activeSeg && !!activeSeg.querySelector('form.js-confirm-form');
+    const isLastSegment = (bsCurrent === segs.length - 1);
+    const confirmed = isCurrentStageConfirmed();
+    if(next){
+      next.disabled = !confirmed;
+      next.style.opacity = confirmed ? '1' : '0.5';
+      next.title = confirmed ? 'Go to next stage' : 'Confirm this stage before proceeding';
+    }
+    if(confirmActions && decisionActions){
+      if(isLastSegment){
+        confirmActions.style.display = 'none';
+        decisionActions.style.display = 'flex';
+      } else {
+        confirmActions.style.display = 'flex';
+        decisionActions.style.display = 'none';
+      }
+    }
+    if(confirm){
+      confirm.style.display = hasConfirmForm ? 'inline-block' : 'none';
+      confirm.disabled = !hasConfirmForm;
+    }
+    if(confirmExit){
+      confirmExit.style.display = hasConfirmForm ? 'inline-block' : 'none';
+      confirmExit.disabled = !hasConfirmForm;
+    }
+  }
+  function openApproveModalWiz(){
+    const m = document.getElementById('approveModalWiz');
+    if(m) m.classList.remove('hidden');
+  }
+  function openRejectModalWiz(){
+    const m = document.getElementById('rejectModalWiz');
+    if(m) m.classList.remove('hidden');
+  }
+  function confirmReview(){
+    const activeSeg = document.querySelector('.bs-segment.active');
+    const form = activeSeg?.querySelector('form.js-confirm-review-form');
+    const btn = form?.querySelector('button.js-confirm-review-submit');
+    if(btn){
+      btn.click();
+    } else if(window.Swal){
+      Swal.fire({icon:'info', title:'Review already confirmed', text:'All review stages are already confirmed.', toast:true, position:'top-end', timer:3000, showConfirmButton:false});
+    }
   }
   function goToBankStep(i){
     // Allow editing - jump to any step (done or pending) for review - user can revisit numbers at top
@@ -371,24 +476,10 @@
     if(window.Swal) Swal.fire({icon:'success', title:'Stage opened', text:'You can review and edit this stage.', toast:true, position:'top-end', timer:2000, showConfirmButton:false});
   }
   function nextBankStep(){
-    // If current stage is active (not yet confirmed), trigger its Confirm form so DB saves and success toast shows
-    const activeSeg = document.querySelector('.bs-segment.active');
-    if(activeSeg){
-      const isDone = activeSeg.querySelector('.text-emerald-600') && activeSeg.querySelector('.text-emerald-600').textContent.includes('Confirmed');
-      if(!isDone){
-        const form = activeSeg.querySelector('form.js-confirm-form');
-        if(form){
-          // Trigger receipt flow if needed, otherwise submit
-          if(form.dataset.receipt === '1'){
-            showReceiptAndSubmit(form);
-          } else {
-            form.submit();
-          }
-          return;
-        }
-        const fallback = activeSeg.querySelector('form[action*="bank_application_stage"]');
-        if(fallback){ fallback.submit(); return; }
-      }
+    // Next is disabled until current stage is confirmed
+    if(!isCurrentStageConfirmed()){
+      if(window.Swal) Swal.fire({icon:'info', title:'Confirm required', text:'Please click Confirm Stage before going to the next step.', toast:true, position:'top-end', timer:4000, showConfirmButton:false});
+      return;
     }
     // If already confirmed, just navigate to next segment with SUCCESS toast (stage 1 confirm successfully etc.)
     const nextIdx = bsCurrent+1;
@@ -396,6 +487,28 @@
       showBankStep(nextIdx);
       const stageName = document.querySelector('.bs-segment.active h2')?.textContent || ('Stage '+(nextIdx+1));
       if(window.Swal) Swal.fire({icon:'success', title: stageName.trim() + ' — ready', text:'Previous stage confirmed successfully. Now at next stage.', toast:true, position:'top-end', timer:3500, showConfirmButton:false});
+    }
+  }
+  function confirmCurrentStage(){
+    const activeSeg = document.querySelector('.bs-segment.active');
+    if(!activeSeg) return;
+    const form = activeSeg.querySelector('form.js-confirm-form');
+    const btn = form?.querySelector('button.js-confirm-submit');
+    if(btn){
+      btn.click();
+    } else if(window.Swal){
+      Swal.fire({icon:'info', title:'Nothing to confirm', text:'This stage is already confirmed or does not require confirmation.', toast:true, position:'top-end', timer:3000, showConfirmButton:false});
+    }
+  }
+  function confirmExitCurrentStage(){
+    const activeSeg = document.querySelector('.bs-segment.active');
+    if(!activeSeg) return;
+    const form = activeSeg.querySelector('form.js-confirm-exit-form');
+    const btn = form?.querySelector('button.js-confirm-exit-submit');
+    if(btn){
+      btn.click();
+    } else if(window.Swal){
+      Swal.fire({icon:'info', title:'Nothing to confirm', text:'This stage is already confirmed or does not require confirmation.', toast:true, position:'top-end', timer:3000, showConfirmButton:false});
     }
   }
   function prevBankStep(){ showBankStep(bsCurrent-1); }
@@ -476,6 +589,9 @@
         }
       });
     });
+    // Auto-save active segment when leaving the page so officer returns to the same stage
+    window.addEventListener('beforeunload', saveBankReviewState);
+    document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'hidden') saveBankReviewState(); });
   });
   var galleryImgs=[], galleryIdx=0, galleryTitle='';
   function openDocModal(url,name,kind){ galleryImgs=[]; showDoc(url,name,kind,''); document.getElementById('docModal').classList.remove('hidden'); if(window.morgiRenderIcons) morgiRenderIcons(); }

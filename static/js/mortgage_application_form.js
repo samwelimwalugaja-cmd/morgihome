@@ -143,7 +143,7 @@
     bankDetails.innerHTML = `
       <strong>${b.name}</strong> <span class="badge bg-primary ms-2">${b.interest_rate ? b.interest_rate+'% Interest' : '12% default'}</span>
       <div class="mt-2 row g-2 small">
-        <div class="col-6">Interest: <strong>${b.interest_rate ? b.interest_rate+'%' : '12%'}</strong> | Fee: <strong>${b.processing_fee ? b.processing_fee+'%' : '2%'}</strong></div>
+        <div class="col-6">Interest: <strong>${b.interest_rate ? b.interest_rate+'%' : '12%'}</strong> | Fee: <strong>${b.processing_fee ? b.processing_fee+'%' : '1%'}</strong></div>
         <div class="col-6">Max Period: <strong>${maxM} months (${maxY} years)</strong></div>
         <div class="col-6">Loan Range: <strong>${b.min_loan_amount ? Number(b.min_loan_amount).toLocaleString() : '0'} - ${b.max_loan_amount ? Number(b.max_loan_amount).toLocaleString() : '∞'} TZS</strong></div>
         <div class="col-12">Requirements: <em>${b.bank_requirements || '—'}</em></div>

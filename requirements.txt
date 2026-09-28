@@ -9,6 +9,7 @@ python-dotenv==1.2.*
 django-ratelimit==4.1.*
 django-axes==8.3.*
 django-ipware==7.0.*
+django-allauth==65.*
 gunicorn==23.*
 whitenoise==6.11.*
 Pillow==10.*

@@ -73,7 +73,11 @@ class MortgageApplicationSerializer(serializers.ModelSerializer):
                   'bank', 'bank_name', 'bank_details',
                   'loan_amount', 'down_payment', 'repayment_period',
                   'monthly_income', 'monthly_expenses', 'employment_status',
-                  'marital_status', 'dob', 'nida_number', 'marriage_certificate_number', 'marriage_certificate_file',
+                  'marital_status', 'dob', 'nida_number', 'gender', 'dependents',
+                  'employer_name', 'job_title', 'years_employed', 'contract_type',
+                  'bank_account_number', 'bank_account_name',
+                  'marriage_certificate_number', 'marriage_certificate_file',
+                  'business_name', 'business_years',
                   'business_type', 'business_registration_number', 'annual_income',
                   'employment_sector', 'deduction_psssf', 'deduction_heslb', 'deduction_paye',
                   'psssf_amount', 'heslb_amount', 'paye_amount', 'total_deductions', 'net_monthly_income',
@@ -87,6 +91,28 @@ class MortgageApplicationSerializer(serializers.ModelSerializer):
         read_only_fields = ['customer', 'application_number', 'affordability_score', 'risk_score', 'monthly_installment',
                            'dti_ratio', 'psssf_amount', 'heslb_amount', 'paye_amount', 'total_deductions', 'net_monthly_income',
                            'created_at', 'updated_at']
+
+    def to_internal_value(self, data):
+        # Money inputs are formatted with thousand separators (10,000) - strip
+        # commas before DRF Decimal/Integer parsing, DB keeps raw numbers.
+        try:
+            import copy
+            mutable = hasattr(data, 'copy')
+            data = data.copy() if mutable else dict(data)
+            for _f in ['loan_amount', 'down_payment', 'monthly_income', 'monthly_expenses',
+                       'annual_income', 'other_loan_amount', 'other_loan_balance',
+                       'other_loan_monthly_payment', 'existing_loan_amount',
+                       'existing_loan_repayment', 'existing_loan_balance',
+                       'repayment_period']:
+                try:
+                    _v = data.get(_f)
+                    if isinstance(_v, str) and ',' in _v:
+                        data[_f] = _v.replace(',', '').strip()
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        return super().to_internal_value(data)
 
     def get_customer_name(self, obj):
         return obj.customer.get_full_name() if obj.customer else None
@@ -239,6 +265,25 @@ class MortgageApplicationSerializer(serializers.ModelSerializer):
             if price > 0 and float(loan) > price:
                 raise serializers.ValidationError({
                     'loan_amount': f"Loan amount (TZS {float(loan):,.0f}) exceeds the property value (TZS {price:,.0f}). Reduce the amount."})
+        # Bank account details are required on final submit (Step 5) - drafts skip this
+        try:
+            _is_draft = False
+            _req = getattr(self, 'context', {}).get('request') if isinstance(getattr(self, 'context', {}), dict) else None
+            if _req is not None:
+                _path = getattr(_req, 'path', '') or ''
+                _is_draft = 'draft' in _path
+        except Exception:
+            _is_draft = False
+        if not _is_draft:
+            _bank = attrs.get('bank') or (self.instance.bank if self.instance else None)
+            _acc = attrs.get('bank_account_number') or (getattr(self.instance, 'bank_account_number', None) if self.instance else None)
+            try:
+                if _req is not None and hasattr(_req, 'data') and not _acc:
+                    _acc = _req.data.get('bank_account_number') or _req.data.get('bank_account')
+            except Exception:
+                pass
+            if _bank and not _acc:
+                raise serializers.ValidationError({'bank_account_number': 'Bank account number is required. Enter your account number at the selected bank.'})
         # Statutory deductions validation: PSSSF only for employed public sector; but allow but backend will ignore if not applicable
         has_other = attrs.get('has_other_loan') or (self.instance.has_other_loan if self.instance else None)
         if has_other == 'yes':
@@ -248,11 +293,10 @@ class MortgageApplicationSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'other_loan_bank': 'Benki ya mkopo wa zamani inahitajika kama una mkopo mwingine.'})
             if not other_bal:
                 raise serializers.ValidationError({'other_loan_balance': 'Deni lililobaki linahitajika.'})
-            # consolidate flag recommended
+            # consolidate flag required when customer has another loan
             consolidate = attrs.get('other_loan_consolidate') or (self.instance.other_loan_consolidate if self.instance else None)
             if not consolidate:
-                # auto default to no, but warn - no error, allow
-                pass
+                raise serializers.ValidationError({'other_loan_consolidate': 'Please select whether the new bank should include (takeover) this existing loan or keep it separate.'})
         return attrs
 
 

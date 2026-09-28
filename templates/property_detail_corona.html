@@ -61,6 +61,11 @@
           <div class="text-end" style="min-width: 150px;">
             <h2 class="text-primary mb-1" style="font-weight: 800; font-size: 28px;">TZS {{ property.price|intcomma }}</h2>
             <span class="badge {% if property.status == 'available' %}badge-outline-success{% elif property.status == 'sold' %}badge-outline-danger{% else %}badge-outline-warning{% endif %}" style="font-size: 12px; padding: 6px 12px;">{{ property.get_status_display }}</span>
+            {% if property.seller.is_verified %}
+            <span class="badge badge-outline-success ml-1" style="font-size: 12px; padding: 6px 12px; background:rgba(0,210,91,0.12); border:1px solid #00d25b; color:#00d25b; margin-left:6px;" title="Seller verified - documents checked"><i class="mdi mdi-check-decagram"></i> Verified Property</span>
+            {% else %}
+            <span class="badge badge-outline-warning ml-1" style="font-size: 11px; padding: 6px 12px; margin-left:6px;" title="Listing not yet fully verified"><i class="mdi mdi-clock-outline"></i> Unverified</span>
+            {% endif %}
           </div>
         </div>
 

@@ -14,9 +14,7 @@
   <link rel="stylesheet" href="{% static 'corona/vendors/owl-carousel-2/owl.carousel.min.css' %}">
   <link rel="stylesheet" href="{% static 'corona/vendors/owl-carousel-2/owl.theme.default.min.css' %}">
   <link rel="stylesheet" href="{% static 'corona/css/style.css' %}">
-  <link href="{% static 'images/favicon.ico' %}?v=4" rel="icon" sizes="48x48">
-  <link href="{% static 'images/favicon-32x32.png' %}?v=4" rel="icon" type="image/png" sizes="32x32">
-  <link href="{% static 'images/favicon-16x16.png' %}?v=4" rel="icon" type="image/png" sizes="16x16">
+  <link href="{% static 'images/favicon.png' %}?v=5" rel="icon" type="image/png">
   <link href="{% static 'images/apple-touch-icon.png' %}?v=4" rel="apple-touch-icon" type="image/png">
   <style>
     html, body { background:#000 !important; margin:0 !important; }
@@ -113,7 +111,7 @@
   </style>
   {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
   <div class="container-scroller">
     <!-- Sidebar -->
     <nav class="sidebar sidebar-offcanvas" id="sidebar">
@@ -370,11 +368,17 @@
           }
           if(!items.length){
             if(badge) badge.style.display='none';
+            list.innerHTML = '<div class="text-center py-4"><i class="mdi mdi-bell-off-outline" style="font-size:32px; color:#6c7293;"></i><p class="text-muted mt-2 mb-0" style="font-size:13px;">No notifications</p><small class="text-muted" style="font-size:11px;">You are all caught up.</small></div>';
             return;
           }
           if(badge){
             if(unread > 0){ badge.style.display=''; badge.textContent = unread > 9 ? '9+' : String(unread); }
             else { badge.style.display='none'; }
+          }
+          // If marked as read and no unread, show empty state in dropdown (user requested: after Mark as Read, dropdown should have no message)
+          if(unread === 0){
+            list.innerHTML = '<div class="text-center py-4"><i class="mdi mdi-bell-off-outline" style="font-size:32px; color:#6c7293;"></i><p class="text-muted mt-2 mb-0" style="font-size:13px;">No notifications</p><small class="text-muted" style="font-size:11px;">You are all caught up.</small></div>';
+            return;
           }
           list.innerHTML = items.slice(0,5).map(function(n){
             return '<a class="dropdown-item preview-item" href="/customer/notifications/">' +
@@ -389,10 +393,12 @@
         var h = custAuthHeaders();
         h['X-CSRFToken'] = getCookie('csrftoken')||'';
         h['X-Requested-With'] = 'XMLHttpRequest';
+        var listEl = document.getElementById('custNotifList');
+        function clearList(){ if(listEl) listEl.innerHTML = '<div class="text-center py-4"><i class="mdi mdi-bell-off-outline" style="font-size:32px; color:#6c7293;"></i><p class="text-muted mt-2 mb-0" style="font-size:13px;">No notifications</p><small class="text-muted" style="font-size:11px;">You are all caught up.</small></div>'; }
         return fetch('/api/auth/notifications/', {method:'POST', credentials:'same-origin', headers: h})
           .then(function(r){ if(!r.ok) throw 0; return r.json().catch(function(){return {};}); })
-          .then(function(){ try{ localStorage.setItem('cust_notif_read_at', Date.now().toString()); }catch(e){} if(badge) badge.style.display='none'; })
-          .catch(function(){ try{ localStorage.setItem('cust_notif_read_at', Date.now().toString()); }catch(e){} if(badge) badge.style.display='none'; });
+          .then(function(){ try{ localStorage.setItem('cust_notif_read_at', Date.now().toString()); }catch(e){} if(badge) badge.style.display='none'; clearList(); })
+          .catch(function(){ try{ localStorage.setItem('cust_notif_read_at', Date.now().toString()); }catch(e){} if(badge) badge.style.display='none'; clearList(); });
       };
     })();
     // External Apply links without mortgage type -> ask user which mortgage type

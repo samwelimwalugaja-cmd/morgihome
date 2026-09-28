@@ -621,10 +621,17 @@ select.input {
   box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
 }
 
-/* Single Google button */
+/* Single Google button - full width to match primary submit button */
 .social-row.single {
   grid-template-columns: 1fr;
 }
 .social-row.single .social-btn {
   justify-content: center;
+}
+.social-btn.social-btn--full {
+  width: 100%;
+  max-width: none;
+  padding: 13px 20px;
+  font-size: 15px;
+  font-weight: 600;
 }

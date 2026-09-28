@@ -21,6 +21,7 @@ urlpatterns = [
     path("applications/<int:pk>/correction/", views.bank_application_correction, name="bank_application_correction"),
     path("applications/<int:pk>/approve/", views.bank_application_approve, name="bank_application_approve"),
     path("applications/<int:pk>/reject/", views.bank_application_reject, name="bank_application_reject"),
+    path("applications/<int:pk>/disburse/", views.bank_application_disburse, name="bank_application_disburse"),
     path("applications/<int:pk>/pdf/", views.bank_application_pdf, name="bank_application_pdf"),
 
     # Contracts - /bank/contracts/

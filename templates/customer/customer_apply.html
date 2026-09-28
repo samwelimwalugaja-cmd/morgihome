@@ -1,6 +1,7 @@
 {% extends 'customer/customer_base.html' %}
 {% load static humanize %}
 {% block title %}Apply Mortgage - MorgiHome{% endblock %}
+{% block body_class %}apply-page{% endblock %}
 
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -33,6 +34,25 @@
   .form-control.is-valid, .form-select.is-valid { border-color:#00d25b !important; box-shadow:0 0 0 0.2rem rgba(0,210,91,.15) !important; }
   .field-error { color:#fc424a; font-size:11px; margin-top:4px; display:none; }
   .field-error.show { display:block; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-5px)} 40%,80%{transform:translateX(5px)} }
+  .shake { animation: shake 0.4s ease; }
+  #confirmReviewCard.is-invalid { border-color:#fc424a !important; box-shadow:0 0 0 0.2rem rgba(252,66,74,.25) !important; background: rgba(252,66,74,0.06) !important; }
+  #confirmReviewCheck.is-invalid { outline:2px solid #fc424a; outline-offset:2px; }
+
+  /* Full-screen mortgage form on customer apply page */
+  .apply-page .container-scroller { padding:0 !important; max-width:none !important; }
+  .apply-page .page-body-wrapper { width:100% !important; max-width:none !important; padding-left:0 !important; padding-right:0 !important; }
+  .apply-page .main-panel { width:100% !important; max-width:none !important; margin-left:0 !important; }
+  .apply-page .content-wrapper { padding:0 !important; width:100% !important; max-width:none !important; }
+  .apply-page .container-fluid { padding-left:10px !important; padding-right:10px !important; width:100% !important; max-width:none !important; }
+  .apply-page .row { margin-left:0 !important; margin-right:0 !important; }
+  .apply-page .col-12 { padding-left:10px !important; padding-right:10px !important; }
+  /* Form fills the content area; paired fields use col-md-6 to sit side-by-side on large screens */
+  .apply-page .content-wrapper { padding:20px 0 0 0 !important; width:100% !important; max-width:none !important; }
+  .apply-page .container-fluid { width:100% !important; max-width:none !important; padding-left:10px !important; padding-right:10px !important; }
+  .apply-page .row { margin-left:0 !important; margin-right:0 !important; }
+  .apply-page .col-12 { padding-left:10px !important; padding-right:10px !important; }
+  .apply-page .card { width:100% !important; max-width:none !important; }
 </style>
 {% endblock %}
 
@@ -61,7 +81,7 @@
 <div id="draftResumeBanner" class="card mt-3" style="display:none; border-left:4px solid #ffc107; background:#191c24; border-color:#2c2e33; border-radius:10px;">
   <div class="card-body py-3 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
     <div>
-      <h6 class="mb-1" style="font-weight:700;"><i class="mdi mdi-content-save-edit" style="color:#ffc107;"></i> Draft in Progress (Pending)</h6>
+      <h6 class="mb-1" style="font-weight:700;"><i class="mdi mdi-content-save-edit" style="color:#ffc107;"></i> Draft in Progress</h6>
       <p class="text-muted mb-0" style="font-size:13px;" id="draftResumeText">Continued from step 3 • Residential Mortgage • Will resume where you left off</p>
       <small class="text-muted" id="draftResumeMeta" style="font-size:11px;"></small>
     </div>
@@ -112,7 +132,7 @@
   </div>
 </div>
 
-<form id="wizardForm" enctype="multipart/form-data" class="mt-3">
+<form id="wizardForm" enctype="multipart/form-data" class="mt-3" novalidate>
   {% csrf_token %}
   <!-- STEP 1: Customer Type -->
   <div class="segment-card active" data-segment="1">
@@ -139,6 +159,9 @@
           </div>
         </div>
         <div id="typeInfo" class="alert" style="background:rgba(0,119,182,0.1); border:1px solid rgba(0,119,182,0.2); color:#6c7293; font-size:13px; display:none;"></div>
+        <div class="d-flex justify-content-end mt-3 pt-3 segment-save-bar" style="border-top:1px solid #2c2e33;">
+          <button type="button" class="btn btn-info btn-sm" style="background:#0077B6; border-color:#0077B6; color:#fff;" onclick="saveCurrentStage()"><i class="mdi mdi-content-save me-1"></i> Save This Step</button>
+        </div>
       </div>
     </div>
   </div>
@@ -198,6 +221,9 @@
           <div id="dobError" class="col-12 text-danger small" style="display:none;"></div>
           <div id="nidaError2" class="col-12 text-danger small" style="display:none;"></div>
         </div>
+        <div class="d-flex justify-content-end mt-3 pt-3 segment-save-bar" style="border-top:1px solid #2c2e33;">
+          <button type="button" class="btn btn-info btn-sm" style="background:#0077B6; border-color:#0077B6; color:#fff;" onclick="saveCurrentStage()"><i class="mdi mdi-content-save me-1"></i> Save This Step</button>
+        </div>
       </div>
     </div>
   </div>
@@ -222,27 +248,9 @@
           <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Employer Name *</label><input type="text" name="employer_name" id="employerName" class="form-control" placeholder="e.g. Ministry of Education" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
           <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Job Title *</label><input type="text" name="job_title" id="jobTitle" class="form-control" placeholder="e.g. Teacher" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
           <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Years of Employment *</label><input type="number" name="years_employed" id="yearsEmployed" class="form-control" placeholder="3" min="0" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
-          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Gross Monthly Income (TZS) *</label><input type="number" name="monthly_income" id="monthlyIncome" class="form-control" placeholder="2000000" required style="background:#2c2e33; border-color:#444; color:#fff;"><small class="text-muted" style="font-size:11px;">Gross salary before deductions</small></div>
-          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Monthly Expenses (TZS) *</label><input type="number" name="monthly_expenses" id="monthlyExpenses" class="form-control" placeholder="800000" required style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+          <input type="hidden" name="monthly_expenses" id="monthlyExpenses" value="0">
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Gross Monthly Income (TZS) *</label><input type="text" inputmode="numeric" name="monthly_income" id="monthlyIncome" class="form-control money-input" placeholder="2,000,000" required style="background:#2c2e33; border-color:#444; color:#fff;"><small class="text-muted" style="font-size:11px;">Gross salary before deductions</small></div>
           <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Contract Type *</label><select name="contract_type" id="contractType" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;"><option value="">Select</option><option value="permanent">Permanent</option><option value="contract">Contract</option></select></div>
-          <div class="col-12"><label class="form-label" style="font-size:12px; color:#6c7293;">Do you have an existing loan at any bank? *</label>
-            <select name="has_existing_loan" id="hasExistingLoan" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;" onchange="toggleExistingLoanDetails(this.value)">
-              <option value="">Select</option>
-              <option value="no" selected>No</option>
-              <option value="yes">Yes</option>
-            </select>
-          </div>
-          <div id="existingLoanDetails" class="col-12" style="display:none;">
-            <div style="background:#191c24; border:1px solid #2c2e33; border-radius:8px; padding:14px;">
-              <p class="text-muted mb-2" style="font-size:12px;">Please provide details of your existing loan — this information will be attached and sent to the selected bank.</p>
-              <div class="row g-2">
-                <div class="col-12 col-md-6"><label class="form-label" style="font-size:11px; color:#6c7293;">Bank Name</label><input type="text" name="existing_loan_bank" class="form-control" placeholder="e.g. CRDB Bank" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
-                <div class="col-12 col-md-6"><label class="form-label" style="font-size:11px; color:#6c7293;">Loan Amount (TZS)</label><input type="number" name="existing_loan_amount" class="form-control" placeholder="20000000" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
-                <div class="col-12 col-md-6"><label class="form-label" style="font-size:11px; color:#6c7293;">Monthly Repayment (TZS)</label><input type="number" name="existing_loan_repayment" class="form-control" placeholder="500000" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
-                <div class="col-12 col-md-6"><label class="form-label" style="font-size:11px; color:#6c7293;">Remaining Balance (TZS)</label><input type="number" name="existing_loan_balance" class="form-control" placeholder="10000000" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
-              </div>
-            </div>
-          </div>
           <!-- Statutory Deductions - Employee (English) -->
           <div class="col-12">
             <div style="background:rgba(124,58,237,0.07); border:1px solid rgba(124,58,237,0.20); border-radius:10px; padding:14px;">
@@ -303,6 +311,9 @@
           </div>
         </div>
         <div class="alert mt-3" style="background:rgba(0,119,182,0.08); border:1px solid rgba(0,119,182,0.15); font-size:12px;"><i class="mdi mdi-information-outline me-1" style="color:#0077B6;"></i> Your monthly income and repayment will be used to calculate affordability (DSR). The selected bank's interest rate will be applied automatically. All deductions will be used to calculate the true DTI.</div>
+        <div class="d-flex justify-content-end mt-3 pt-3 segment-save-bar" style="border-top:1px solid #2c2e33;">
+          <button type="button" class="btn btn-info btn-sm" style="background:#0077B6; border-color:#0077B6; color:#fff;" onclick="saveCurrentStage()"><i class="mdi mdi-content-save me-1"></i> Save This Step</button>
+        </div>
       </div>
     </div>
   </div>
@@ -318,7 +329,7 @@
           <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Business Registration Number <span style="color:#ffc107;">* if Business Owner</span></label><input type="text" name="business_registration_number" id="businessRegNo" class="form-control" placeholder="BRL-2024-001234 or LIC-DSM-2024-005678" style="background:#2c2e33; border-color:#444; color:#fff;"><small class="text-muted" style="font-size:11px;">BRELA: BRL-2024-001234 | Council: LIC-DSM-2024-005678</small></div>
           <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Business Type *</label><select name="business_type" id="businessType" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;"><option value="">Select</option><option value="wholesale">Wholesale</option><option value="retail">Retail</option></select></div>
           <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Years in Business</label><input type="number" name="business_years" class="form-control" placeholder="5" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
-          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Average Annual Income (TZS) <span style="color:#ffc107;">* if Business Owner</span></label><input type="number" name="annual_income" id="annualIncome" class="form-control" placeholder="24000000" style="background:#2c2e33; border-color:#444; color:#fff;"><small class="text-muted" style="font-size:11px;">Average annual income — not monthly (will be divided by 12)</small></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Average Annual Income (TZS) <span style="color:#ffc107;">* if Business Owner</span></label><input type="text" inputmode="numeric" name="annual_income" id="annualIncome" class="form-control money-input" placeholder="24,000,000" style="background:#2c2e33; border-color:#444; color:#fff;"><small class="text-muted" style="font-size:11px;">Average annual income — not monthly (will be divided by 12)</small></div>
           <!-- Deductions for Business Owner (PSSSF disabled) - English -->
           <div class="col-12">
             <div style="background:rgba(124,58,237,0.07); border:1px solid rgba(124,58,237,0.20); border-radius:10px; padding:14px;">
@@ -369,6 +380,9 @@
             </div>
           </div>
         </div>
+        <div class="d-flex justify-content-end mt-3 pt-3 segment-save-bar" style="border-top:1px solid #2c2e33;">
+          <button type="button" class="btn btn-info btn-sm" style="background:#0077B6; border-color:#0077B6; color:#fff;" onclick="saveCurrentStage()"><i class="mdi mdi-content-save me-1"></i> Save This Step</button>
+        </div>
       </div>
     </div>
   </div>
@@ -403,6 +417,13 @@
             {% for bank in banks %}<option value="{{ bank.id }}">{{ bank.get_full_name }} — {{ bank.interest_rate }}%</option>{% endfor %}
           </select>
         </div>
+        <div class="row g-3 mt-1">
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293; font-weight:600;">Your Account Number at this Bank *</label><input type="text" name="bank_account_number" id="bankAccountNumber" class="form-control" placeholder="e.g. 0152345678900" required style="background:#2c2e33; border-color:#444; color:#fff;"><small class="text-muted" style="font-size:11px;">Account number of the bank you selected above — required to continue.</small><div class="field-error" id="bankAccountError" style="color:#fc424a; font-size:11px; display:none;">Account number is required.</div></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Account Holder Name</label><input type="text" name="bank_account_name" id="bankAccountName" class="form-control" placeholder="e.g. Juma Mhando" style="background:#2c2e33; border-color:#444; color:#fff;"><small class="text-muted" style="font-size:11px;">Name as it appears on that bank account (optional but recommended).</small></div>
+        </div>
+        <div class="d-flex justify-content-end mt-3 pt-3 segment-save-bar" style="border-top:1px solid #2c2e33;">
+          <button type="button" class="btn btn-info btn-sm" style="background:#0077B6; border-color:#0077B6; color:#fff;" onclick="saveCurrentStage()"><i class="mdi mdi-content-save me-1"></i> Save This Step</button>
+        </div>
       </div>
     </div>
   </div>
@@ -431,8 +452,8 @@
               <option value="construction">Construction - Build new house (5M-200M, 5 stages BOQ)</option>
             </select>
           </div>
-          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Loan Amount (TZS) *</label><input type="number" name="loan_amount" id="loanAmount" class="form-control" placeholder="50000000" required min="5000000" style="background:#2c2e33; border-color:#444; color:#fff;" oninput="updateDownPaymentCustomer()" onkeyup="updateDownPaymentCustomer()" onchange="updateDownPaymentCustomer()"></div>
-          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Down Payment (TZS) <span class="text-muted">(auto 10%)</span></label><input type="number" name="down_payment" id="downPayment" class="form-control" placeholder="" readonly style="background:#191c24; border-color:#444; color:#fff;"><small class="text-muted" style="font-size:11px;" id="downHint">10% of loan amount — will calculate as you type</small></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Loan Amount (TZS) *</label><input type="text" inputmode="numeric" name="loan_amount" id="loanAmount" class="form-control money-input" placeholder="50,000,000" required style="background:#2c2e33; border-color:#444; color:#fff;" oninput="updateDownPaymentCustomer()" onkeyup="updateDownPaymentCustomer()" onchange="updateDownPaymentCustomer()"></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Down Payment (TZS) <span class="text-muted">(auto 10%)</span></label><input type="text" inputmode="numeric" name="down_payment" id="downPayment" class="form-control money-input" placeholder="" readonly style="background:#191c24; border-color:#444; color:#fff;"><small class="text-muted" style="font-size:11px;" id="downHint">10% of loan amount — will calculate as you type</small></div>
           <div class="col-12"><label class="form-label" style="font-size:12px; color:#6c7293; font-weight:600;">Repayment Period (Months) *</label>
             <select name="repayment_period" id="repaymentPeriod" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;" required>
               <option value="">-- Select Bank first --</option>
@@ -444,46 +465,73 @@
           <!-- Other Loan / Consolidation Section (Step 6) - English -->
           <div class="col-12">
             <div style="background:linear-gradient(135deg, rgba(0,119,182,0.08) 0%, rgba(10,43,78,0.08) 100%); border:1px solid rgba(0,119,182,0.25); border-radius:12px; padding:16px;">
-              <h6 style="font-weight:800; color:#0077B6; font-size:13px;"><i class="mdi mdi-bank-transfer me-1"></i> Do you have another loan at a different bank? <span class="text-danger">*</span></h6>
-              <p class="text-muted mb-2" style="font-size:11px;">Some banks will takeover your existing loan and consolidate it into this new mortgage. Answer this so the selected bank knows whether to include the old debt or keep this loan separate.</p>
-              <div class="row g-3">
-                <div class="col-12 col-md-6">
-                  <label class="form-label" style="font-size:12px; color:#6c7293; font-weight:600;">Do you have another loan? *</label>
-                  <select name="has_other_loan" id="hasOtherLoan" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;" onchange="toggleOtherLoanDetails(this.value)" required>
-                    <option value="no" selected>No — I don't have another loan</option>
-                    <option value="yes">Yes — I have another loan</option>
-                  </select>
+              <h6 style="font-weight:800; color:#0077B6; font-size:13px;"><i class="mdi mdi-bank-transfer me-1"></i> Other Existing Loan <span class="text-danger">*</span></h6>
+              <p class="text-muted mb-2" style="font-size:11px;">Tell us if you currently have a loan at another bank. If yes, the selected bank can choose to take it over (consolidate) into this new mortgage, or you can keep repaying it separately.</p>
+
+              <!-- Question 1: Do you have another loan? -->
+              <div class="mb-3">
+                <label class="form-label" style="font-size:12px; color:#6c7293; font-weight:600;">Do you have another loan at a different bank? *</label>
+                <select name="has_other_loan" id="hasOtherLoan" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;" onchange="toggleOtherLoanDetails(this.value)" required>
+                  <option value="no" selected>No — I don't have another loan</option>
+                  <option value="yes">Yes — I have another loan</option>
+                </select>
+              </div>
+
+              <div id="otherLoanDetails" style="display:none;">
+                <!-- Question 2: Consolidation (prominent full-width radio cards) -->
+                <div class="mb-3">
+                  <label class="form-label d-block" style="font-size:12px; color:#6c7293; font-weight:600;">Do you want the new bank to include this existing loan in your new mortgage? *</label>
+                  <div class="d-flex flex-column gap-2">
+                    <label class="consolidate-card d-block p-3 rounded" style="background:#2c2e33; border:1px solid #444; cursor:pointer; width:100%;">
+                      <input type="radio" name="other_loan_consolidate" value="yes" id="otherLoanConsolidateYes" style="accent-color:#0077B6;">
+                      <span class="ms-2" style="font-weight:600; font-size:13px;">Yes — Include / Takeover</span>
+                      <p class="mb-0 mt-1 text-muted" style="font-size:12px;">The new bank pays off the old debt and adds it to this mortgage.</p>
+                    </label>
+                    <label class="consolidate-card d-block p-3 rounded" style="background:#2c2e33; border:1px solid #444; cursor:pointer; width:100%;">
+                      <input type="radio" name="other_loan_consolidate" value="no" id="otherLoanConsolidateNo" style="accent-color:#0077B6;">
+                      <span class="ms-2" style="font-weight:600; font-size:13px;">No — Keep Separate</span>
+                      <p class="mb-0 mt-1 text-muted" style="font-size:12px;">You will continue repaying the old loan separately from this mortgage.</p>
+                    </label>
+                  </div>
+                  <div class="field-error" id="otherLoanConsolidate-error"></div>
                 </div>
-                <div class="col-12 col-md-6" id="consolidateWrap" style="display:none;">
-                  <label class="form-label" style="font-size:12px; color:#6c7293; font-weight:600;">Should this loan consolidate the old debt? *</label>
-                  <select name="other_loan_consolidate" id="otherLoanConsolidate" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;">
-                    <option value="">-- Select --</option>
-                    <option value="yes">Yes — New bank to takeover the debt (Consolidation)</option>
-                    <option value="no">No — Keep loans separate</option>
-                  </select>
-                  <small class="text-muted" style="font-size:10px;">"Yes" = new bank pays the old debt and adds it to this loan. "No" = you will repay two separate loans.</small>
+
+                <!-- Existing loan details -->
+                <div style="background:#191c24; border:1px solid #2c2e33; border-radius:8px; padding:14px;">
+                  <p class="mb-2" style="font-weight:600; font-size:12px; color:#0077B6;"><i class="mdi mdi-information-outline me-1"></i> Existing Loan Details (will be sent to your selected bank)</p>
+                  <div class="row g-2">
+                    <div class="col-12 col-md-6"><label class="form-label" style="font-size:11px; color:#6c7293;">Existing Loan Bank Name *</label><input type="text" name="other_loan_bank" id="otherLoanBank" class="form-control" placeholder="e.g. NMB, CRDB, NBC" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+                    <div class="col-12 col-md-6"><label class="form-label" style="font-size:11px; color:#6c7293;">Original Loan Amount (TZS)</label><input type="text" inputmode="numeric" name="other_loan_amount" id="otherLoanAmount" class="form-control money-input" placeholder="30,000,000" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+                    <div class="col-12 col-md-6"><label class="form-label" style="font-size:11px; color:#6c7293;">Outstanding Balance (TZS) *</label><input type="text" inputmode="numeric" name="other_loan_balance" id="otherLoanBalance" class="form-control money-input" placeholder="15,000,000" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+                    <div class="col-12 col-md-6"><label class="form-label" style="font-size:11px; color:#6c7293;">Monthly Payment (TZS)</label><input type="text" inputmode="numeric" name="other_loan_monthly_payment" id="otherLoanMonthly" class="form-control money-input" placeholder="500,000" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+                  </div>
                 </div>
-                <div id="otherLoanDetails" class="col-12" style="display:none;">
-                  <div style="background:#191c24; border:1px solid #2c2e33; border-radius:8px; padding:14px;">
-                    <p class="mb-2" style="font-weight:600; font-size:12px; color:#0077B6;"><i class="mdi mdi-information-outline me-1"></i> Existing Loan Details (will be sent to your selected bank)</p>
-                    <div class="row g-2">
-                      <div class="col-12 col-md-6"><label class="form-label" style="font-size:11px; color:#6c7293;">Existing Loan Bank Name *</label><input type="text" name="other_loan_bank" id="otherLoanBank" class="form-control" placeholder="e.g. NMB, CRDB, NBC" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
-                      <div class="col-12 col-md-6"><label class="form-label" style="font-size:11px; color:#6c7293;">Original Loan Amount (TZS)</label><input type="number" name="other_loan_amount" id="otherLoanAmount" class="form-control" placeholder="30000000" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
-                      <div class="col-12 col-md-6"><label class="form-label" style="font-size:11px; color:#6c7293;">Outstanding Balance (TZS) *</label><input type="number" name="other_loan_balance" id="otherLoanBalance" class="form-control" placeholder="15000000" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
-                      <div class="col-12 col-md-6"><label class="form-label" style="font-size:11px; color:#6c7293;">Monthly Payment (TZS)</label><input type="number" name="other_loan_monthly_payment" id="otherLoanMonthly" class="form-control" placeholder="500000" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+              </div>
+                <!-- Semi-Finish: upload YOUR house photos (min 10, max 20, pick cover) -->
+                <div class="col-12" id="semiFinishPhotosWrap" style="display:none;">
+                  <div style="background:linear-gradient(135deg, rgba(0,210,91,0.08) 0%, rgba(10,43,78,0.08) 100%); border:1px solid rgba(0,210,91,0.25); border-radius:12px; padding:16px;">
+                    <h6 style="font-weight:800; color:#00d25b; font-size:13px;"><i class="mdi mdi-home-edit me-1"></i> Your House Photos — Renovation (Semi-Finish at Lintel Stage) *</h6>
+                    <p class="text-muted mb-2" style="font-size:11px;">Upload photos of <strong>your own house</strong> you want to complete. <strong>Minimum 10, maximum 20 photos.</strong> Click one photo to mark it as <strong>Cover</strong> (shown first to the bank).</p>
+                    <!-- Hidden input accumulates all chosen files -->
+                    <input type="file" name="house_photos" id="housePhotosInput" accept=".jpg,.jpeg,.png,.webp" multiple class="form-control" style="display:none;">
+                    <div class="d-flex gap-2 flex-wrap mb-2">
+                      <button type="button" id="addHousePhotosBtn" class="btn btn-outline-primary btn-sm" onclick="triggerAddHousePhotos()"><i class="mdi mdi-image-plus me-1"></i> Add Photos</button>
+                      <button type="button" id="clearHousePhotosBtn" class="btn btn-outline-danger btn-sm" onclick="clearHousePhotos()" style="display:none;"><i class="mdi mdi-delete-sweep me-1"></i> Clear All</button>
                     </div>
-                    <div class="alert mt-2 mb-0" style="background:rgba(0,119,182,0.08); border:1px solid rgba(0,119,182,0.15); font-size:11px; color:#e5e6ea;">
-                      <i class="mdi mdi-lightbulb-outline me-1" style="color:#0077B6;"></i> <strong>Note:</strong> If you select "Yes — takeover", the new bank will finance the old debt as part of this mortgage (Debt Consolidation). If "No", DTI will be calculated by adding both payments (old loan + new mortgage).
-                    </div>
+                    <small class="text-muted" style="font-size:11px;" id="housePhotosHint">0 selected — need at least 10 (max 20). JPG/PNG/WEBP, max 5MB each.</small>
+                    <div id="housePhotosPreview" class="d-flex gap-2 flex-wrap mt-2"></div>
+                    <input type="hidden" name="house_cover_index" id="houseCoverIndex" value="0">
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
+        <div class="d-flex justify-content-end mt-3 pt-3 segment-save-bar" style="border-top:1px solid #2c2e33;">
+          <button type="button" class="btn btn-info btn-sm" style="background:#0077B6; border-color:#0077B6; color:#fff;" onclick="saveCurrentStage()"><i class="mdi mdi-content-save me-1"></i> Save This Step</button>
+        </div>
       </div>
     </div>
-  </div>
 <script>
 // Fallback real-time Down Payment calc — ensures field shows actual money even if main JS hasn't bound yet
 (function(){
@@ -495,7 +543,7 @@
     var loan=parseFloat(String(loanEl.value).replace(/,/g,''))||0;
     if(loan>0){
       var down=Math.round(loan*0.10);
-      downEl.value=String(down);
+      downEl.value=down.toLocaleString('en-US');
       if(hint) hint.textContent='TZS '+down.toLocaleString()+' (10% of TZS '+loan.toLocaleString()+')';
     } else {
       downEl.value='';
@@ -527,7 +575,7 @@
     <div class="card">
       <div class="card-body">
         <h5 style="font-weight:700;"><span style="display:inline-flex; width:28px; height:28px; background:#0077B6; color:#fff; border-radius:50%; align-items:center; justify-content:center; font-size:13px; margin-right:8px;">7</span> Upload Documents</h5>
-        <p class="text-muted" style="font-size:13px;">Each file max 5MB. Allowed: PDF, JPG, PNG. Title deed, ID, pay slips and bank statements are required. Other is optional.</p>
+        <p class="text-muted" style="font-size:13px;">Each file max 5MB. Allowed: PDF, JPG, PNG. Title deed, ID, pay slips and bank statements are required. Other is optional. <strong>Oversized or wrong-type files are rejected immediately when you select them.</strong></p>
         <div id="docEmployedNote" class="alert mt-2" style="display:none; background:rgba(0,119,182,0.08); border:1px solid rgba(0,119,182,0.15); font-size:12px;"><i class="mdi mdi-information-outline" style="color:#0077B6;"></i> You are employed — employer documents are required. Business documents are not needed.</div>
         <div id="docBusinessNote" class="alert mt-2" style="display:none; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.15); font-size:12px;"><i class="mdi mdi-store" style="color:#10b981;"></i> You are a business owner — business income proof is required. Employer reference letter is not needed.</div>
         <div class="row g-3 mt-1">
@@ -538,6 +586,9 @@
           <div class="col-12 col-md-6" id="docEmploymentContractWrap"><label class="form-label" style="font-size:12px; color:#6c7293;">Employment Contract <span id="docContractStar" style="display:none;">*</span></label><div class="doc-drop"><input type="file" name="documents" id="docEmploymentContract" accept=".pdf,.jpg,.jpeg,.png" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;"></div></div>
           <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Title Deed *</label><div class="doc-drop"><input type="file" name="documents" id="docTitleDeed" accept=".pdf,.jpg,.jpeg,.png" class="form-control doc-required" style="background:#2c2e33; border-color:#444; color:#fff;"></div></div>
           <div class="col-12"><label class="form-label" style="font-size:12px; color:#6c7293;">Other Documents (Tax Clearance etc.)</label><div class="doc-drop"><input type="file" name="documents" id="docOther" multiple accept=".pdf,.jpg,.jpeg,.png" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;"></div></div>
+        </div>
+        <div class="d-flex justify-content-end mt-3 pt-3 segment-save-bar" style="border-top:1px solid #2c2e33;">
+          <button type="button" class="btn btn-info btn-sm" style="background:#0077B6; border-color:#0077B6; color:#fff;" onclick="saveCurrentStage()"><i class="mdi mdi-content-save me-1"></i> Save This Step</button>
         </div>
       </div>
     </div>
@@ -564,13 +615,13 @@
           </div>
         </div>
         <div class="alert mt-3" style="background:rgba(255,193,7,0.1); border:1px solid rgba(255,193,7,0.3); font-size:13px; display:none;" id="aiAlert"></div>
-        <div class="card mt-3" style="background:#0f0f0f; border:1px solid #2c2e33; border-radius:8px;">
+        <div class="card mt-3" id="confirmReviewCard" style="background:#0f0f0f; border:1px solid #2c2e33; border-radius:8px; transition: all 0.2s;">
           <div class="card-body py-3">
-            <label class="d-flex gap-3 align-items-start" style="cursor:pointer;">
-              <input type="checkbox" id="confirmReviewCheck" style="margin-top:4px; width:18px; height:18px;">
-              <span style="font-size:13px; color:#e5e6ea;"><strong>Read carefully:</strong> I have reviewed all information above and confirm it is correct. I understand that this information will be sent to the selected bank for assessment. I agree to proceed with submission.</span>
+            <label class="d-flex gap-3 align-items-start" style="cursor:pointer;" for="confirmReviewCheck">
+              <input type="checkbox" id="confirmReviewCheck" style="margin-top:4px; width:18px; height:18px; accent-color:#0077B6;" required>
+              <span style="font-size:13px; color:#e5e6ea;"><strong>Declaration & Confirmation <span class="text-danger">*</span></strong><br>I have reviewed all information above and confirm it is correct. I understand that this information will be sent to the selected bank for assessment. I agree to proceed with submission.</span>
             </label>
-            <div id="confirmError" class="field-error" style="display:none; color:#fc424a; font-size:11px; margin-top:8px;">Please confirm that you have read and verified your information before submitting.</div>
+            <div id="confirmError" class="field-error" style="display:none; color:#fc424a; font-size:12px; margin-top:10px; font-weight:600;"><i class="mdi mdi-alert-circle me-1"></i> You must tick this box to confirm and proceed — Please review your details and check the confirmation to submit your application.</div>
           </div>
         </div>
       </div>
@@ -580,7 +631,7 @@
   <!-- Navigation -->
   <div class="d-flex justify-content-between align-items-center mt-3 mb-4">
     <button type="button" id="prevBtn" class="btn btn-outline-secondary" style="border-radius:6px; padding:8px 20px; display:none;" onclick="prevSegment()"><i class="mdi mdi-arrow-left me-1"></i> Previous</button>
-    <div class="ms-auto d-flex gap-2">
+    <div class="ms-auto d-flex gap-2 flex-wrap justify-content-end">
       <button type="button" id="saveExitBtn" class="btn btn-outline-secondary" style="border-radius:6px; padding:8px 16px;" onclick="saveAndExit()">Save & Exit</button>
       <button type="button" id="nextBtn" class="btn btn-primary" style="border-radius:6px; padding:8px 24px;" onclick="nextSegment()">Next <i class="mdi mdi-arrow-right ms-1"></i></button>
       <button type="submit" id="submitBtn" class="btn btn-success" style="border-radius:6px; padding:8px 24px; display:none;"><i class="mdi mdi-send me-1"></i> Submit Application</button>
@@ -597,6 +648,9 @@ const totalSegments = 8;
 let customerType = null;
 let currentMortgageType = null;
 let pendingDraft = null;
+// Track which stages have been explicitly saved and whether current stage was modified
+window._savedSegments = new Set();
+window._segmentChanged = {};
 
 function getMortgageType(){
   const urlParams = new URLSearchParams(window.location.search);
@@ -645,6 +699,17 @@ function saveDraftLocal(){
     const fd = new FormData(form);
     const obj = {};
     fd.forEach((v,k)=>{ if(v) obj[k]=v; });
+    // Preserve NIDA verification state in local draft
+    obj._nidaVerified = !window._nidaNeedsVerify && document.getElementById('nidaVerifyStatus') && document.getElementById('nidaVerifyStatus').innerHTML.includes('Verified');
+    if(typeof nidaQ1Ok!=='undefined'){ obj._nidaQ1Ok=nidaQ1Ok; obj._nidaQ2Ok=nidaQ2Ok; obj._nidaQ3Ok=nidaQ3Ok; }
+    if(typeof nidaScore!=='undefined') obj._nidaScore=nidaScore;
+    // Store which file inputs had selections (user can't recover File objects, but knows what was uploaded)
+    const fileInputs=['docId','docPayslip','docBankStatement','docEmployerRef','docEmploymentContract','docTitleDeed','docOther','marriageCertFile','housePhotosInput'];
+    obj._fileSelection = {};
+    fileInputs.forEach(id=>{
+      var inp=document.getElementById(id);
+      if(inp && inp.files && inp.files.length) obj._fileSelection[id]=inp.files.length;
+    });
     obj._currentStep = currentSegment;
     obj._mortgageType = currentMortgageType||getMortgageType();
     obj._customerType = customerType;
@@ -669,6 +734,17 @@ async function saveDraftBackend(useBeacon){
     const fd = new FormData(form);
     const payload = {};
     fd.forEach((v,k)=>{ if(v) payload[k]=v; });
+    // Persist NIDA verification state in backend draft_data
+    payload._nidaVerified = !window._nidaNeedsVerify && document.getElementById('nidaVerifyStatus') && document.getElementById('nidaVerifyStatus').innerHTML.includes('Verified');
+    if(typeof nidaQ1Ok!=='undefined'){ payload._nidaQ1Ok=nidaQ1Ok; payload._nidaQ2Ok=nidaQ2Ok; payload._nidaQ3Ok=nidaQ3Ok; }
+    if(typeof nidaScore!=='undefined') payload._nidaScore=nidaScore;
+    // Persist file selection existence count (no actual files in JSON draft)
+    const fileInputs=['docId','docPayslip','docBankStatement','docEmployerRef','docEmploymentContract','docTitleDeed','docOther','marriageCertFile','housePhotosInput'];
+    payload._fileSelection = {};
+    fileInputs.forEach(id=>{
+      var inp=document.getElementById(id);
+      if(inp && inp.files && inp.files.length) payload._fileSelection[id]=inp.files.length;
+    });
     payload.current_step = currentSegment;
     payload.mortgage_type = currentMortgageType||getMortgageType();
     payload.loan_type = document.getElementById('loanType')?.value || payload.mortgage_type;
@@ -723,19 +799,32 @@ function restoreFormFromObj(obj){
   if(!obj) return;
   for(const[k,v] of Object.entries(obj)){
     if(k.startsWith('_')) continue;
-    // property/bank special: they are IDs
-    const el = document.querySelector(`[name="${k}"]`);
-    if(el && v){
-      if(el.type==='radio' || el.type==='checkbox'){
-        const radio = document.querySelector(`[name="${k}"][value="${v}"]`);
-        if(radio){ radio.checked=true; }
+    // Skip file values (can't restore File objects) - just keep file counts stored elsewhere
+    if(k==='_files' || k==='documents' || k==='house_photos' || k==='marriage_certificate_file') continue;
+    const inputs = document.querySelectorAll(`[name="${k}"]`);
+    if(inputs.length === 0) continue;
+    inputs.forEach(el=>{
+      if(!el) return;
+      if(el.type==='radio'){
+        if(String(el.value) === String(v)) el.checked = true;
+      } else if(el.type==='checkbox'){
+        el.checked = (String(v).toLowerCase() === 'true' || String(v) === '1' || String(v) === 'on' || String(v) === 'yes');
+      } else if(el.tagName==='SELECT'){
+        el.value = String(v);
+        // trigger change handlers so dependent UI updates (loan type -> semi-finish, bank -> periods etc.)
+        try{ el.dispatchEvent(new Event('change', {bubbles:true})); }catch(e){}
       } else {
-        el.value=v;
+        el.value = v;
       }
-    }
+    });
   }
-  if(obj._customerType || obj.customer_type){
-    customerType = obj._customerType || obj.customer_type;
+  // Trigger dependent UI updates after values are restored
+  try{
+    var loanTypeEl = document.getElementById('loanType');
+    if(loanTypeEl) loanTypeEl.dispatchEvent(new Event('change', {bubbles:true}));
+  }catch(e){}
+  if(obj._customerType || obj.customer_type || obj.employment_status || obj.customer_type){
+    customerType = obj._customerType || obj.customer_type || (obj.employment_status==='business_owner'?'business':'employed');
     document.querySelectorAll('.type-card').forEach(c=>c.classList.toggle('selected', c.dataset.value===customerType));
     const inp=document.querySelector(`.type-card[data-value="${customerType}"] input`);
     if(inp) inp.checked=true;
@@ -753,6 +842,8 @@ function restoreFormFromObj(obj){
       const sel=document.getElementById('applyBank'); if(sel) sel.value=obj.bank;
     }
   }
+  try{ formatAllMoneyInputs(); }catch(e){}
+  try{ updateSemiFinishUI(); }catch(e){}
 }
 
 function autoResumeDraft(obj){
@@ -760,6 +851,12 @@ function autoResumeDraft(obj){
   let restoreObj = obj;
   if(obj.draft_data){
     restoreObj = {...obj.draft_data, _customerType: obj.draft_data.customer_type || obj.draft_data._customerType, _currentStep: obj.current_step, _mortgageType: obj.mortgage_type||obj._mortgageType, mortgage_type: obj.mortgage_type};
+    // Also pull any top-level fields into restore object so restoreFormFromObj finds them
+    for(const fld of ['bank','property','loan_amount','down_payment','repayment_period','monthly_income','annual_income','employer_name','job_title','years_employed','contract_type','business_name','business_registration_number','business_type','business_years','bank_account_number','bank_account_name','nida_number','dob','gender','dependents','marital_status','marriage_certificate_number','loan_type','has_other_loan','other_loan_bank','other_loan_amount','other_loan_balance','other_loan_monthly_payment','other_loan_consolidate','employment_sector','deduction_psssf','deduction_heslb','deduction_paye','monthly_expenses','employment_status']){
+      if(obj[fld] !== undefined && obj[fld] !== null && obj[fld] !== '' && (restoreObj[fld] === undefined || restoreObj[fld] === '' || restoreObj[fld] === null)){
+        restoreObj[fld] = obj[fld];
+      }
+    }
     // Top-level bank/property fallbacks (draft.bank outside draft_data) - for direct bank apply
     if(obj.bank && !restoreObj.bank) restoreObj.bank = obj.bank;
     if(obj.property && !restoreObj.property) restoreObj.property = obj.property;
@@ -767,6 +864,25 @@ function autoResumeDraft(obj){
     if(obj.property_details && obj.property_details.id && !restoreObj.property) restoreObj.property = obj.property_details.id;
   }
   restoreFormFromObj(restoreObj);
+  // Fire formatting on restored money inputs after all values are set
+  try{ formatAllMoneyInputs(); }catch(e){}
+  // Restore NIDA verification state (backend or local)
+  var nidaVerified = restoreObj._nidaVerified || (restoreObj.draft_data && restoreObj.draft_data._nidaVerified);
+  if(restoreObj._nidaQ1Ok !== undefined){
+    nidaQ1Ok = restoreObj._nidaQ1Ok; nidaQ2Ok = restoreObj._nidaQ2Ok; nidaQ3Ok = restoreObj._nidaQ3Ok;
+  } else if(restoreObj.draft_data && restoreObj.draft_data._nidaQ1Ok !== undefined){
+    nidaQ1Ok = restoreObj.draft_data._nidaQ1Ok; nidaQ2Ok = restoreObj.draft_data._nidaQ2Ok; nidaQ3Ok = restoreObj.draft_data._nidaQ3Ok;
+  }
+  // If the draft says verified and a NIDA number exists, show verified status so user doesn't need to click Verify again
+  if(nidaVerified || (nidaQ1Ok && nidaQ2Ok) || (nidaQ1Ok && nidaQ3Ok) || (nidaQ2Ok && nidaQ3Ok)){
+    window._nidaNeedsVerify = false;
+    const nidaInput = document.getElementById('nidaInput');
+    if(nidaInput){ nidaInput.classList.remove('is-invalid'); nidaInput.classList.add('is-valid'); }
+    const status = document.getElementById('nidaVerifyStatus');
+    if(status){ status.style.display='inline'; status.innerHTML='<span style="color:#00d25b;"><i class="mdi mdi-check-circle"></i> Verified (restored)</span>'; }
+    const final = document.getElementById('nidaFinalMsg');
+    if(final){ final.style.display='block'; final.innerHTML='<div class="alert" style="background:rgba(0,210,91,0.12); border:1px solid rgba(0,210,91,0.25); color:#e5e6ea; border-radius:8px;"><i class="mdi mdi-check-decagram" style="color:#00d25b;"></i> <strong>Verified:</strong> NIDA was previously verified. No need to verify again.</div>'; }
+  }
   // Ensure bank is restored even if restoreObj missed it - check top-level and draft_data
   var bankToRestore = restoreObj.bank || obj.bank || (obj.draft_data && obj.draft_data.bank) || null;
   if(bankToRestore){
@@ -793,7 +909,7 @@ function autoResumeDraft(obj){
     if(restoreObj.other_loan_amount) { var el=document.getElementById('otherLoanAmount'); if(el) el.value=restoreObj.other_loan_amount; }
     if(restoreObj.other_loan_balance) { var el=document.getElementById('otherLoanBalance'); if(el) el.value=restoreObj.other_loan_balance; }
     if(restoreObj.other_loan_monthly_payment) { var el=document.getElementById('otherLoanMonthly'); if(el) el.value=restoreObj.other_loan_monthly_payment; }
-    if(restoreObj.other_loan_consolidate) { var el=document.getElementById('otherLoanConsolidate'); if(el) el.value=restoreObj.other_loan_consolidate; }
+    if(restoreObj.other_loan_consolidate) { setOtherLoanConsolidate(restoreObj.other_loan_consolidate); }
   }
   if(restoreObj.employment_sector){ var es=document.getElementById('employmentSector'); if(es) es.value=restoreObj.employment_sector; }
   if(restoreObj.deduction_psssf){ var cb=document.getElementById('deductPsssf'); if(cb) cb.checked = (String(restoreObj.deduction_psssf).toLowerCase()==='true' || String(restoreObj.deduction_psssf)==='1'); }
@@ -801,8 +917,15 @@ function autoResumeDraft(obj){
   if(restoreObj.deduction_paye){ var cb=document.getElementById('deductPaye'); if(cb) cb.checked = (String(restoreObj.deduction_paye).toLowerCase()==='true' || String(restoreObj.deduction_paye)==='1'); var cb2=document.getElementById('deductPayeBiz'); if(cb2) cb2.checked = (String(restoreObj.deduction_paye).toLowerCase()==='true' || String(restoreObj.deduction_paye)==='1'); }
   try{ recalcDeductions(); }catch(e){}
   try{ recalcDeductionsBiz(); }catch(e){}
+  // Resume to exact saved step. If resume comes from ?resume_draft_id, current_step is authoritative.
   currentSegment = parseInt(obj.current_step || obj._currentStep || 1);
   if(isNaN(currentSegment) || currentSegment<1) currentSegment=1;
+  // Remember the highest step the user legitimately reached so we can block forward jumps beyond it.
+  window._highestReachedStep = Math.max(window._highestReachedStep || 0, currentSegment);
+  // Mark all previous segments as already saved; current segment must be saved again before Next
+  window._savedSegments = new Set();
+  window._segmentChanged = {};
+  for(var _s=1; _s<currentSegment; _s++) window._savedSegments.add(_s);
   // Skip Employment for business owner, skip Business for employed
   var effType = customerType || restoreObj._customerType || (obj.draft_data && obj.draft_data.customer_type) || '';
   if(currentSegment===3 && effType==='business') currentSegment=4;
@@ -960,10 +1083,10 @@ function updateDownPaymentCustomer(){
   var downEl=document.getElementById('downPayment');
   var hint=document.getElementById('downHint');
   if(!loanEl||!downEl) return;
-  var loan=parseFloat(loanEl.value)||0;
+  var loan=(typeof parseMoney==='function')?parseMoney(loanEl.value):(parseFloat(String(loanEl.value).replace(/,/g,''))||0);
   if(loan){
     var down=Math.round(loan*0.10);
-    downEl.value=down;
+    downEl.value=down.toLocaleString('en-US');
     if(hint) hint.textContent='TZS '+down.toLocaleString()+' (10% of TZS '+loan.toLocaleString()+')';
   } else {
     downEl.value='';
@@ -1045,11 +1168,11 @@ function calcPayeTZ(income){
 function getGrossMonthlyForDeductions(isBiz){
   if(isBiz){
     var annual=document.getElementById('annualIncome');
-    if(annual && annual.value) return parseFloat(annual.value)/12;
+    if(annual && annual.value) return parseMoney(annual.value)/12;
     return 0;
   } else {
     var mi=document.getElementById('monthlyIncome');
-    return mi ? parseFloat(mi.value)||0 : 0;
+    return mi ? parseMoney(mi.value)||0 : 0;
   }
 }
 function recalcDeductions(){
@@ -1143,22 +1266,33 @@ function recalcDeductionsBiz(){
   }
   if(typeof recalcAI==='function') setTimeout(recalcAI, 100);
 }
+function getOtherLoanConsolidate(){
+  var yes=document.getElementById('otherLoanConsolidateYes');
+  var no=document.getElementById('otherLoanConsolidateNo');
+  if(yes && yes.checked) return 'yes';
+  if(no && no.checked) return 'no';
+  return '';
+}
+function setOtherLoanConsolidate(val){
+  var yes=document.getElementById('otherLoanConsolidateYes');
+  var no=document.getElementById('otherLoanConsolidateNo');
+  if(yes) yes.checked = (val === 'yes');
+  if(no) no.checked = (val === 'no');
+}
 function toggleOtherLoanDetails(val){
   var details=document.getElementById('otherLoanDetails');
-  var consol=document.getElementById('consolidateWrap');
   if(val==='yes'){
     if(details) details.style.display='block';
-    if(consol) consol.style.display='block';
   } else {
     if(details) details.style.display='none';
-    if(consol) consol.style.display='none';
     ['otherLoanBank','otherLoanAmount','otherLoanBalance','otherLoanMonthly'].forEach(function(id){
       var el=document.getElementById(id); if(el) el.value='';
     });
-    var c=document.getElementById('otherLoanConsolidate'); if(c) c.value='';
+    setOtherLoanConsolidate('');
   }
   if(typeof saveDraft==='function') saveDraft();
   if(typeof recalcAI==='function') recalcAI();
+  markSegmentChanged(6);
 }
 function bindCustomerApplyExtras(){
   var dobEl=document.getElementById('dobInput');
@@ -1184,14 +1318,229 @@ function bindCustomerApplyExtras(){
   });}
   var businessRegEl=document.getElementById('businessRegNo');
   if(businessRegEl){ businessRegEl.addEventListener('input', function(){ validateBusinessRegCustomer(false); }); businessRegEl.addEventListener('change', function(){ validateBusinessRegCustomer(true); }); }
+  try{ bindMoneyInputs(); }catch(e){}
+  try{ bindHousePhotos(); }catch(e){}
+  try{ bindDocSizeGuards(); }catch(e){}
+  try{ updateSemiFinishUI(); }catch(e){}
+  var loanTypeEl=document.getElementById('loanType');
+  if(loanTypeEl){ loanTypeEl.addEventListener('change', function(){ try{updatePropertyOptionalUI();}catch(e){} try{updateSemiFinishUI();}catch(e){} }); }
+  var accEl=document.getElementById('bankAccountNumber');
+  if(accEl){ accEl.addEventListener('input', function(){ var e=document.getElementById('bankAccountError'); if(e) e.style.display='none'; accEl.classList.remove('is-invalid'); }); }
   // Deductions listeners
-  var dedIds=['deductPsssf','deductHeslb','deductPaye','deductHeslbBiz','deductPayeBiz','employmentSector','monthlyIncome','annualIncome','hasOtherLoan','otherLoanConsolidate','otherLoanMonthly'];
+  var dedIds=['deductPsssf','deductHeslb','deductPaye','deductHeslbBiz','deductPayeBiz','employmentSector','monthlyIncome','annualIncome','hasOtherLoan','otherLoanMonthly'];
   dedIds.forEach(function(id){
     var el=document.getElementById(id);
     if(el){ el.addEventListener('change', function(){ try{recalcDeductions();}catch(e){} try{recalcDeductionsBiz();}catch(e){} try{recalcAI();}catch(e){} }); el.addEventListener('input', function(){ try{recalcDeductions();}catch(e){} try{recalcDeductionsBiz();}catch(e){} try{recalcAI();}catch(e){} }); }
   });
+  // Radio buttons for consolidation also affect AI recalculation
+  ['otherLoanConsolidateYes','otherLoanConsolidateNo'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el){ el.addEventListener('change', function(){ try{recalcDeductions();}catch(e){} try{recalcDeductionsBiz();}catch(e){} try{recalcAI();}catch(e){} try{saveDraft();}catch(e){} }); }
+  });
 }
 
+// === Money formatting (TZS thousands separators) - display with commas, DB keeps raw numbers ===
+function stripCommas(v){ return String(v==null?'':v).replace(/,/g,'').trim(); }
+function parseMoney(v){ var n=parseFloat(stripCommas(v)); return isNaN(n)?0:n; }
+function formatMoney(v){ var n=parseMoney(v); if(!v && v!==0) return ''; return n.toLocaleString('en-US'); }
+function bindMoneyInputs(){
+  document.querySelectorAll('.money-input').forEach(function(el){
+    if(el.dataset.moneyBound) return;
+    el.dataset.moneyBound='1';
+    el.addEventListener('input', function(){
+      var raw=stripCommas(el.value).replace(/[^0-9.]/g,'');
+      if(!raw){ el.value=''; return; }
+      var parts=raw.split('.');
+      parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      el.value = parts.length>1 ? parts[0]+'.'+parts[1].slice(0,2) : parts[0];
+      if(el.id==='loanAmount' && typeof updateDownPaymentCustomer==='function') updateDownPaymentCustomer();
+      if(typeof recalcAI==='function') recalcAI();
+    });
+    el.addEventListener('blur', function(){ if(el.value) el.value=formatMoney(el.value); });
+  });
+}
+function formatAllMoneyInputs(){
+  document.querySelectorAll('.money-input').forEach(function(el){ if(el.value) el.value=formatMoney(el.value); });
+}
+// === Semi-Finish house photos (min 10, max 20, cover pick) ===
+function isSemiFinishSelected(){
+  try{
+    var lt=document.getElementById('loanType')?.value || '';
+    var mt=(typeof currentMortgageType!=='undefined' && currentMortgageType) ? currentMortgageType : '';
+    return lt==='semi_finish' || ['renovation','semi_finish'].includes(mt);
+  }catch(e){ return false; }
+}
+function updateSemiFinishUI(){
+  var wrap=document.getElementById('semiFinishPhotosWrap');
+  if(!wrap) return;
+  var show=isSemiFinishSelected();
+  wrap.style.display=show?'block':'none';
+  var inp=document.getElementById('housePhotosInput');
+  if(inp){ if(show) inp.setAttribute('required',''); else inp.removeAttribute('required'); }
+}
+window._housePhotoFiles = [];
+function triggerAddHousePhotos(){
+  var inp=document.getElementById('housePhotosTempInput');
+  if(!inp){
+    inp=document.createElement('input');
+    inp.type='file';
+    inp.id='housePhotosTempInput';
+    inp.accept='.jpg,.jpeg,.png,.webp';
+    inp.multiple=true;
+    inp.style.display='none';
+    inp.addEventListener('change', handleAddHousePhotos);
+    document.body.appendChild(inp);
+  }
+  inp.click();
+}
+function handleAddHousePhotos(e){
+  var inp=e.target;
+  var newFiles=Array.prototype.slice.call(inp.files||[]);
+  if(!newFiles.length) return;
+  var current=window._housePhotoFiles||[];
+  var valid=[];
+  var errors=[];
+  for(var i=0;i<newFiles.length;i++){
+    var f=newFiles[i];
+    var ext=(f.name.split('.').pop()||'').toLowerCase();
+    if(['jpg','jpeg','png','webp'].indexOf(ext)===-1){
+      errors.push('"'+f.name+'" is not a supported image type.');
+      continue;
+    }
+    if(f.size>5*1024*1024){
+      errors.push('"'+f.name+'" is '+Number(f.size/(1024*1024)).toFixed(1)+'MB — max 5MB.');
+      continue;
+    }
+    valid.push(f);
+  }
+  if(errors.length && typeof Swal!=='undefined'){
+    Swal.fire({icon:'warning', title:'Some photos skipped', html:errors.join('<br>'), toast:true, position:'top-end', timer:5000, showConfirmButton:false});
+  }
+  if(!valid.length) return;
+  if(current.length+valid.length>20){
+    var allowed=20-current.length;
+    if(allowed<=0){
+      if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Too many photos', text:'You already have '+current.length+' photos (max 20). Clear some before adding more.', toast:true, position:'top-end', timer:5000, showConfirmButton:false});
+      return;
+    }
+    valid=valid.slice(0,allowed);
+    if(typeof Swal!=='undefined') Swal.fire({icon:'info', title:'Photos trimmed', text:'Only the first '+allowed+' new photos were added to stay within the 20-photo limit.', toast:true, position:'top-end', timer:4000, showConfirmButton:false});
+  }
+  window._housePhotoFiles=current.concat(valid);
+  syncHousePhotosInput();
+  renderHousePhotosPreview();
+  markSegmentChanged(6);
+  inp.value='';
+}
+function syncHousePhotosInput(){
+  var dt=new DataTransfer();
+  (window._housePhotoFiles||[]).forEach(function(f){ dt.items.add(f); });
+  var inp=document.getElementById('housePhotosInput');
+  if(inp) inp.files=dt.files;
+}
+function renderHousePhotosPreview(){
+  var prev=document.getElementById('housePhotosPreview');
+  var hint=document.getElementById('housePhotosHint');
+  var clearBtn=document.getElementById('clearHousePhotosBtn');
+  var files=window._housePhotoFiles||[];
+  if(prev) prev.innerHTML='';
+  var cover=document.getElementById('houseCoverIndex');
+  var coverVal=parseInt(cover?cover.value:'0')||0;
+  if(files.length && coverVal>=files.length) coverVal=0;
+  files.forEach(function(f, idx){
+    var url=URL.createObjectURL(f);
+    var wrap=document.createElement('div');
+    wrap.style.cssText='width:90px; font-size:11px; text-align:center; position:relative;';
+    var isCover=(idx===coverVal);
+    wrap.innerHTML='<img src="'+url+'" style="width:90px;height:70px;object-fit:cover;border-radius:8px;border:2px solid '+(isCover?'#00d25b':'#2c2e33')+';cursor:pointer;" onclick="setHouseCover('+idx+')" title="Click to set as cover"><div style="margin-top:4px;"><input type="radio" name="house_cover_pick" value="'+idx+'"'+(isCover?' checked':'')+' onchange="setHouseCover('+idx+')"> Cover</div><button type="button" onclick="removeHousePhoto('+idx+')" style="font-size:10px; color:#fc424a; background:none; border:none; padding:0; margin-top:2px;"><i class="mdi mdi-close-circle"></i> Remove</button>';
+    if(prev) prev.appendChild(wrap);
+  });
+  if(hint) hint.textContent=files.length+' selected'+(files.length<10?' — need at least 10':' — OK (cover: photo '+(coverVal+1)+')')+' (max 20). Click a photo to set Cover.';
+  if(clearBtn) clearBtn.style.display=files.length>0?'inline-block':'none';
+}
+function setHouseCover(idx){
+  var cover=document.getElementById('houseCoverIndex');
+  var files=window._housePhotoFiles||[];
+  if(idx<0 || idx>=files.length) return;
+  if(cover) cover.value=String(idx);
+  renderHousePhotosPreview();
+}
+function removeHousePhoto(idx){
+  var files=window._housePhotoFiles||[];
+  if(idx<0 || idx>=files.length) return;
+  files.splice(idx,1);
+  window._housePhotoFiles=files;
+  var cover=document.getElementById('houseCoverIndex');
+  if(cover){
+    var cv=parseInt(cover.value)||0;
+    if(idx===cv) cover.value='0';
+    else if(idx<cv) cover.value=String(cv-1);
+    if(parseInt(cover.value)>=files.length && files.length>0) cover.value=String(files.length-1);
+  }
+  syncHousePhotosInput();
+  renderHousePhotosPreview();
+  markSegmentChanged(6);
+}
+function clearHousePhotos(){
+  window._housePhotoFiles=[];
+  syncHousePhotosInput();
+  renderHousePhotosPreview();
+  var cover=document.getElementById('houseCoverIndex');
+  if(cover) cover.value='0';
+  markSegmentChanged(6);
+}
+function bindHousePhotos(){
+  var addBtn=document.getElementById('addHousePhotosBtn');
+  if(addBtn && !addBtn.dataset.hpBound){
+    addBtn.dataset.hpBound='1';
+    addBtn.addEventListener('click', triggerAddHousePhotos);
+  }
+  renderHousePhotosPreview();
+}
+// === Document upload guards - reject oversized/wrong-type files IMMEDIATELY on selection ===
+// Backend allows max 5MB per file, types PDF/JPG/JPEG/PNG. The user must be told
+// right when they pick the file - not at the end on Submit.
+var DOC_MAX_MB = 5;
+var DOC_ALLOWED_EXT = ['pdf', 'jpg', 'jpeg', 'png'];
+function docFileProblems(input){
+  var problems = [];
+  var files = (input && input.files) ? Array.prototype.slice.call(input.files) : [];
+  files.forEach(function(f){
+    var name = f.name || 'file';
+    var ext = (name.split('.').pop() || '').toLowerCase();
+    if(DOC_ALLOWED_EXT.indexOf(ext) === -1){
+      problems.push({file: f, msg: '"'+name+'" is not allowed. Only PDF, JPG, PNG.'});
+    } else if(f.size > DOC_MAX_MB * 1024 * 1024){
+      var mb = (f.size / (1024 * 1024)).toFixed(1);
+      problems.push({file: f, msg: '"'+name+'" is '+mb+'MB — maximum is '+DOC_MAX_MB+'MB. Choose a smaller file.'});
+    }
+  });
+  return problems;
+}
+function validateDocInputNow(input){
+  if(!input) return true;
+  var problems = docFileProblems(input);
+  if(problems.length){
+    input.value = '';
+    input.classList.add('is-invalid');
+    input.classList.remove('is-valid');
+    showFieldError(input, problems[0].msg);
+    if(typeof Swal!=='undefined') Swal.fire({icon:'error', title:'File rejected', text:problems[0].msg, toast:true, position:'top-end', timer:6000, showConfirmButton:false});
+    return false;
+  }
+  input.classList.remove('is-invalid');
+  if(input.files && input.files.length) input.classList.add('is-valid');
+  clearFieldError(input);
+  return true;
+}
+function bindDocSizeGuards(){
+  ['docId','docPayslip','docBankStatement','docEmployerRef','docEmploymentContract','docTitleDeed','docOther','marriageCertFile'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(!el || el.dataset.docGuard) return;
+    el.dataset.docGuard = '1';
+    el.addEventListener('change', function(){ validateDocInputNow(el); if(typeof saveDraft==='function') saveDraft(); });
+  });
+}
 function clearFieldError(el){
 
   if(!el) return;
@@ -1341,6 +1690,8 @@ function validateSegment(seg, showErrors){
       if(showErrors && typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Select customer type first', text:'Go back to Step 1 and choose Employed or Business Owner', toast:true, position:'top-end', timer:5000, showConfirmButton:false});
     }
     // When not business (employed case), employer fields are required
+    // NOTE: Monthly Expenses + existing-loan questions were removed from Step 3 -
+    // the loan-stage (Step 6) already asks about other loans.
     const isBusinessLocal = customerType==='business';
     if(!isBusinessLocal){
       valid = mark('#employerName', 'Employer name is required') && valid;
@@ -1349,18 +1700,9 @@ function validateSegment(seg, showErrors){
       valid = mark('#contractType', 'Contract type is required') && valid;
     }
     valid = mark('#monthlyIncome', 'Monthly income is required') && valid;
-    valid = mark('#monthlyExpenses', 'Monthly expenses is required') && valid;
     // also check income >0
     const inc = document.getElementById('monthlyIncome');
-    if(inc && inc.value && parseFloat(inc.value) <=0){ valid=false; if(showErrors) showFieldError(inc,'Enter a valid amount'); }
-    const exp = document.getElementById('monthlyExpenses');
-    if(exp && exp.value && parseFloat(exp.value) <=0){ valid=false; if(showErrors) showFieldError(exp,'Enter a valid amount'); }
-    // Existing loan details if Yes
-    const hasLoan = document.getElementById('hasExistingLoan')?.value || document.querySelector('input[name="has_existing_loan"]:checked')?.value;
-    if(hasLoan==='yes'){
-      valid = mark('[name="existing_loan_bank"]', 'Bank name is required') && valid;
-      valid = mark('[name="existing_loan_amount"]', 'Loan amount is required') && valid;
-    }
+    if(inc && inc.value && parseMoney(inc.value) <=0){ valid=false; if(showErrors) showFieldError(inc,'Enter a valid amount'); }
   } else if(seg===4){
     if(customerType==='business'){
       valid = mark('[name=\"business_name\"]', 'Business name is required') && valid;
@@ -1381,7 +1723,7 @@ function validateSegment(seg, showErrors){
       // Monthly Business Expenses removed per requirements - not validated
     }
   } else if(seg===5){
-    const bankSel = document.querySelector('input[name=\"bank\"]:checked');
+    const bankSel = document.querySelector('input[name="bank"]:checked');
     const fallback = document.getElementById('applyBank');
     const hasBank = (bankSel && bankSel.value) || (fallback && fallback.value);
     if(!hasBank){
@@ -1390,6 +1732,19 @@ function validateSegment(seg, showErrors){
         if(fallback) showFieldError(fallback, 'Please select a bank');
         if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Bank selection required', text:'Please select a bank before continuing', toast:true, position:'top-end', timer:4500, showConfirmButton:false});
       }
+    }
+    // Bank account number is mandatory - customer cannot proceed without it
+    const accEl=document.getElementById('bankAccountNumber');
+    const accErr=document.getElementById('bankAccountError');
+    if(!accEl || !accEl.value.trim()){
+      valid=false;
+      if(showErrors){
+        if(accEl) showFieldError(accEl, 'Account number at the selected bank is required');
+        if(accErr) accErr.style.display='block';
+        if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Bank account required', text:'Enter your account number at the selected bank before continuing', toast:true, position:'top-end', timer:5000, showConfirmButton:false});
+      }
+    } else {
+      if(showErrors){ markFieldValid(accEl); if(accErr) accErr.style.display='none'; }
     }
   } else if(seg===6){
     // Property is optional for semi_finish / construction / renovation
@@ -1406,10 +1761,10 @@ function validateSegment(seg, showErrors){
     valid = mark('#loanType', 'Loan type is required') && valid;
     valid = mark('#loanAmount', 'Loan amount is required') && valid;
     const loan = document.getElementById('loanAmount');
-    if(loan && loan.value && parseFloat(loan.value) < 5000000){ valid=false; if(showErrors) showFieldError(loan,'Minimum is 5,000,000 TZS'); }
+    if(loan && loan.value && parseMoney(loan.value) < 5000000){ valid=false; if(showErrors) showFieldError(loan,'Minimum is 5,000,000 TZS'); }
     // Bank-specific min/max loan enforcement
     (function(){
-      var loanVal = loan ? parseFloat(loan.value)||0 : 0;
+      var loanVal = loan ? parseMoney(loan.value)||0 : 0;
       var bankSel = document.querySelector('input[name="bank"]:checked');
       var bankFallback = document.getElementById('applyBank');
       var bid = (bankSel && bankSel.value) || (bankFallback && bankFallback.value);
@@ -1430,8 +1785,8 @@ function validateSegment(seg, showErrors){
       var isPurchaseLike = ['residential','commercial','land'].includes(mt5) || (lt5==='purchase' && ['residential','commercial','land',''].includes(mt5));
       var propSel = document.getElementById('applyProperty');
       var opt = propSel ? propSel.options[propSel.selectedIndex] : null;
-      var price = opt ? parseFloat(opt.getAttribute('data-price')||'0') : 0;
-      if(isPurchaseLike && loan && loan.value && price > 0 && parseFloat(loan.value) > price){
+      var price = opt ? parseMoney(opt.getAttribute('data-price')||'0') : 0;
+      if(isPurchaseLike && loan && loan.value && price > 0 && parseMoney(loan.value) > price){
         valid=false;
         if(showErrors) showFieldError(loan,'Loan exceeds property value (TZS '+price.toLocaleString()+'). Reduce the amount.');
       }
@@ -1459,13 +1814,36 @@ function validateSegment(seg, showErrors){
     // Other loan validation
     var hasOtherLoanEl=document.getElementById('hasOtherLoan');
     if(hasOtherLoanEl && hasOtherLoanEl.value==='yes'){
-      valid = mark('#otherLoanBank', 'Benki ya mkopo wa zamani inahitajika') && valid;
-      valid = mark('#otherLoanBalance', 'Deni lililobaki linahitajika') && valid;
-      var consolEl=document.getElementById('otherLoanConsolidate');
-      if(consolEl && !consolEl.value){
+      valid = mark('#otherLoanBank', 'Existing loan bank name is required') && valid;
+      valid = mark('#otherLoanBalance', 'Outstanding balance is required') && valid;
+      var consolVal = getOtherLoanConsolidate();
+      var consolError = document.getElementById('otherLoanConsolidate-error');
+      if(!consolVal){
         valid=false;
-        if(showErrors) showFieldError(consolEl, 'Select whether to consolidate the loan (Yes/No)');
-      } else if(consolEl && showErrors) markFieldValid(consolEl);
+        if(showErrors && consolError){
+          consolError.textContent = 'Please select whether to include this loan in the new mortgage (Yes/No)';
+          consolError.style.display = 'block';
+        }
+      } else {
+        if(consolError){ consolError.textContent = ''; consolError.style.display = 'none'; }
+      }
+    }
+    // Semi-Finish house photos: min 10, max 20
+    if(typeof isSemiFinishSelected==='function' && isSemiFinishSelected()){
+      var hpInp=document.getElementById('housePhotosInput');
+      var hpCount=(window._housePhotoFiles && window._housePhotoFiles.length) || (hpInp && hpInp.files ? hpInp.files.length : 0);
+      if(hpCount<10){
+        valid=false;
+        if(showErrors){
+          if(hpInp) showFieldError(hpInp, 'Upload at least 10 photos of your house (max 20). You selected '+hpCount+'.');
+          if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'House photos required', text:'Renovation (Semi-Finish) needs minimum 10 photos of your house (max 20). You selected '+hpCount+'.', toast:true, position:'top-end', timer:5000, showConfirmButton:false});
+        }
+      } else if(hpCount>20){
+        valid=false;
+        if(showErrors){
+          if(hpInp) showFieldError(hpInp, 'Maximum 20 photos allowed (you selected '+hpCount+').');
+        }
+      } else if(hpInp && showErrors){ markFieldValid(hpInp); }
     }
   } else if(seg===7){
     // Documents - required based on customer type — business owner hides all employee docs
@@ -1482,10 +1860,29 @@ function validateSegment(seg, showErrors){
         if(showErrors) showFieldError(el, 'This document is required');
         else el.classList.add('is-invalid');
       } else {
-        if(showErrors) markFieldValid(el);
+        // Re-check size/type here too (defense in depth - e.g. jumped steps)
+        const probs = docFileProblems(el);
+        if(probs.length){
+          valid=false;
+          if(showErrors) showFieldError(el, probs[0].msg);
+          else el.classList.add('is-invalid');
+        } else if(showErrors) markFieldValid(el);
       }
     }
-    // Other documents optional - no validation
+    // Optional docs (Other + marriage cert): not required, but if attached must be valid size/type
+    ['#docOther','#marriageCertFile'].forEach(function(sel){
+      const el=document.querySelector(sel);
+      if(!el || !el.files || !el.files.length) return;
+      if(el.offsetParent===null && sel==='#marriageCertFile'){
+        // hidden marriage block - still validate if a file was somehow attached
+      }
+      const probs = docFileProblems(el);
+      if(probs.length){
+        valid=false;
+        if(showErrors) showFieldError(el, probs[0].msg);
+        else el.classList.add('is-invalid');
+      }
+    });
   }
   return valid;
 }
@@ -1524,6 +1921,7 @@ function updateStepper(showAlert=true, hasInvalid=false){
   document.getElementById('prevBtn').style.display = currentSegment===1?'none':'inline-block';
   document.getElementById('nextBtn').style.display = currentSegment===totalSegments?'none':'inline-block';
   document.getElementById('submitBtn').style.display = currentSegment===totalSegments?'inline-block':'none';
+  updateSaveNextState();
   if(showAlert){
     saveDraft();
   } else {
@@ -1544,6 +1942,12 @@ function goToSegment(target){
     if(currentSegment===3 && customerType==='business') currentSegment=4;
     updateStepper(true, false);
     window.scrollTo({top:0, behavior:'smooth'});
+    return;
+  }
+  // Forward: current segment must be saved first
+  if(!canProceedFromSegment(currentSegment)){
+    if(typeof Swal!=='undefined') Swal.fire({icon:'info', title:'Save required', text:'Please click "Save This Step" on the current step before jumping forward.', toast:true, position:'top-end', timer:4000, showConfirmButton:false});
+    updateSaveNextState();
     return;
   }
   // Forward: validate current and intermediate segments, but allow jump with red indication
@@ -1668,6 +2072,7 @@ function selectCustomerType(type){
   if(hiddenEmp){ hiddenEmp.classList.remove('is-invalid'); hiddenEmp.classList.add('is-valid'); }
   localStorage.setItem('apply_customer_type', type);
   updateEmploymentBusinessDisabled();
+  markSegmentChanged(1);
   saveDraft();
 }
 
@@ -1681,6 +2086,7 @@ function selectBank(id){
   try{ populatePeriodsCustomer(); updateDownPaymentCustomer(); }catch(e){}
   recalcAI();
   updateBankHeaderById(id);
+  markSegmentChanged(5);
 }
 
 function updateBankHeaderById(bankId){
@@ -2018,13 +2424,19 @@ async function saveAndExit(){
   // Give backend a moment to commit
   await new Promise(r=> setTimeout(r, 400));
   if(typeof Swal!=='undefined'){
-    Swal.fire({icon:'success', title:'Saved!', html:'Your progress has been saved as <b>Draft • Pending</b> • When you return you will continue from step <b>'+currentSegment+'</b>. Check My Applications to see it.', timer:3500, showConfirmButton:false}).then(()=>{ window.location.href='/customer/applications/'; });
+    Swal.fire({icon:'success', title:'Saved!', html:'Your progress has been saved as <b>Draft</b> • When you return you will continue from step <b>'+currentSegment+'</b>. Check My Applications to see it under Drafts.', timer:3500, showConfirmButton:false}).then(()=>{ window.location.href='/customer/applications/'; });
   } else {
     window.location.href='/customer/applications/';
   }
 }
 
 function nextSegment(){
+  // Must explicitly save the current stage before Next is enabled
+  if(!canProceedFromSegment(currentSegment)){
+    if(typeof Swal!=='undefined') Swal.fire({icon:'info', title:'Save required', text:'Please click "Save This Step" before proceeding to the next step.', toast:true, position:'top-end', timer:4000, showConfirmButton:false});
+    updateSaveNextState();
+    return;
+  }
   // Validate current segment with red border & message - English only
   if(!validateSegment(currentSegment, true)){
     // If NIDA needs verify, specific Swal already shown in validateSegment, don't show generic
@@ -2037,6 +2449,10 @@ function nextSegment(){
     updateStepper(true, true);
     return;
   }
+  // Save draft synchronously before moving, so resume is always accurate
+  try{ saveDraftLocal(); saveDraftBackend(); }catch(e){}
+  // Track highest legitimately reached step
+  window._highestReachedStep = Math.max(window._highestReachedStep || 0, currentSegment + 1);
   // Business owner: skip Employment (3) entirely - go 2 -> 4 directly
   if(currentSegment===2 && customerType==='business'){
     currentSegment = 4;
@@ -2060,6 +2476,42 @@ function nextSegment(){
     if(currentSegment===8) { buildReview(); recalcAI(); }
     window.scrollTo({top:0, behavior:'smooth'});
   }
+}
+function saveCurrentStage(){
+  // Explicit per-stage save: user clicks Save, data is stored without changing step
+  try{
+    saveDraftLocal();
+    saveDraftBackend();
+    window._savedSegments.add(currentSegment);
+    window._segmentChanged[currentSegment] = false;
+    updateSaveNextState();
+    if(typeof Swal!=='undefined') Swal.fire({icon:'success', title:'Saved', text:'Stage '+currentSegment+' saved. You can continue later or click Next to proceed.', toast:true, position:'top-end', timer:3000, showConfirmButton:false});
+  }catch(e){
+    if(typeof Swal!=='undefined') Swal.fire({icon:'error', title:'Save failed', text:'Could not save. Please check your connection and try again.', toast:true, position:'top-end', timer:4000, showConfirmButton:false});
+  }
+}
+function markSegmentChanged(seg){
+  seg = seg || currentSegment;
+  window._segmentChanged[seg] = true;
+  updateSaveNextState();
+}
+function canProceedFromSegment(seg){
+  seg = seg || currentSegment;
+  return window._savedSegments.has(seg) && !window._segmentChanged[seg];
+}
+function updateSaveNextState(){
+  var nextBtn = document.getElementById('nextBtn');
+  if(!nextBtn) return;
+  if(currentSegment === totalSegments){
+    nextBtn.disabled = false;
+    nextBtn.style.opacity = '1';
+    nextBtn.title = '';
+    return;
+  }
+  var enable = canProceedFromSegment(currentSegment);
+  nextBtn.disabled = !enable;
+  nextBtn.style.opacity = enable ? '1' : '0.5';
+  nextBtn.title = enable ? 'Proceed to next step' : 'Save this step before proceeding';
 }
 function prevSegment(){
   if(currentSegment>1){
@@ -2120,12 +2572,12 @@ function buildReview(){
         }
       }
       const label = map[k]||k;
-      // format amounts
-      if(k.includes('amount') || k.includes('income') || k.includes('expenses') || k.includes('balance') || k.includes('repayment') && !isNaN(v)){
-        try{ const n=Number(v); if(!isNaN(n)) v='TZS '+n.toLocaleString(); }catch(e){}
+      // format amounts (strip commas first - inputs are formatted)
+      if(k.includes('amount') || k.includes('income') || k.includes('expenses') || k.includes('balance') || k.includes('repayment')){
+        try{ const n=Number(String(v).replace(/,/g,'')); if(!isNaN(n)) v='TZS '+n.toLocaleString(); }catch(e){}
       }
       if(k==='loan_amount' || k==='down_payment'){
-        try{ const n=Number(v); if(!isNaN(n)) v='TZS '+n.toLocaleString(); }catch(e){}
+        try{ const n=Number(String(v).replace(/,/g,'')); if(!isNaN(n)) v='TZS '+n.toLocaleString(); }catch(e){}
       }
       rows+=`<tr><td style="color:#6c7293; border-color:#2c2e33; width:45%;">${label}</td><td style="border-color:#2c2e33; font-weight:600; color:#fff;">${v}</td></tr>`;
     }
@@ -2184,14 +2636,14 @@ async function tryRefreshToken(){
   return false;
 }
 async function recalcAI(){
-  const loan=parseFloat(document.getElementById('loanAmount')?.value)||0;
-  const period=parseInt(document.getElementById('repaymentPeriod')?.value)||0;
-  var incomeRaw=parseFloat(document.getElementById('monthlyIncome')?.value)||0;
-  var expensesRaw=parseFloat(document.getElementById('monthlyExpenses')?.value)||0;
+  const loan=parseMoney(document.getElementById('loanAmount')?.value)||0;
+  const period=parseInt(stripCommas(document.getElementById('repaymentPeriod')?.value||'0'))||0;
+  var incomeRaw=parseMoney(document.getElementById('monthlyIncome')?.value)||0;
+  var expensesRaw=parseMoney(document.getElementById('monthlyExpenses')?.value)||0;
   // If business owner, use annualIncome /12
   if(customerType==='business'){
     var annualEl=document.getElementById('annualIncome');
-    if(annualEl && annualEl.value){ incomeRaw=parseFloat(annualEl.value)/12; }
+    if(annualEl && annualEl.value){ incomeRaw=parseMoney(annualEl.value)/12; }
   }
   // Deductions: compute gross -> net for AI
   var dedPsssf=false, dedHeslb=false, dedPaye=false, sector='';
@@ -2218,8 +2670,8 @@ async function recalcAI(){
   var effExpenses = expensesRaw;
   // other loan consolidation: if has_other_loan yes and NOT consolidating, add monthly payment to expenses
   var hasOther=document.getElementById('hasOtherLoan')?.value||'no';
-  var otherConsol=document.getElementById('otherLoanConsolidate')?.value||'no';
-  var otherMonthly=parseFloat(document.getElementById('otherLoanMonthly')?.value)||0;
+  var otherConsol=getOtherLoanConsolidate()||'no';
+  var otherMonthly=parseMoney(document.getElementById('otherLoanMonthly')?.value)||0;
   if(hasOther==='yes' && otherConsol==='no' && otherMonthly>0){
     effExpenses += otherMonthly;
   }
@@ -2245,7 +2697,7 @@ async function recalcAI(){
     var headers={'Content-Type':'application/json'};
     if(token && !isJwtExpired(token)) headers['Authorization']='Bearer '+token;
     if(csrftoken) headers['X-CSRFToken']=csrftoken;
-    var payload={loan_amount:loan, down_payment:parseFloat(document.getElementById('downPayment')?.value)||0, repayment_period:period, monthly_income:incomeRaw, monthly_expenses:expensesRaw, employment_status:employment, bank:bank, employment_sector: sector||document.getElementById('employmentSector')?.value||'', deduction_psssf: dedPsssf, deduction_heslb: dedHeslb, deduction_paye: dedPaye, has_other_loan: hasOther, other_loan_monthly_payment: otherMonthly, other_loan_consolidate: otherConsol, annual_income: (customerType==='business'? parseFloat(document.getElementById('annualIncome')?.value)||0 : undefined)};
+    var payload={loan_amount:loan, down_payment:parseMoney(document.getElementById('downPayment')?.value)||0, repayment_period:period, monthly_income:incomeRaw, monthly_expenses:expensesRaw, employment_status:employment, bank:bank, employment_sector: sector||document.getElementById('employmentSector')?.value||'', deduction_psssf: dedPsssf, deduction_heslb: dedHeslb, deduction_paye: dedPaye, has_other_loan: hasOther, other_loan_monthly_payment: otherMonthly, other_loan_consolidate: otherConsol, annual_income: (customerType==='business'? parseMoney(document.getElementById('annualIncome')?.value)||0 : undefined)};
     var res=await fetch('/api/mortgages/calculate/',{method:'POST',headers:headers, credentials:'same-origin', body:JSON.stringify(payload)});
     if(res.status===401){
       // try refresh once then retry without token (session cookie)
@@ -2281,7 +2733,7 @@ async function recalcAI(){
       // adjust DTI for other loan not consolidated (combined debt)
       try{
         var hasOtherLocal=document.getElementById('hasOtherLoan')?.value;
-        var otherConLocal=document.getElementById('otherLoanConsolidate')?.value;
+        var otherConLocal=getOtherLoanConsolidate();
         var otherPayLocal=parseFloat(document.getElementById('otherLoanMonthly')?.value)||0;
         if(hasOtherLocal==='yes' && otherConLocal==='no' && otherPayLocal>0 && income>0){
           var comb=usedData.monthly_installment + otherPayLocal;
@@ -2349,15 +2801,24 @@ async function recalcAI(){
         alertBox.style.display='block';
         alertBox.innerHTML='<i class="mdi mdi-information-outline"></i> '+dtiCat;
         alertBox.style.background=bg; alertBox.style.border='1px solid '+bd; alertBox.style.color=col;
-        // Disable submit if high risk
+        // Keep button clickable — handler will show professional alert if blocked (avoid silent disabled)
         if(submitBtn){
-          submitBtn.disabled=disable;
-          submitBtn.style.opacity=disable?'0.5':'1';
-          submitBtn.title=disable?'High risk — adjust loan to enable submit':'Submit Application';
+          submitBtn.disabled=false;
+          submitBtn.style.opacity=disable?'0.7':'1';
+          submitBtn.dataset.blocked = disable ? '1' : '0';
+          window._aiBlocked = disable;
+          window._aiBlockReason = dtiCat;
+          if(disable){
+            submitBtn.title='High risk — click to see why (DTI >40)';
+            submitBtn.classList.add('btn-warning'); submitBtn.classList.remove('btn-success');
+          } else {
+            submitBtn.title='Submit Application';
+            submitBtn.classList.add('btn-success'); submitBtn.classList.remove('btn-warning');
+          }
         }
         // Also handle nextBtn? keep enabled but show warning
       } else {
-        if(submitBtn){ submitBtn.disabled=false; submitBtn.style.opacity='1'; }
+        if(submitBtn){ submitBtn.disabled=false; submitBtn.style.opacity='1'; submitBtn.dataset.blocked='0'; window._aiBlocked=false; }
       }
       // Add download button if not exists and DTI good
       if(dtiVal<=40){
@@ -2375,8 +2836,8 @@ async function recalcAI(){
             var bankVal=fd.get('bank')||document.getElementById('applyBank')?.value||'—';
             var bankCard=document.querySelector('.bank-card[data-bank="'+bankVal+'"] h6');
             var bankTxt=bankCard?bankCard.textContent.trim():bankVal;
-            var loan=fd.get('loan_amount')||'—';
-            var down=fd.get('down_payment')||'—';
+            var loan=String(fd.get('loan_amount')||'0').replace(/,/g,'');
+            var down=String(fd.get('down_payment')||'0').replace(/,/g,'');
             var periodVal=fd.get('repayment_period')||'—';
             var w=window.open('', '_blank');
             w.document.write('<html><head><title>MorgiHome Application</title><style>body{font-family:Inter,sans-serif;padding:30px;color:#0A2B4E}h1{color:#0077B6}table{width:100%;border-collapse:collapse}td,th{border:1px solid #e2e8f0;padding:8px;font-size:13px}th{background:#f1f5f9;text-align:left}</style></head><body><h1>MorgiHome Mortgage Application</h1><p>Property: '+propTxt+'</p><p>Bank: '+bankTxt+'</p><table><tr><th>Loan Amount</th><td>TZS '+Number(loan).toLocaleString()+'</td></tr><tr><th>Down Payment (10%)</th><td>TZS '+Number(down).toLocaleString()+'</td></tr><tr><th>Period</th><td>'+periodVal+' months</td></tr><tr><th>Interest</th><td>'+Number(bankRateVal).toFixed(2)+'%</td></tr><tr><th>Monthly Payment</th><td>TZS '+Number(usedData.monthly_installment).toFixed(2)+'</td></tr><tr><th>Total Payment</th><td>TZS '+Math.round(totalPay).toLocaleString()+'</td></tr><tr><th>DTI</th><td>'+Number(dtiVal).toFixed(1)+'% ('+(dtiVal<=30?'Very Good':dtiVal<=40?'Good':dtiVal<=50?'High Risk':'Very High')+')</td></tr><tr><th>Affordability</th><td>'+Number(usedData.affordability_score).toFixed(1)+'%</td></tr><tr><th>Risk</th><td>'+Number(usedData.risk_score).toFixed(1)+'%</td></tr></table><p style="margin-top:20px;font-size:11px;color:#64748b;">Generated by MorgiHome • '+new Date().toLocaleString()+'</p></body></html>');
@@ -2426,24 +2887,52 @@ async function recalcAI(){
     }catch(e2){}
   }
 }
-['loanAmount','downPayment','repaymentPeriod','monthlyIncome','monthlyExpenses','employmentStatus','applyBank','annualIncome','businessRegNo','businessType'].forEach(id=>{
+['loanAmount','downPayment','repaymentPeriod','monthlyIncome','monthlyExpenses','employmentStatus','applyBank','annualIncome','businessRegNo','businessType','bankAccountNumber'].forEach(id=>{
   const el=document.getElementById(id);
   if(el){ el.addEventListener('input', recalcAI); el.addEventListener('change', recalcAI); }
 });
+try{ bindMoneyInputs(); }catch(e){}
+try{ bindHousePhotos(); }catch(e){}
+try{ bindDocSizeGuards(); }catch(e){}
+try{ updateSemiFinishUI(); }catch(e){}
+document.getElementById('loanType')?.addEventListener('change', function(){ try{updateSemiFinishUI();}catch(e){} try{updatePropertyOptionalUI();}catch(e){} });
 
 document.getElementById('wizardForm').addEventListener('submit', async function(e){
   e.preventDefault();
-  // Require confirmation checkbox
+  // Require confirmation checkbox — professional validation with red border & alert
   const confirmChk=document.getElementById('confirmReviewCheck');
   const confirmErr=document.getElementById('confirmError');
+  const confirmCard=document.getElementById('confirmReviewCard');
   if(confirmChk && !confirmChk.checked){
-    if(confirmErr) confirmErr.style.display='block';
+    if(confirmErr) { confirmErr.style.display='block'; confirmErr.classList.add('show'); }
     confirmChk.classList.add('is-invalid');
-    if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Please confirm', text:'Please read carefully and tick the checkbox to confirm your information is correct before submitting.'});
+    if(confirmCard){ confirmCard.classList.add('is-invalid','shake'); confirmCard.style.borderColor='#fc424a'; setTimeout(()=> confirmCard.classList.remove('shake'), 500); confirmCard.scrollIntoView({behavior:'smooth', block:'center'}); }
+    confirmChk.focus();
+    if(typeof Swal!=='undefined') Swal.fire({
+      icon:'error',
+      title:'Confirmation Required',
+      html: '<div style="text-align:left; font-size:13px; line-height:1.6;">'
+            + '<p class="mb-2"><strong>You cannot submit until you confirm the declaration.</strong></p>'
+            + '<p class="mb-1 text-muted">Please tick the checkbox above to confirm:</p>'
+            + '<ul style="margin:6px 0 8px 18px; color:#6c7293;"><li>You have reviewed all details in Step 8</li><li>All information is correct and complete</li><li>You agree to send it to the selected bank for assessment</li></ul>'
+            + '<p class="mb-0" style="color:#fc424a; font-weight:600;">Tick the box — then click Submit again.</p></div>',
+      confirmButtonText:'Got it — I will confirm',
+      confirmButtonColor:'#0077B6',
+      width: 520
+    });
     return;
   } else {
-    if(confirmErr) confirmErr.style.display='none';
+    if(confirmErr) { confirmErr.style.display='none'; confirmErr.classList.remove('show'); }
     if(confirmChk) confirmChk.classList.remove('is-invalid');
+    if(confirmCard){ confirmCard.classList.remove('is-invalid'); confirmCard.style.borderColor='#2c2e33'; }
+  }
+  // AI block — DTI >40 etc. Keep button clickable but explain why
+  if(window._aiBlocked){
+    const reason = window._aiBlockReason || 'High risk — DTI exceeds 40% threshold';
+    if(typeof Swal!=='undefined') Swal.fire({icon:'error', title:'Cannot Submit — High Risk', html: '<div style=\"text-align:left;\"><p>'+reason+'</p><p class=\"text-muted\" style=\"font-size:12px;\">Please reduce Loan Amount or extend Repayment Period, or increase your Net Income (after deductions). DTI must be ≤40% (Very Good ≤30, Good 31-40). Your AI assessment shows this application is currently blocked.</p></div>', confirmButtonColor:'#0077B6', confirmButtonText:'Adjust Loan'});
+    else alert('Cannot submit: '+reason);
+    document.getElementById('aiAlert')?.scrollIntoView({behavior:'smooth', block:'center'});
+    return;
   }
   const form = e.target;
   const fd = new FormData(form);
@@ -2454,15 +2943,69 @@ document.getElementById('wizardForm').addEventListener('submit', async function(
   const loanTypeVal=document.getElementById('loanType')?.value;
   if(loanTypeVal) fd.set('loan_type', loanTypeVal);
   fd.set('current_step', currentSegment);
+  // Strip thousand-separator commas from every money field - DB keeps raw numbers
+  ['loan_amount','down_payment','monthly_income','monthly_expenses','annual_income','other_loan_amount','other_loan_balance','other_loan_monthly_payment','existing_loan_amount','existing_loan_repayment','existing_loan_balance'].forEach(function(k){
+    try{ var v=fd.get(k); if(v!==null && v!==undefined && String(v).indexOf(',')!==-1) fd.set(k, String(v).replace(/,/g,'')); }catch(e){}
+  });
+  // Bank account number is mandatory
+  if(!fd.get('bank_account_number') || !String(fd.get('bank_account_number')).trim()){
+    if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Bank account required', text:'Enter your account number at the selected bank (Step 5) before submitting.'});
+    try{ goToSegment(5); }catch(e){}
+    return;
+  }
+  // Semi-Finish house photos: append files + cover index (min 10, max 20)
+  try{
+    var _ltS=document.getElementById('loanType')?.value||'';
+    var _isSemi=(_ltS==='semi_finish')||['renovation','semi_finish'].includes(currentMortgageType);
+    if(_isSemi){
+      var _hpFiles=(window._housePhotoFiles&&window._housePhotoFiles.length)?window._housePhotoFiles:(document.getElementById('housePhotosInput')?.files?Array.prototype.slice.call(document.getElementById('housePhotosInput').files):[]);
+      var _n=_hpFiles.length;
+      if(_n<10){ if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'House photos required', text:'Upload at least 10 photos of your house (you selected '+_n+').'}); return; }
+      if(_n>20){ if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Too many photos', text:'Maximum 20 photos allowed.'}); return; }
+      fd.delete('house_photos');
+      for(var _hi=0;_hi<_hpFiles.length;_hi++){ fd.append('house_photos', _hpFiles[_hi]); }
+      var _cv=document.getElementById('houseCoverIndex'); if(_cv) fd.set('house_cover_index', _cv.value||'0');
+    }
+  }catch(e){}
+  // Fix: Business owners store Annual Income → derive Monthly Income for backend (backend also does, but FormData needs it)
+  if(customerType==='business' && !parseMoney(fd.get('monthly_income')) && fd.get('annual_income')){
+    const av = parseMoney(fd.get('annual_income'))||0;
+    if(av>0) fd.set('monthly_income', String(Math.round(av/12)));
+  }
+  // Fallback: if still no monthly but annual present (or vice versa for employed), ensure something is sent
+  if(!parseMoney(fd.get('monthly_income')) && fd.get('annual_income')){
+    const av2 = parseMoney(fd.get('annual_income'))||0;
+    if(av2>0) fd.set('monthly_income', String(Math.round(av2/12)));
+  }
   // property optional for semi_finish/construction/renovation
   const ltSubmit = document.getElementById('loanType')?.value || currentMortgageType || '';
   const propOptionalSubmit = ['semi_finish','construction'].includes(ltSubmit) || ['construction','renovation','semi_finish'].includes(currentMortgageType);
-  if((!propOptionalSubmit && !fd.get('property'))||!fd.get('loan_amount')||!fd.get('repayment_period')||!fd.get('monthly_income')){
-    if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Please fill required fields', text:'Property (unless Semi-Finish/Construction), Loan Amount, Period and Monthly Income are required.'}); return;
+  const hasIncome = fd.get('monthly_income') || fd.get('annual_income');
+  if((!propOptionalSubmit && !fd.get('property'))||!fd.get('loan_amount')||!fd.get('repayment_period')||!hasIncome){
+    let missing = [];
+    if(!propOptionalSubmit && !fd.get('property')) missing.push('Property');
+    if(!fd.get('loan_amount')) missing.push('Loan Amount');
+    if(!fd.get('repayment_period')) missing.push('Repayment Period');
+    if(!hasIncome) missing.push(customerType==='business' ? 'Annual Income (→ Monthly)' : 'Monthly Income');
+    if(!fd.get('bank') && !document.querySelector('input[name=\"bank\"]:checked') && !document.getElementById('applyBank')?.value) missing.push('Bank Selection');
+    // Highlight missing fields with red border
+    try{
+      if(!hasIncome){
+        const mi = document.getElementById('monthlyIncome');
+        const ai = document.getElementById('annualIncome');
+        if(customerType==='business' && ai){ ai.classList.add('is-invalid'); ai.scrollIntoView({behavior:'smooth', block:'center'}); }
+        else if(mi){ mi.classList.add('is-invalid'); mi.scrollIntoView({behavior:'smooth', block:'center'}); }
+      }
+      if(!fd.get('loan_amount')){ const el=document.getElementById('loanAmount'); if(el) el.classList.add('is-invalid'); }
+      if(!fd.get('repayment_period')){ const el=document.getElementById('repaymentPeriod'); if(el) el.classList.add('is-invalid'); }
+      if(!propOptionalSubmit && !fd.get('property')){ const el=document.getElementById('applyProperty'); if(el) el.classList.add('is-invalid'); }
+    }catch(e){}
+    if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Missing Required Fields', html: 'Please complete before submitting:<br><b>'+missing.join(', ')+'</b><br><small class=\"text-muted\">Business owners: Annual Income will be converted to Monthly automatically.</small>', confirmButtonColor:'#0077B6'});
+    return;
   }
   // Final guards: minimum 5M + purchase loan capped at property value (backend enforces too)
   var guardFail = (function(){
-    var loanAmt = parseFloat(fd.get('loan_amount'))||0;
+    var loanAmt = parseMoney(fd.get('loan_amount'))||0;
     if(loanAmt < 5000000){
       if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Loan too small', text:'Minimum loan is 5,000,000 TZS.'});
       return true;
@@ -2472,7 +3015,7 @@ document.getElementById('wizardForm').addEventListener('submit', async function(
     var purch = ['residential','commercial','land'].includes(mtS) || (ltS==='purchase' && ['residential','commercial','land',''].includes(mtS));
     if(purch && fd.get('property')){
       var o = document.querySelector('#applyProperty option[value="'+fd.get('property')+'"]');
-      var pr = o ? parseFloat(o.getAttribute('data-price')||'0') : 0;
+      var pr = o ? parseMoney(o.getAttribute('data-price')||'0') : 0;
       if(pr > 0 && loanAmt > pr){
         if(typeof Swal!=='undefined') Swal.fire({icon:'error', title:'Loan exceeds property value', text:'You requested TZS '+loanAmt.toLocaleString()+' but the property is worth TZS '+pr.toLocaleString()+'. Reduce the amount.'});
         return true;
@@ -2481,6 +3024,26 @@ document.getElementById('wizardForm').addEventListener('submit', async function(
     return false;
   })();
   if(guardFail) return;
+  // Final file scan - no oversized/invalid file may reach the server (would fail submit at the end)
+  var badFile = (function(){
+    var ids = ['docId','docPayslip','docBankStatement','docEmployerRef','docEmploymentContract','docTitleDeed','docOther','marriageCertFile'];
+    for(var i=0;i<ids.length;i++){
+      var inp = document.getElementById(ids[i]);
+      if(!inp || !inp.files || !inp.files.length) continue;
+      // skip hidden employee-only docs for business owners
+      if(inp.offsetParent===null && (ids[i]==='docEmployerRef'||ids[i]==='docEmploymentContract'||ids[i]==='docPayslip')) continue;
+      var probs = (typeof docFileProblems==='function') ? docFileProblems(inp) : [];
+      if(probs.length) return {input: inp, msg: probs[0].msg};
+    }
+    return null;
+  })();
+  if(badFile){
+    showFieldError(badFile.input, badFile.msg);
+    if(typeof Swal!=='undefined') Swal.fire({icon:'error', title:'Fix document first', text:badFile.msg+' Re-attach a valid file in Step 7, then submit again.'});
+    try{ goToSegment(7); }catch(e){}
+    try{ badFile.input.scrollIntoView({behavior:'smooth', block:'center'}); }catch(e){}
+    return;
+  }
   try{
     // Build headers with valid token or session fallback
     var submitToken=localStorage.getItem('access') || localStorage.getItem('access_token') || '';
@@ -2551,6 +3114,16 @@ document.getElementById('wizardForm').addEventListener('submit', async function(
     }
   }catch(err){
     if(typeof Swal!=='undefined') Swal.fire({icon:'error', title:'Network error', text: err.message || 'Check internet connection - your draft is saved'});
+  }
+});
+// Live clear of confirmation error when user ticks the box
+document.getElementById('confirmReviewCheck')?.addEventListener('change', function(){
+  const err=document.getElementById('confirmError');
+  const card=document.getElementById('confirmReviewCard');
+  if(this.checked){
+    if(err){ err.style.display='none'; err.classList.remove('show'); }
+    this.classList.remove('is-invalid');
+    if(card){ card.classList.remove('is-invalid'); card.style.borderColor='#2c2e33'; card.classList.remove('shake'); }
   }
 });
 
@@ -2702,6 +3275,8 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   } else {
     // re-apply disabled after stepper update
     setTimeout(updateEmploymentBusinessDisabled, 300);
+    // Ensure forward lock is initialized from resumed step
+    window._highestReachedStep = Math.max(window._highestReachedStep || 0, parseInt(pendingDraft.current_step || pendingDraft._currentStep || 1));
   }
   // Bind new extras for DOB/NIDA/marriage/downpayment/period
   try{ bindCustomerApplyExtras(); }catch(e){}
@@ -2721,6 +3296,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   document.getElementById('wizardForm').querySelectorAll('input, select, textarea').forEach(el=>{
     el.addEventListener('change', saveDraft);
     el.addEventListener('input', function(){
+      markSegmentChanged(currentSegment);
       if(this.value && this.value.toString().trim()!==''){
         // if previously invalid, turn to valid
         if(this.classList.contains('is-invalid')){
@@ -2736,7 +3312,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
       }
       clearTimeout(window._draftTimer); window._draftTimer=setTimeout(saveDraft, 800);
     });
-    el.addEventListener('change', function(){ markFieldValid(this); });
+    el.addEventListener('change', function(){ markFieldValid(this); markSegmentChanged(currentSegment); });
   });
   // Before leaving page (dashboard click, etc.) persist draft as pending
   window.addEventListener('beforeunload', function(){ try{ saveDraftLocal(); saveDraftBackend(); }catch(e){} });

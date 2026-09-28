@@ -68,6 +68,13 @@
               <h3 class="mb-0">{{ stats.payments_paid|default:"0" }}/{{ stats.payments_total|default:"0" }}</h3>
               <p class="text-success ms-2 mb-0 font-weight-medium">Paid</p>
             </div>
+            <p class="text-muted mb-0 mt-1" style="font-size:12px;">
+              {% if stats.monthly_payment %}
+                TZS {{ stats.monthly_payment|intcomma }}/month
+              {% else %}
+                No active mortgage
+              {% endif %}
+            </p>
           </div>
           <div class="col-3">
             <div class="icon icon-box-success"><span class="mdi mdi-wallet icon-item"></span></div>

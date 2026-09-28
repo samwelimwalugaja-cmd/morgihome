@@ -27,9 +27,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- Favicon - prevent 404 -->
-  <link href="{% static 'images/favicon.ico' %}?v=4" rel="icon" sizes="48x48">
-  <link href="{% static 'images/favicon-32x32.png' %}?v=4" rel="icon" type="image/png" sizes="32x32">
-  <link href="{% static 'images/favicon-16x16.png' %}?v=4" rel="icon" type="image/png" sizes="16x16">
+  <link href="{% static 'images/favicon.png' %}?v=5" rel="icon" type="image/png">
   <link href="{% static 'images/apple-touch-icon.png' %}?v=4" rel="apple-touch-icon" type="image/png">
 
   <!-- MorgiHome Custom CSS + Special Bank Template (spec: #0077B6/#0A2B4E, not corona) -->
@@ -109,13 +107,7 @@
         <div>
           <p class="px-3 mb-2 text-[11px] font-semibold uppercase tracking-widest text-[var(--morgi-muted)]">System</p>
           <ul class="space-y-1">
-            <li>
-              <a href="{% url 'bank_notifications' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm {% if request.resolver_match.url_name == 'bank_notifications' %}active{% endif %}">
-                <i data-lucide="bell" class="w-[18px] h-[18px]"></i>
-                Notifications
-                <span id="sidebarNotifBadge" class="ml-auto text-xs bg-red-500 text-white px-2 py-0.5 rounded-full" style="display:none">0</span>
-              </a>
-            </li>
+
             <li>
               <a href="{% url 'bank_settings' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 text-sm {% if request.resolver_match.url_name == 'bank_settings' %}active{% endif %}">
                 <i data-lucide="settings" class="w-[18px] h-[18px]"></i>
@@ -345,23 +337,27 @@
       return h;
     }
     window.bankMarkAllRead = function(){
-      // Persist on the server so the count clears and STAYS cleared.
+      // Persist on the server so the count clears and STAYS cleared. Also clear dropdown (user requested: after Mark as Read, bell dropdown should have no message)
       const hdr = bankAuthHeaders();
+      const listEl = document.getElementById('notifList');
+      function clearBell(){ if(listEl) listEl.innerHTML = '<div class="p-6 text-center text-sm text-[var(--morgi-muted)]">No notifications.<br>You are all caught up.</div>'; }
       fetch("{% url 'bank_notifications_read' %}", {method:'POST', credentials:'same-origin', headers: hdr})
         .then(function(r){ if(!r.ok) throw new Error('mark failed'); return r.json().catch(function(){return {};}); })
         .then(function(){
           const nc = document.getElementById('notifCount'); if(nc) nc.style.display='none';
           const sb = document.getElementById('sidebarNotifBadge'); if(sb) sb.style.display='none';
           const nd = document.getElementById('notifDropdown'); if(nd) nd.classList.add('hidden');
+          clearBell();
           try{ localStorage.setItem('bank_notif_read_at', Date.now().toString()); }catch(e){}
-          // Re-fetch to confirm server state
+          // Re-fetch to confirm server state (will show empty due to unread 0)
           fetch("{% url 'bank_notifications_api' %}", {credentials:'same-origin', headers: bankAuthHeaders()})
-            .then(r=>r.json()).then(d=>{ bankNotifApply(d.unread||0); }).catch(function(){});
+            .then(r=>r.json()).then(d=>{ bankNotifApply(d.unread||0); if((d.unread||0)===0) clearBell(); }).catch(function(){});
         }).catch(function(){
           // Even if server fails, hide locally and remember in localStorage so badge doesn't return on navigation
           const nc = document.getElementById('notifCount'); if(nc) nc.style.display='none';
           const sb = document.getElementById('sidebarNotifBadge'); if(sb) sb.style.display='none';
           const nd = document.getElementById('notifDropdown'); if(nd) nd.classList.add('hidden');
+          clearBell();
           try{ localStorage.setItem('bank_notif_read_at', Date.now().toString()); }catch(e){}
         });
       return false;
@@ -406,7 +402,7 @@
             .then(r=>r.json())
             .then(data=>{
               if(data.notifications){
-                if(!data.notifications.length){
+                if(!data.notifications.length || (data.unread||0)===0){
                   notifList.innerHTML = '<div class="p-6 text-center text-sm text-[var(--morgi-muted)]">No notifications.<br>You are all caught up.</div>';
                 } else {
                   notifList.innerHTML = data.notifications.map(n=>`

@@ -1,0 +1,197 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Resend Verification Email - MorgiHome</title>
+  <meta name="description" content="Resend your MorgiHome verification email">
+  <link href="{% static 'images/favicon.png' %}?v=5" rel="icon" type="image/png">
+  <link href="{% static 'images/apple-touch-icon.png' %}?v=4" rel="apple-touch-icon" type="image/png">
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap" rel="stylesheet">
+  <link href="{% static 'vendors/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+  <link href="{% static 'css/auth.css' %}?v=103" rel="stylesheet">
+  <link href="{% static 'css/toast.css' %}" rel="stylesheet">
+  <style>
+    .verify-icon { width: 72px; height: 72px; border-radius: 50%; background: rgba(0, 119, 182, 0.15); color: #0077B6; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 24px; }
+    .method-help { font-size: 12.5px; color: var(--auth-muted); margin-top: 12px; line-height: 1.5; }
+    .auth-helper-row { text-align: center; margin-top: 18px; font-size: 13.5px; color: var(--auth-muted); }
+    .auth-helper-row a { color: var(--auth-accent); font-weight: 600; text-decoration: none; }
+  </style>
+</head>
+
+<body>
+
+  <div class="auth-shell">
+
+    <aside class="auth-aside">
+      <div class="auth-brand">
+        <div class="logo"><i class="bi bi-house-heart-fill"></i></div>
+        <div class="name">MorgiHome</div>
+      </div>
+
+      <div class="auth-aside-body">
+        <span class="auth-aside-eyebrow">MorgiHome · Easy Mortgages</span>
+        <h1>Verify your account</h1>
+        <p>Enter the email address you used to sign up and we will send you a fresh verification link.</p>
+        <div class="auth-quote">
+          "MorgiHome keeps my account secure with a quick email verification step."
+          <div class="auth-quote-author">
+            <div class="av">MH</div>
+            <div>MorgiHome Security · Built in Tanzania</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="auth-aside-footer">
+        <span>© 2026 MORGIHOME</span>
+        <span>BUILT IN TANZANIA</span>
+      </div>
+    </aside>
+
+    <main class="auth-main">
+      <div class="auth-main-top">
+        <a href="{% url 'home' %}" class="auth-back">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
+          Back to Home
+        </a>
+        <div class="switch-link">Remembered it? <a href="{% url 'login_page' %}">Back to Log In</a></div>
+      </div>
+
+      <div class="auth-card" style="text-align: center;">
+        <div class="verify-icon"><i class="bi bi-envelope-arrow-up"></i></div>
+        <h2>Resend verification email</h2>
+        <p class="sub">We will check your account and send a new link if it has not been verified yet.</p>
+
+        <form id="resend-form" class="auth-form" style="text-align: left;">
+          {% csrf_token %}
+          <div class="field" id="field-email">
+            <label class="field-label" for="email">Email Address</label>
+            <div class="input-icon">
+              <span class="ico"><i class="bi bi-envelope"></i></span>
+              <input id="email" class="input" type="email" placeholder="john.doe@example.com" autocomplete="email" required>
+            </div>
+            <div class="field-error" id="email-error"></div>
+          </div>
+
+          <button type="submit" class="btn btn--primary auth-submit" id="submit-btn">Send Verification Link
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"></path></svg>
+          </button>
+        </form>
+
+        <p class="method-help">Previous verification links will stop working once a new link is sent.</p>
+
+        <div class="auth-helper-row">
+          Already verified? <a href="{% url 'login_page' %}">Log in here</a>
+        </div>
+      </div>
+
+      <div class="auth-main-bottom">Need help? <a href="{% url 'faq_page' %}">Contact Support</a></div>
+    </main>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="{% static 'js/toast.js' %}?v=103"></script>
+  <script src="{% static 'js/auth.js' %}?v=103"></script>
+  <script>
+    (function(){
+      function sweetAlert(icon, title, text){
+        if(window.Swal && typeof window.Swal.fire === 'function'){
+          window.Swal.fire({icon: icon, title: title, text: text, confirmButtonColor: '#0077B6'});
+        } else if(window.showToast){
+          window.showToast(text, icon === 'error' ? 'error' : icon === 'success' ? 'success' : icon === 'warning' ? 'warning' : 'info', title);
+        } else {
+          alert(title + ': ' + text);
+        }
+      }
+      function getCsrfToken(){
+        try{ var m=document.cookie.match(/(?:^|; )csrftoken=([^;]*)/); if(m) return decodeURIComponent(m[1]); }catch(e){}
+        return null;
+      }
+      function jsonHeaders(){
+        var h={"Content-Type":"application/json"}; var t=getCsrfToken(); if(t) h["X-CSRFToken"]=t; return h;
+      }
+
+      var form = document.getElementById('resend-form');
+      var submitBtn = document.getElementById('submit-btn');
+      var COOLDOWN_SECONDS = 60;
+      var countdownTimer = null;
+
+      function startCooldown(seconds){
+        if(!submitBtn) return;
+        submitBtn.disabled = true;
+        var remaining = seconds;
+        var originalText = submitBtn.innerHTML;
+        function tick(){
+          if(remaining <= 0){
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            if(countdownTimer) clearInterval(countdownTimer);
+            return;
+          }
+          submitBtn.textContent = 'Resend in ' + remaining + 's';
+          remaining--;
+        }
+        tick();
+        countdownTimer = setInterval(tick, 1000);
+      }
+
+      if(form){
+        form.addEventListener('submit', async function(e){
+          e.preventDefault();
+          var email = (document.getElementById('email').value || '').trim();
+          if(!email){
+            sweetAlert('warning','Email required','Please enter your email address.');
+            return;
+          }
+          submitBtn.disabled = true;
+          var originalText = submitBtn.innerHTML;
+          submitBtn.textContent = 'Sending...';
+          try{
+            var res = await fetch('/api/auth/resend-verification/', {
+              method: 'POST',
+              headers: jsonHeaders(),
+              body: JSON.stringify({email: email}),
+              credentials: 'same-origin'
+            });
+            var data = await res.json().catch(function(){ return {}; });
+            if(res.ok){
+              sweetAlert('success','Email sent', data.message || 'A new verification link has been sent to your email.');
+              startCooldown(data.cooldown_seconds || COOLDOWN_SECONDS);
+            } else if(res.status === 400 && data.error && data.error.toLowerCase().indexOf('already verified') !== -1){
+              sweetAlert('info','Already verified', data.error || 'This account is already verified. Please log in.');
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = originalText;
+            } else if(res.status === 429){
+              var retry = data.retry_after || COOLDOWN_SECONDS;
+              sweetAlert('warning','Please wait', data.error || 'Please wait before requesting another email.');
+              startCooldown(retry);
+            } else {
+              var detail = data.error || data.detail || 'Could not resend the verification email. Please try again.';
+              if(data.debug_smtp_error){
+                detail += '\n\nTechnical details: ' + data.debug_smtp_error;
+              }
+              sweetAlert('error','Failed', detail);
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = originalText;
+            }
+          }catch(err){
+            sweetAlert('error','Network error', err.message || 'Please check your connection.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+          }
+        });
+      }
+    })();
+  </script>
+
+</body>
+
+</html>

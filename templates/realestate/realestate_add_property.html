@@ -119,7 +119,7 @@
             <div class="col-md-6">
               <div class="form-group">
                 <label>Price <span class="text-danger">*</span></label>
-                <input type="number" name="price" class="form-control" placeholder="Enter price (TZS)" required>
+                <input type="text" inputmode="numeric" name="price" class="form-control" placeholder="Enter price (TZS)" required>
               </div>
             </div>
             <div class="col-md-6">
@@ -258,7 +258,7 @@
           <div class="form-group">
             <label>Upload Images <span class="text-danger">*</span></label>
             <input type="file" name="images" multiple accept=".jpg,.jpeg,.png" class="form-control" required>
-            <small class="text-muted">JPG, PNG, JPEG • Max 2MB per image • Max 5 photos • Max 5 photos • 2MB each</small>
+            <small class="text-muted">JPG, PNG, JPEG • Max 2MB per image • Min 10, max 20 photos • Min 10, max 20 photos • 2MB each</small>
           </div>
         </div>
       </div>
@@ -327,7 +327,7 @@
       try{
         existing = document.querySelectorAll('[data-existing-img]').length;
       }catch(e){}
-      if(files.length + existing > 5){ shortAlert('Maximum 5 photos allowed.'); inp.value=''; return; }
+      if(files.length + existing > 20){ shortAlert('Minimum 10, maximum 20 photos required.'); inp.value=''; return; }
       for(var i=0;i<files.length;i++){
         if(files[i].size > 2*1024*1024){ shortAlert('Photo "'+files[i].name+'" exceeds 2MB.'); inp.value=''; prev.innerHTML=''; return; }
       }
@@ -350,7 +350,8 @@
         var files = inp.files||[];
         var existing = 0;
         try{ existing = document.querySelectorAll('[data-existing-img]').length; }catch(e2){}
-        if(files.length + existing > 5){ e.preventDefault(); shortAlert('Maximum 5 photos allowed.'); return false; }
+        if(files.length + existing > 20){ e.preventDefault(); shortAlert('Minimum 10, maximum 20 photos required.'); return false; }
+        if(files.length + existing < 10){ e.preventDefault(); shortAlert('Minimum 10 photos required (you have '+(files.length+existing)+').'); return false; }
         for(var i=0;i<files.length;i++){ if(files[i].size > 2*1024*1024){ e.preventDefault(); shortAlert('Photo "'+files[i].name+'" exceeds 2MB.'); return false; } }
       });
     }
@@ -360,4 +361,18 @@
 })();
 </script>
 
+<script>
+(function(){
+  // TZS money formatting: display with commas, submit raw numbers
+  function fmt(v){ var r=String(v==null?'':v).replace(/,/g,'').replace(/[^0-9.]/g,''); if(!r) return ''; var p=r.split('.'); p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); return p.length>1?p[0]+'.'+p[1].slice(0,2):p[0]; }
+  document.querySelectorAll('input[name="price"]').forEach(function(el){
+    el.setAttribute('type','text'); el.setAttribute('inputmode','numeric');
+    if(el.value) el.value=fmt(el.value);
+    el.addEventListener('input', function(){ el.value=fmt(el.value); });
+    el.addEventListener('blur', function(){ if(el.value) el.value=fmt(el.value); });
+    var f=el.closest('form');
+    if(f && !f.dataset.moneyStrip){ f.dataset.moneyStrip='1'; f.addEventListener('submit', function(){ document.querySelectorAll('input[name="price"]').forEach(function(x){ x.value=String(x.value).replace(/,/g,''); }); }); }
+  });
+})();
+</script>
 {% endblock %}

@@ -39,6 +39,86 @@ STAGE_SUCCESS_MESSAGES = {
 }
 
 
+def _ensure_repayment_and_contract(app, user=None):
+    """After approval the customer repayment page + disbursement figures read from
+    RepaymentSchedule + Contract. The web approve path never created them (only the
+    API did), so totals read as zero. Generate both idempotently here."""
+    try:
+        from datetime import date, timedelta
+        from dateutil.relativedelta import relativedelta
+    except Exception:
+        from datetime import date, timedelta
+        relativedelta = None
+    try:
+        from mortgages.models import RepaymentSchedule
+        from mortgages.ai_utils import generate_repayment_schedule
+        from transactions.models import Contract, Transaction
+        if not RepaymentSchedule.objects.filter(mortgage=app).exists():
+            try:
+                schedules, _mi = generate_repayment_schedule(app)
+            except Exception:
+                schedules, _mi = [], None
+            start = date.today() + timedelta(days=30)
+            for s in schedules:
+                try:
+                    _n = int(s.get('installment_number', 1))
+                except Exception:
+                    _n = 1
+                try:
+                    if relativedelta:
+                        _due = date.today() + relativedelta(months=_n)
+                    else:
+                        _due = start + timedelta(days=30 * (_n - 1))
+                except Exception:
+                    _due = start
+                try:
+                    RepaymentSchedule.objects.create(
+                        mortgage=app,
+                        installment_number=_n,
+                        due_date=_due,
+                        amount_due=s.get('amount_due', 0),
+                        balance_remaining=s.get('balance_remaining', 0))
+                except Exception:
+                    pass
+        # Ensure a contract exists so disbursement reports stop reading zero
+        try:
+            _c = Contract.objects.filter(mortgage=app).first()
+            if not _c:
+                from accounts.models import User as _U
+                _seller = getattr(getattr(app, 'property', None), 'seller', None)
+                _bank = getattr(app, 'bank', None) or _U.objects.filter(role='bank').first()
+                if _seller is not None and _bank is not None:
+                    _c = Contract.objects.create(
+                        mortgage=app, customer=app.customer,
+                        seller=_seller, bank=_bank,
+                        status='signed' if app.status == 'approved' else 'draft',
+                        customer_signed=True, seller_signed=True, bank_signed=True,
+                        signed_date=date.today() if app.status == 'approved' else None)
+            # Disbursed applications must have an executed contract + disbursement transaction
+            if getattr(app, 'status', '') == 'disbursed' and _c is not None:
+                _upd = []
+                if _c.status != 'executed':
+                    _c.status = 'executed'
+                    _upd.append('status')
+                if not _c.executed_date:
+                    _c.executed_date = date.today()
+                    _upd.append('executed_date')
+                if _upd:
+                    _c.save(update_fields=_upd)
+                if not Transaction.objects.filter(contract=_c, transaction_type='mortgage_disbursement').exists():
+                    try:
+                        Transaction.objects.create(
+                            contract=_c, amount=getattr(app, 'loan_amount', 0) or 0,
+                            transaction_type='mortgage_disbursement', status='completed',
+                            notes=f"Disbursement for {getattr(app, 'application_number', app.id)}")
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+    except Exception:
+        pass
+
+
 def _sync_property_status(app):
     """Keep Property badge in sync with loan progress:
     - approved/disbursed -> sold (house taken, others cannot apply)
@@ -471,27 +551,63 @@ def _real_application_detail(pk):
                 "napa": getattr(prop, 'napa', '') or '',
                 "seller": prop.seller.get_full_name() if getattr(prop, 'seller', None) else '',
             }
-        # Extract CRB-related extra info from draft_data (has_existing_loan etc)
+        # Extract extra info from model fields + draft_data (new statutory deductions + other loan)
         crb_info = {}
         try:
             dd = app.draft_data or {}
+            def _val(field, fallback=''):
+                # prefer model field, then draft_data
+                v = getattr(app, field, None)
+                if v not in (None, ''):
+                    return v
+                return dd.get(field) or fallback
             crb_info = {
-                'has_existing_loan': dd.get('has_existing_loan') or dd.get('has_existing_loan') or '',
-                'existing_loan_bank': dd.get('existing_loan_bank') or '',
-                'existing_loan_amount': dd.get('existing_loan_amount') or '',
-                'existing_loan_repayment': dd.get('existing_loan_repayment') or '',
-                'existing_loan_balance': dd.get('existing_loan_balance') or '',
-                'dob': dd.get('dob') or '',
-                'gender': dd.get('gender') or '',
-                'marital_status': dd.get('marital_status') or '',
-                'dependents': dd.get('dependents') or '',
-                'nida': dd.get('nin') or dd.get('nida') or '',
+                'has_existing_loan': _val('has_existing_loan', dd.get('has_existing_loan') or ''),
+                'existing_loan_bank': _val('existing_loan_bank', dd.get('existing_loan_bank') or ''),
+                'existing_loan_amount': _val('existing_loan_amount', dd.get('existing_loan_amount') or ''),
+                'existing_loan_repayment': _val('existing_loan_repayment', dd.get('existing_loan_repayment') or ''),
+                'existing_loan_balance': _val('existing_loan_balance', dd.get('existing_loan_balance') or ''),
+                'dob': _val('dob', dd.get('dob') or ''),
+                'gender': _val('gender', dd.get('gender') or ''),
+                'marital_status': _val('marital_status', dd.get('marital_status') or ''),
+                'dependents': _val('dependents', dd.get('dependents') or ''),
+                'bank_account_number': _val('bank_account_number', dd.get('bank_account_number') or dd.get('bank_account') or ''),
+                'bank_account_name': _val('bank_account_name', dd.get('bank_account_name') or ''),
+                'monthly_expenses': _val('monthly_expenses', dd.get('monthly_expenses') or ''),
+                'monthly_income': _val('monthly_income', dd.get('monthly_income') or ''),
+                'employer_name_m': _val('employer_name', ''),
+                'job_title_m': _val('job_title', ''),
+                'years_employed_m': _val('years_employed', ''),
+                'contract_type_m': _val('contract_type', ''),
+                'business_name_m': _val('business_name', ''),
+                'business_years_m': _val('business_years', ''),
+                'nida': _val('nida_number', dd.get('nida_number') or dd.get('nin') or dd.get('nida') or ''),
+                'nida_number': _val('nida_number', ''),
                 'contract_type': dd.get('contract_type') or '',
                 'years_employed': dd.get('years_employed') or '',
-                'job_title': dd.get('job_title') or '',
-                'employer_name': dd.get('employer_name') or '',
-                'business_name': dd.get('business_name') or '',
-                'business_type': dd.get('business_type') or '',
+                'job_title': dd.get('job_title') or _val('job_title', ''),
+                'employer_name': dd.get('employer_name') or _val('employer_name', ''),
+                'business_name': _val('business_name', dd.get('business_name') or ''),
+                'business_type': _val('business_type', dd.get('business_type') or ''),
+                'business_registration_number': _val('business_registration_number', dd.get('business_registration_number') or ''),
+                'business_years': dd.get('business_years') or '',
+                'annual_income': _val('annual_income', dd.get('annual_income') or ''),
+                'employment_sector': _val('employment_sector', dd.get('employment_sector') or ''),
+                'deduction_psssf': _val('deduction_psssf', dd.get('deduction_psssf') or False),
+                'deduction_heslb': _val('deduction_heslb', dd.get('deduction_heslb') or False),
+                'deduction_paye': _val('deduction_paye', dd.get('deduction_paye') or False),
+                'psssf_amount': _val('psssf_amount', dd.get('psssf_amount') or ''),
+                'heslb_amount': _val('heslb_amount', dd.get('heslb_amount') or ''),
+                'paye_amount': _val('paye_amount', dd.get('paye_amount') or ''),
+                'total_deductions': _val('total_deductions', dd.get('total_deductions') or ''),
+                'net_monthly_income': _val('net_monthly_income', dd.get('net_monthly_income') or ''),
+                'has_other_loan': _val('has_other_loan', dd.get('has_other_loan') or ''),
+                'other_loan_bank': _val('other_loan_bank', dd.get('other_loan_bank') or ''),
+                'other_loan_amount': _val('other_loan_amount', dd.get('other_loan_amount') or ''),
+                'other_loan_balance': _val('other_loan_balance', dd.get('other_loan_balance') or ''),
+                'other_loan_monthly_payment': _val('other_loan_monthly_payment', dd.get('other_loan_monthly_payment') or ''),
+                'other_loan_consolidate': _val('other_loan_consolidate', dd.get('other_loan_consolidate') or ''),
+                'marriage_certificate_number': _val('marriage_certificate_number', dd.get('marriage_certificate_number') or ''),
             }
             # Also try direct fields if draft_data missing
             if not crb_info['has_existing_loan']:
@@ -563,7 +679,7 @@ def _real_application_detail(pk):
             "risk_score": risk,
             "dti": f"{float(app.dti_ratio or 0):.1f}%",
             "interest": f"{float(app.bank.interest_rate):.1f}%" if getattr(app, 'bank', None) and getattr(app.bank, 'interest_rate', None) else "13%",
-            "processing_fee_percent": f"{float(app.bank.processing_fee):.1f}%" if getattr(app, 'bank', None) and getattr(app.bank, 'processing_fee', None) else "2.0%",
+            "processing_fee_percent": f"{float(app.bank.processing_fee):.1f}%" if getattr(app, 'bank', None) and getattr(app.bank, 'processing_fee', None) else "1.0%",
             "monthly_payment": float(app.monthly_installment or 0),
             "status": app.status,
             "review_stage": getattr(app, 'review_stage', 'received') or 'received',
@@ -571,7 +687,12 @@ def _real_application_detail(pk):
             "customer_photo": cust_photo,
             "customer_initials": (getattr(cust, 'initials', '') or (cust.get_full_name()[:1] if cust and cust.get_full_name() else '-')) if cust else '-',
             "customer_since": cust.date_joined.strftime("%b %Y") if cust and getattr(cust, 'date_joined', None) else '',
+            "bank_name": app.bank.get_full_name() if getattr(app, 'bank', None) else '',
+            "customer_is_verified": bool(getattr(cust, 'is_verified', False)) if cust else False,
+            "customer_verification": getattr(cust, 'verification_level', 'not_verified') if cust else 'not_verified',
             "property_info": prop_info,
+            "house_photos": [g.image.url for g in app.house_photos.all() if g.image] if hasattr(app, 'house_photos') else [],
+            "house_cover": (lambda _hs: _hs.image.url if _hs and _hs.image else '')(next((g for g in app.house_photos.all() if g.is_cover), app.house_photos.first() if hasattr(app, 'house_photos') and app.house_photos.exists() else None)) if hasattr(app, 'house_photos') else '',
             "date": app.created_at.strftime("%Y-%m-%d") if app.created_at else "",
             "notes": app.notes or "",
             "documents": docs,
@@ -678,6 +799,10 @@ def bank_application_review(request, pk):
                 ApplicationTimelineEvent.log(app, 'approved', user=user)
                 try:
                     _sync_property_status(app)
+                except Exception:
+                    pass
+                try:
+                    _ensure_repayment_and_contract(app, user=user)
                 except Exception:
                     pass
                 messages.success(request, "Application approved successfully.")
@@ -825,9 +950,46 @@ def bank_application_approve(request, pk):
             _sync_property_status(app)
         except Exception:
             pass
+        try:
+            _ensure_repayment_and_contract(app, user=user)
+        except Exception:
+            pass
         messages.success(request, "Application approved successfully.")
     except Exception as e:
         messages.error(request, "Failed to approve.")
+    return redirect("bank_application_detail", pk=pk)
+
+
+def bank_application_disburse(request, pk):
+    """POST /bank/applications/<id>/disburse/ - mark loan as disbursed.
+    Creates executed contract + disbursement transaction + repayment schedule
+    so customer/bank disbursement figures stop reading zero."""
+    from django.contrib import messages
+    from django.shortcuts import redirect
+    if request.method != "POST":
+        return redirect("bank_application_detail", pk=pk)
+    try:
+        from mortgages.models import ApplicationTimelineEvent, MortgageApplication
+        app = MortgageApplication.objects.get(pk=pk)
+        user = request.user if getattr(request.user, 'is_authenticated', False) else None
+        if app.status not in ('approved', 'disbursed'):
+            messages.error(request, "Only approved loans can be disbursed.")
+            return redirect("bank_application_detail", pk=pk)
+        app.status = "disbursed"
+        app.review_stage = "approval_decision"
+        app.save(update_fields=['status', 'review_stage', 'updated_at'])
+        ApplicationTimelineEvent.log(app, 'disbursed', user=user)
+        try:
+            _sync_property_status(app)
+        except Exception:
+            pass
+        try:
+            _ensure_repayment_and_contract(app, user=user)
+        except Exception:
+            pass
+        messages.success(request, "Loan disbursed successfully.")
+    except Exception:
+        messages.error(request, "Failed to disburse.")
     return redirect("bank_application_detail", pk=pk)
 
 
@@ -986,55 +1148,234 @@ def bank_application_pdf(request, pk):
     except Exception:
         pass
 
-    def _row(k, v):
-        return [Paragraph(f"<b>{k}</b>", normal), Paragraph(str(v or '-'), normal)]
+    NAVY = colors.HexColor('#0A2B4E')
+    BLUE = colors.HexColor('#0077B6')
+    LIGHT = colors.HexColor('#EFF6FF')
+    GRID = colors.HexColor('#BFDBFE')
+    GREEN = colors.HexColor('#15803d')
+    section_title = ParagraphStyle('sec', parent=styles['Heading2'], fontSize=11,
+                                   textColor=colors.white, backColor=NAVY,
+                                   borderPadding=(4, 6, 4), spaceBefore=8, spaceAfter=0,
+                                   leading=14)
+    sub_title = ParagraphStyle('sub', parent=styles['Heading3'], fontSize=10,
+                               textColor=BLUE, spaceBefore=6, spaceAfter=3, leading=13)
+    kv_key = ParagraphStyle('kvk', parent=normal, fontSize=8.5, leading=11,
+                            textColor=colors.HexColor('#475569'))
+    kv_val = ParagraphStyle('kvv', parent=normal, fontSize=9, leading=12,
+                            textColor=colors.HexColor('#0f172a'))
 
-    cust_data = [
-        _row('Customer', detail.get('full_name')),
-        _row('Phone', detail.get('phone')),
-        _row('Email', detail.get('email')),
-        _row('Employer', detail.get('employer')),
-        _row('Monthly Income', f"TZS {float(detail.get('income') or 0):,.0f}"),
-    ]
+    def _tzs(v):
+        try:
+            return f"TZS {float(v or 0):,.0f}"
+        except (TypeError, ValueError):
+            return '-'
+
+    def _kv(data):
+        rows = [[Paragraph(f"{k}", kv_key), Paragraph(f"{v or '-'}", kv_val)]
+                for k, v in data]
+        t = Table(rows, colWidths=[52 * mm, 118 * mm])
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), LIGHT),
+            ('GRID', (0, 0), (-1, -1), 0.5, GRID),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('LEFTPADDING', (0, 0), (-1, -1), 6),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+            ('ROWBACKGROUNDS', (1, 0), (-1, -1), [colors.white, colors.HexColor('#F8FAFC')]),
+        ]))
+        return t
+
+    def _section(title):
+        story.append(Paragraph(title, section_title))
+        story.append(Spacer(1, 2 * mm))
+
+    crb = detail.get('crb_info') or {}
     prop = detail.get('property_info') or {}
-    loan_data = [
-        _row('Loan Amount', f"TZS {float(detail.get('amount') or 0):,.0f}"),
-        _row('Term', f"{detail.get('term')} months"),
-        _row('Property', prop.get('title', detail.get('property_name'))),
-        _row('Location', prop.get('location', '')),
-        _row('Value', f"TZS {float(prop.get('price') or detail.get('property_value') or 0):,.0f}"),
-    ]
-    story.append(Paragraph('Customer', h2))
-    t1 = Table(cust_data, colWidths=[45*mm, 125*mm])
-    t1.setStyle(TableStyle([('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#EFF6FF')),
-                            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#BFDBFE')),
-                            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                            ('TOPPADDING', (0, 0), (-1, -1), 4),
-                            ('BOTTOMPADDING', (0, 0), (-1, -1), 4)]))
-    story.append(t1)
-    story.append(Paragraph('Loan & Property', h2))
-    t2 = Table(loan_data, colWidths=[45*mm, 125*mm])
-    t2.setStyle(TableStyle([('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#EFF6FF')),
-                            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#BFDBFE')),
-                            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                            ('TOPPADDING', (0, 0), (-1, -1), 4),
-                            ('BOTTOMPADDING', (0, 0), (-1, -1), 4)]))
-    story.append(t2)
-    story.append(Paragraph('Review Stages', h2))
+    docs = detail.get('documents') or []
+    timeline = detail.get('timeline') or []
     steps = detail.get('steps') or []
-    stage_rows = [[Paragraph('<b><font color="white">Stage</font></b>', th_style), Paragraph('<b><font color="white">State</font></b>', th_style)]]
-    for s in steps:
-        stage_rows.append([Paragraph(str(s.get('label')), normal), Paragraph(str(s.get('state')).title(), normal)])
-    t3 = Table(stage_rows, colWidths=[120*mm, 50*mm])
-    t3.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0A2B4E')),
-                            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-                            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#BFDBFE')),
-                            ('TOPPADDING', (0, 0), (-1, -1), 4),
-                            ('BOTTOMPADDING', (0, 0), (-1, -1), 4)]))
-    story.append(t3)
-    story.append(Spacer(1, 6*mm))
+
+    # ---- 1. Applicant ----
+    _section('1 &nbsp;•&nbsp; Mortgage Applicant')
+    story.append(_kv([
+        ('Full name', detail.get('full_name')),
+        ('Phone', detail.get('phone')),
+        ('Email', detail.get('email')),
+        ('Customer since', detail.get('customer_since')),
+        ('Verification', 'Verified ✓' if detail.get('customer_is_verified') else 'Not verified'),
+    ]))
+    story.append(Paragraph('Identity', sub_title))
+    story.append(_kv([
+        ('NIDA number', crb.get('nida_number') or crb.get('nida')),
+        ('Gender', str(crb.get('gender') or '').title()),
+        ('Date of birth', crb.get('dob')),
+        ('Marital status', str(crb.get('marital_status') or '').title()),
+        ('Dependents', crb.get('dependents')),
+        ('Marriage cert no', crb.get('marriage_certificate_number')),
+    ]))
+
+    # ---- 2. Employment / Business ----
+    is_biz = bool(crb.get('business_name')) or str(detail.get('employer') or '').lower() == 'business owner'
+    _section('2 &nbsp;•&nbsp; Employment / Business')
+    if is_biz:
+        story.append(_kv([
+            ('Business name', crb.get('business_name')),
+            ('Business type', str(crb.get('business_type') or '').title()),
+            ('Registration no', crb.get('business_registration_number')),
+            ('Years in business', crb.get('business_years')),
+            ('Annual income', _tzs(crb.get('annual_income'))),
+            ('Monthly equivalent', _tzs(detail.get('income'))),
+        ]))
+    else:
+        story.append(_kv([
+            ('Employment status', detail.get('employer')),
+            ('Employer', crb.get('employer_name')),
+            ('Job title', crb.get('job_title')),
+            ('Years employed', crb.get('years_employed')),
+            ('Contract type', str(crb.get('contract_type') or '').title()),
+            ('Employment sector', str(crb.get('employment_sector') or '').title()),
+            ('Gross monthly income', _tzs(detail.get('income'))),
+            ('Monthly expenses', _tzs(crb.get('monthly_expenses'))),
+        ]))
+    story.append(Paragraph('Statutory deductions & net income', sub_title))
+    story.append(_kv([
+        ('Employment sector', str(crb.get('employment_sector') or '').title()),
+        ('PSSSF 5% (public only)', f"{'Applied' if crb.get('deduction_psssf') else 'Not applied'} • {_tzs(crb.get('psssf_amount'))}"),
+        ('HESLB 15%', f"{'Applied' if crb.get('deduction_heslb') else 'Not applied'} • {_tzs(crb.get('heslb_amount'))}"),
+        ('PAYE 0–30%', f"{'Applied' if crb.get('deduction_paye') else 'Not applied'} • {_tzs(crb.get('paye_amount'))}"),
+        ('Total deductions', _tzs(crb.get('total_deductions'))),
+        ('Net monthly income', _tzs(crb.get('net_monthly_income') or detail.get('income'))),
+    ]))
+
+    # ---- 3. Bank ----
+    try:
+        _bank_name = detail.get('bank_name') or ((_bank.get_full_name() if '_bank' in dir() else '') or 'Selected bank')
+    except Exception:
+        _bank_name = 'Selected bank'
+    _section('3 &nbsp;•&nbsp; Bank')
+    story.append(_kv([
+        ('Bank', _bank_name),
+        ('Interest rate', detail.get('interest')),
+        ('Processing fee', detail.get('processing_fee_percent')),
+        ('Customer account no', crb.get('bank_account_number')),
+        ('Account holder name', crb.get('bank_account_name')),
+    ]))
+
+    # ---- 4. Loan ----
+    _section('4 &nbsp;•&nbsp; Loan')
+    story.append(_kv([
+        ('Loan type', detail.get('type')),
+        ('Loan amount', _tzs(detail.get('amount'))),
+        ('Repayment term', f"{detail.get('term')} months"),
+        ('Monthly installment', _tzs(detail.get('monthly_payment'))),
+        ('DTI ratio', detail.get('dti')),
+        ('Affordability score', f"{detail.get('score', 0)}/100"),
+        ('AI risk', detail.get('ai_risk')),
+    ]))
+    if crb.get('has_other_loan') == 'yes' or crb.get('other_loan_bank'):
+        story.append(Paragraph('Existing loan & consolidation', sub_title))
+        story.append(_kv([
+            ('Has other loan', str(crb.get('has_other_loan') or '').title()),
+            ('Consolidate / takeover', str(crb.get('other_loan_consolidate') or '').title()),
+            ('Other loan bank', crb.get('other_loan_bank')),
+            ('Original amount', _tzs(crb.get('other_loan_amount'))),
+            ('Outstanding balance', _tzs(crb.get('other_loan_balance'))),
+            ('Old monthly payment', _tzs(crb.get('other_loan_monthly_payment'))),
+        ]))
+
+    # ---- 5. Property / collateral ----
+    _section('5 &nbsp;•&nbsp; Property (collateral)')
+    story.append(_kv([
+        ('Title', prop.get('title', detail.get('property_name'))),
+        ('Location', prop.get('location', '')),
+        ('Value', _tzs(prop.get('price') or detail.get('property_value'))),
+        ('Type', f"{prop.get('type', '')} • {prop.get('category', '')}".strip(' •')),
+        ('Status', prop.get('status', '')),
+        ('Area', prop.get('area', '')),
+        ('Bed / Bath', f"{prop.get('bedrooms', '-') } / {prop.get('bathrooms', '-')}" if prop.get('bedrooms') else '-'),
+        ('Title / NAPA', prop.get('napa', '')),
+        ('Seller', prop.get('seller', '')),
+    ]))
+    if prop.get('description'):
+        story.append(Paragraph(str(prop.get('description'))[:600], normal))
+        story.append(Spacer(1, 1 * mm))
+    _hp = detail.get('house_photos') or []
+    if _hp:
+        story.append(Paragraph(f"Applicant house photos (Semi-Finish): {_hp and len(_hp)} attached — see bank portal gallery.", normal))
+        story.append(Spacer(1, 1 * mm))
+
+    # ---- 6. Documents ----
+    _section(f"6 &nbsp;•&nbsp; Documents ({len(docs)})")
+    if docs:
+        doc_rows = [[Paragraph('<b><font color="white">Document</font></b>', th_style),
+                      Paragraph('<b><font color="white">File</font></b>', th_style)]]
+        for d in docs:
+            doc_rows.append([Paragraph(str(d.get('title') or d.get('type') or '-'), normal),
+                             Paragraph(str(d.get('name') or '-'), normal)])
+        t_docs = Table(doc_rows, colWidths=[60 * mm, 110 * mm])
+        t_docs.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, 0), NAVY),
+                                    ('GRID', (0, 0), (-1, -1), 0.5, GRID),
+                                    ('TOPPADDING', (0, 0), (-1, -1), 4),
+                                    ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+                                    ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F8FAFC')])]))
+        story.append(t_docs)
+    else:
+        story.append(Paragraph('No documents uploaded yet for this application.', normal))
+
+    # ---- 7. Review timeline ----
+    _section('7 &nbsp;•&nbsp; Bank review timeline')
+    if timeline:
+        tl_rows = [[Paragraph('<b><font color="white">Update</font></b>', th_style),
+                     Paragraph('<b><font color="white">Date</font></b>', th_style)]]
+        for ev in timeline:
+            _msg = str(ev.get('title') or ev.get('stage') or '')
+            _det = str(ev.get('message') or '')[:220]
+            tl_rows.append([Paragraph(f"<b>{_msg}</b><br/><font size=8>{_det}</font>", normal),
+                            Paragraph(str(ev.get('created_at') or '')[:16], normal)])
+        t_tl = Table(tl_rows, colWidths=[125 * mm, 45 * mm])
+        t_tl.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, 0), NAVY),
+                                  ('GRID', (0, 0), (-1, -1), 0.5, GRID),
+                                  ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                                  ('TOPPADDING', (0, 0), (-1, -1), 4),
+                                  ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+                                  ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                                  ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F8FAFC')])]))
+        story.append(t_tl)
+    else:
+        stage_rows = [[Paragraph('<b><font color="white">Stage</font></b>', th_style),
+                        Paragraph('<b><font color="white">State</font></b>', th_style)]]
+        for s in steps:
+            stage_rows.append([Paragraph(str(s.get('label')), normal),
+                               Paragraph(str(s.get('state')).title(), normal)])
+        t3 = Table(stage_rows, colWidths=[120 * mm, 50 * mm])
+        t3.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, 0), NAVY),
+                                ('GRID', (0, 0), (-1, -1), 0.5, GRID),
+                                ('TOPPADDING', (0, 0), (-1, -1), 4),
+                                ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+                                ('LEFTPADDING', (0, 0), (-1, -1), 6)]))
+        story.append(t3)
+
+    # ---- 8. Disbursement ----
+    try:
+        from transactions.models import Contract as _C, Transaction as _T
+        from django.db.models import Sum as _Sum
+        _c = _C.objects.filter(mortgage_id=pk).first()
+        _disb_total = _T.objects.filter(contract=_c, transaction_type='mortgage_disbursement').aggregate(s=_Sum('amount'))['s'] if _c else 0
+    except Exception:
+        _c, _disb_total = None, 0
+    _section('8 &nbsp;•&nbsp; Disbursement')
+    story.append(_kv([
+        ('Contract status', getattr(_c, 'status', 'Not created yet')),
+        ('Executed date', str(getattr(_c, 'executed_date', '') or '-')),
+        ('Disbursed total', _tzs(_disb_total or (detail.get('amount') if str(detail.get('status')) == 'disbursed' else 0))),
+        ('Application status', str(detail.get('status', '')).title()),
+    ]))
+
+    story.append(Spacer(1, 6 * mm))
     story.append(Paragraph('Generated by MorgiHome Bank Portal • Brain-Wave Group • 2026', footer_style))
-    story.append(Spacer(1, 3*mm))
+    story.append(Spacer(1, 3 * mm))
     story.append(Paragraph("Customer signature: ____________________ &nbsp;&nbsp; Bank officer: ____________________ &nbsp;&nbsp; Date: __________", sign_style))
     doc.build(story)
     return response

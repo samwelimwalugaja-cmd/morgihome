@@ -10,9 +10,7 @@
   <link rel="stylesheet" href="{% static 'corona/vendors/css/vendor.bundle.base.css' %}">
   <link rel="stylesheet" href="{% static 'corona/vendors/font-awesome/css/font-awesome.min.css' %}">
   <link rel="stylesheet" href="{% static 'corona/css/style.css' %}">
-  <link href="{% static 'images/favicon.ico' %}?v=4" rel="icon" sizes="48x48">
-  <link href="{% static 'images/favicon-32x32.png' %}?v=4" rel="icon" type="image/png" sizes="32x32">
-  <link href="{% static 'images/favicon-16x16.png' %}?v=4" rel="icon" type="image/png" sizes="16x16">
+  <link href="{% static 'images/favicon.png' %}?v=5" rel="icon" type="image/png">
   <link href="{% static 'images/apple-touch-icon.png' %}?v=4" rel="apple-touch-icon" type="image/png">
   <style>
     html, body { background:#000 !important; margin:0 !important; }
@@ -131,9 +129,6 @@
         </li>
         <li class="nav-item menu-items {% if request.path == '/realestate/reports/' %}active{% endif %}">
           <a class="nav-link" href="/realestate/reports/"><span class="menu-icon"><i class="mdi mdi-chart-bar"></i></span><span class="menu-title">Reports</span></a>
-        </li>
-        <li class="nav-item menu-items {% if request.path == '/realestate/notifications/' %}active{% endif %}">
-          <a class="nav-link" href="/realestate/notifications/"><span class="menu-icon"><i class="mdi mdi-bell"></i></span><span class="menu-title">Notifications</span></a>
         </li>
         <li class="nav-item menu-items {% if request.path == '/realestate/search/' %}active{% endif %}">
           <a class="nav-link" href="/realestate/search/"><span class="menu-icon"><i class="mdi mdi-magnify"></i></span><span class="menu-title">Search</span></a>
@@ -255,26 +250,33 @@
           if(!read && unread) { if(dot) dot.style.display='block'; } else if(read) { if(dot) dot.style.display='none'; }
           // Ensure unread 0 hides
           if(!unread) { if(dot) dot.style.display='none'; }
-          if(list && items.length){
-            var esc = function(s){ var d=document.createElement('div'); d.textContent=(s||''); return d.innerHTML; };
-            list.innerHTML = items.slice(0,5).map(function(n){
-              return '<a class="dropdown-item preview-item" href="' + esc(n.link || '/realestate/notifications/') + '">' +
-                '<div class="preview-thumbnail"><div class="preview-icon rounded-circle" style="background:rgba(0,119,182,0.15);"><i class="mdi mdi-bell" style="color:#0077B6;"></i></div></div>' +
-                '<div class="preview-item-content"><p class="preview-subject mb-1">' + esc(n.title) + '</p>' +
-                '<p class="text-muted ellipsis mb-0" style="font-size:12px;">' + esc(n.message).substring(0,80) + '</p></div></div></a>';
-            }).join('');
+          if(list){
+            if(!items.length || unread===0){
+              list.innerHTML = '<div class="p-4 text-center text-sm text-[var(--morgi-muted)]">No notifications.<br>You are all caught up.</div>';
+            } else {
+              var esc = function(s){ var d=document.createElement('div'); d.textContent=(s||''); return d.innerHTML; };
+              list.innerHTML = items.slice(0,5).map(function(n){
+                return '<a class="dropdown-item preview-item" href="' + esc(n.link || '/realestate/notifications/') + '">' +
+                  '<div class="preview-thumbnail"><div class="preview-icon rounded-circle" style="background:rgba(0,119,182,0.15);"><i class="mdi mdi-bell" style="color:#0077B6;"></i></div></div>' +
+                  '<div class="preview-item-content"><p class="preview-subject mb-1">' + esc(n.title) + '</p>' +
+                  '<p class="text-muted ellipsis mb-0" style="font-size:12px;">' + esc(n.message).substring(0,80) + '</p></div></div></a>';
+              }).join('');
+            }
           }
         })
         .catch(function(){ if(dot && !read) dot.style.display = 'block'; });
     }
     function reMarkAllRead(){
+      var listEl = document.getElementById('reNotifList');
+      function clearBell(){ if(listEl) listEl.innerHTML = '<div class="p-4 text-center text-sm text-[var(--morgi-muted)]">No notifications.<br>You are all caught up.</div>'; }
       try{ localStorage.setItem('re_notif_read', '1'); localStorage.setItem('re_notif_read_at', Date.now().toString()); }catch(e){}
       // Persist to server
       fetch('/api/auth/notifications/realestate/', {method:'POST', credentials:'same-origin', headers: reAuthHeaders()})
         .then(function(r){ return r.json().catch(function(){return {};}); })
-        .then(function(){ var dot=document.getElementById('reNotifDot'); if(dot) dot.style.display='none'; })
-        .catch(function(){ var dot=document.getElementById('reNotifDot'); if(dot) dot.style.display='none'; });
-      reNotifRefresh();
+        .then(function(){ var dot=document.getElementById('reNotifDot'); if(dot) dot.style.display='none'; clearBell(); })
+        .catch(function(){ var dot=document.getElementById('reNotifDot'); if(dot) dot.style.display='none'; clearBell(); });
+      // Also clear immediately
+      clearBell();
       return false;
     }
     document.addEventListener('DOMContentLoaded', reNotifRefresh);

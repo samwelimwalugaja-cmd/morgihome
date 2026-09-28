@@ -31,6 +31,15 @@ class User(AbstractUser):
     notify_email = models.BooleanField(default=True, help_text="Receive application updates via email")
     notifications_seen_at = models.DateTimeField(null=True, blank=True, help_text="When the user last read notifications (bell badge)")
 
+    # Email verification (required for customer/seller self-registration)
+    email_verified = models.BooleanField(default=False, help_text="Email address has been verified via verification link")
+    email_verification_token = models.CharField(max_length=255, blank=True, default='', help_text="One-time token sent by email")
+    email_verification_sent_at = models.DateTimeField(null=True, blank=True, help_text="When the verification email was last sent")
+    email_verified_at = models.DateTimeField(null=True, blank=True, help_text="When the email was verified")
+
+    # Social signup role selection pending
+    role_selection_pending = models.BooleanField(default=False, help_text="New social user still needs to select customer/realestate role")
+
     # Bank specific
     interest_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Yearly interest rate in PERCENT (e.g. 12.50 means 12.5% p.a. - this is NOT the fee)")
     processing_fee = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Processing fee in PERCENT (e.g. 1.00 means 1% - applicants see 1%)")

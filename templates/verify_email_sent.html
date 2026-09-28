@@ -1,0 +1,202 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Verify Your Email - MorgiHome</title>
+  <meta name="description" content="Verify your MorgiHome email address">
+  <link href="{% static 'images/favicon.png' %}?v=5" rel="icon" type="image/png">
+  <link href="{% static 'images/apple-touch-icon.png' %}?v=4" rel="apple-touch-icon" type="image/png">
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap" rel="stylesheet">
+  <link href="{% static 'vendors/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+  <link href="{% static 'css/auth.css' %}?v=103" rel="stylesheet">
+  <link href="{% static 'css/toast.css' %}" rel="stylesheet">
+  <style>
+    .verify-icon { width: 72px; height: 72px; border-radius: 50%; background: rgba(0, 119, 182, 0.15); color: #0077B6; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 24px; }
+    .email-pill { display: inline-flex; align-items: center; gap: 8px; background: rgba(0, 119, 182, 0.12); color: #eeeff7; border: 1px solid rgba(0, 119, 182, 0.25); padding: 10px 16px; border-radius: 999px; font-weight: 500; margin: 18px 0; word-break: break-all; }
+    .verify-help { font-size: 13.5px; color: var(--auth-muted); line-height: 1.7; margin: 18px 0 10px; }
+    .verify-help strong { color: var(--auth-heading); }
+    .resend-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 22px; font-size: 13.5px; color: var(--auth-muted); }
+    .resend-row button { background: transparent; border: none; color: var(--auth-accent); font-weight: 600; cursor: pointer; padding: 0; font-size: inherit; }
+    .resend-row button:hover { text-decoration: underline; }
+    .resend-row button:disabled { opacity: 0.6; cursor: not-allowed; }
+  </style>
+</head>
+
+<body>
+
+  <div class="auth-shell">
+
+    <aside class="auth-aside">
+      <div class="auth-brand">
+        <div class="logo"><i class="bi bi-house-heart-fill"></i></div>
+        <div class="name">MorgiHome</div>
+      </div>
+
+      <div class="auth-aside-body">
+        <span class="auth-aside-eyebrow">MorgiHome · Easy Mortgages</span>
+        <h1>Almost there! Verify your email.</h1>
+        <p>We take your security seriously. A quick email verification is the last step before you can access your MorgiHome account.</p>
+        <div class="auth-quote">
+          "MorgiHome made buying my home easy — every step was clear and secure."
+          <div class="auth-quote-author">
+            <div class="av">JM</div>
+            <div>Janeth Mushi · MorgiHome Client, Dar es Salaam</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="auth-aside-footer">
+        <span>© 2026 MORGIHOME</span>
+        <span>BUILT IN TANZANIA</span>
+      </div>
+    </aside>
+
+    <main class="auth-main">
+      <div class="auth-main-top">
+        <a href="{% url 'home' %}" class="auth-back">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
+          Back to Home
+        </a>
+      </div>
+
+      <div class="auth-card" style="text-align: center;">
+        <div class="verify-icon"><i class="bi bi-envelope-check"></i></div>
+        <h2>Please verify your account</h2>
+        <p class="sub">We have sent a verification link to your email address.</p>
+
+        <div class="email-pill" id="email-display">
+          <i class="bi bi-envelope-fill"></i>
+          <span id="email-value">your email</span>
+        </div>
+
+        <p class="verify-help">
+          <strong>Next step:</strong> Open your inbox and click the verification button in the email from <strong>MorgiHome</strong>.<br>
+          Once verified, you can log in and start your home ownership journey.
+        </p>
+
+        <p class="verify-help">
+          <i class="bi bi-info-circle"></i> Can't find the email? Check your <strong>Spam</strong> or <strong>Junk</strong> folder.
+          It may take a minute or two to arrive.
+        </p>
+
+        <div class="resend-row">
+          Didn't receive it?
+          <button type="button" id="resend-btn">Resend verification email</button>
+        </div>
+
+        <div style="margin-top: 28px;">
+          <a href="{% url 'login_page' %}" class="btn btn--primary auth-submit" style="max-width: 320px; margin: 0 auto;">Go to Login
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"></path></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="auth-main-bottom">Need help? <a href="{% url 'faq_page' %}">Visit our FAQ</a></div>
+    </main>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="{% static 'js/toast.js' %}?v=103"></script>
+  <script>
+    (function(){
+      function getParam(name){
+        var params = new URLSearchParams(window.location.search);
+        return params.get(name) || '';
+      }
+      function sweetAlert(icon, title, text){
+        if(window.Swal && typeof window.Swal.fire === 'function'){
+          window.Swal.fire({icon: icon, title: title, text: text, confirmButtonColor: '#0077B6'});
+        } else if(window.showToast){
+          window.showToast(text, icon === 'error' ? 'error' : icon === 'success' ? 'success' : icon === 'warning' ? 'warning' : 'info', title);
+        } else {
+          alert(title + ': ' + text);
+        }
+      }
+      function getCsrfToken(){
+        try{ var m=document.cookie.match(/(?:^|; )csrftoken=([^;]*)/); if(m) return decodeURIComponent(m[1]); }catch(e){}
+        return null;
+      }
+      function jsonHeaders(){
+        var h={"Content-Type":"application/json"}; var t=getCsrfToken(); if(t) h["X-CSRFToken"]=t; return h;
+      }
+
+      var email = getParam('email');
+      var emailEl = document.getElementById('email-value');
+      if(email && emailEl) emailEl.textContent = email;
+
+      var resendBtn = document.getElementById('resend-btn');
+      var COOLDOWN_SECONDS = 60;
+      var countdownTimer = null;
+
+      function startCooldown(seconds){
+        if(!resendBtn) return;
+        resendBtn.disabled = true;
+        var remaining = seconds;
+        function tick(){
+          if(remaining <= 0){
+            resendBtn.textContent = 'Resend verification email';
+            resendBtn.disabled = false;
+            if(countdownTimer) clearInterval(countdownTimer);
+            return;
+          }
+          resendBtn.textContent = 'Resend in ' + remaining + 's';
+          remaining--;
+        }
+        tick();
+        countdownTimer = setInterval(tick, 1000);
+      }
+
+      if(resendBtn){
+        resendBtn.addEventListener('click', async function(){
+          var targetEmail = email || '';
+          if(!targetEmail){
+            sweetAlert('warning','Email missing','We could not detect your email. Please go back to the signup page.');
+            return;
+          }
+          if(resendBtn.disabled) return;
+          resendBtn.disabled = true;
+          var originalText = resendBtn.textContent;
+          resendBtn.textContent = 'Sending...';
+          try{
+            var res = await fetch('/api/auth/resend-verification/', {
+              method: 'POST',
+              headers: jsonHeaders(),
+              body: JSON.stringify({email: targetEmail}),
+              credentials: 'same-origin'
+            });
+            var data = await res.json().catch(function(){ return {}; });
+            if(res.ok){
+              sweetAlert('success','Email sent', data.message || 'Verification email has been resent.');
+              // Start cooldown returned by server, or default.
+              startCooldown(data.cooldown_seconds || COOLDOWN_SECONDS);
+            } else if(res.status === 429){
+              var retry = data.retry_after || COOLDOWN_SECONDS;
+              sweetAlert('warning','Please wait', data.error || 'Please wait before requesting another email.');
+              startCooldown(retry);
+            } else {
+              sweetAlert('error','Failed', data.error || data.detail || 'Could not resend email. Please try again.');
+              resendBtn.disabled = false;
+              resendBtn.textContent = originalText;
+            }
+          }catch(err){
+            sweetAlert('error','Network error', err.message || 'Please check your connection.');
+            resendBtn.disabled = false;
+            resendBtn.textContent = originalText;
+          }
+        });
+      }
+    })();
+  </script>
+
+</body>
+
+</html>

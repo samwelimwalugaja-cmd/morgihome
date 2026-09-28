@@ -1,0 +1,195 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Select Account Type - MorgiHome</title>
+  <meta name="description" content="Choose your MorgiHome account type">
+  <link href="{% static 'images/favicon.png' %}?v=5" rel="icon" type="image/png">
+  <link href="{% static 'images/apple-touch-icon.png' %}?v=4" rel="apple-touch-icon" type="image/png">
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap" rel="stylesheet">
+  <link href="{% static 'vendors/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+  <link href="{% static 'css/auth.css' %}?v=103" rel="stylesheet">
+  <link href="{% static 'css/toast.css' %}" rel="stylesheet">
+  <style>
+    .role-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 8px;
+    }
+    @media (max-width: 520px) {
+      .role-grid { grid-template-columns: 1fr; }
+    }
+    .role-card {
+      position: relative;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      padding: 24px 18px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s;
+    }
+    .role-card:hover {
+      border-color: #0077B6;
+      background: rgba(0, 119, 182, 0.08);
+      transform: translateY(-2px);
+    }
+    .role-card .icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 24px;
+      background: rgba(0, 119, 182, 0.12);
+      color: #0077B6;
+    }
+    .role-card.customer .icon { background: rgba(0, 119, 182, 0.12); color: #0077B6; }
+    .role-card.seller .icon { background: rgba(255, 170, 0, 0.12); color: #ffaa00; }
+    .role-card h3 {
+      font-family: "Montserrat", sans-serif;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--auth-heading);
+      margin-bottom: 8px;
+    }
+    .role-card p {
+      font-size: 13px;
+      color: var(--auth-muted);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    .role-card input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .role-card:has(input:checked) {
+      border-color: #0077B6;
+      background: rgba(0, 119, 182, 0.1);
+      box-shadow: 0 0 0 3px rgba(0, 119, 182, 0.15);
+    }
+    .role-card .check {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--auth-heading);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .role-card:has(input:checked) .check {
+      background: #0077B6;
+      border-color: #0077B6;
+      color: #fff;
+    }
+    .role-error {
+      color: #ff6b6b;
+      font-size: 13.5px;
+      text-align: center;
+      margin-top: 14px;
+    }
+    .welcome-name {
+      font-size: 15px;
+      color: var(--auth-accent);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="auth-shell">
+
+    <aside class="auth-aside">
+      <div class="auth-brand">
+        <div class="logo"><i class="bi bi-house-heart-fill"></i></div>
+        <div class="name">MorgiHome</div>
+      </div>
+
+      <div class="auth-aside-body">
+        <span class="auth-aside-eyebrow">MorgiHome · Easy Mortgages</span>
+        <h1>Choose how you want to use MorgiHome.</h1>
+        <p>MorgiHome connects buyers, sellers, banks, and real estate companies on one secure platform.</p>
+        <div class="auth-quote">
+          "I found my dream home and applied for a mortgage in just a few clicks."
+          <div class="auth-quote-author">
+            <div class="av">JM</div>
+            <div>Janeth Mushi · MorgiHome Client, Dar es Salaam</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="auth-aside-footer">
+        <span>© 2026 MORGIHOME</span>
+        <span>BUILT IN TANZANIA</span>
+      </div>
+    </aside>
+
+    <main class="auth-main">
+      <div class="auth-main-top">
+        <a href="{% url 'login_page' %}" class="auth-back">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
+          Back to Login
+        </a>
+      </div>
+
+      <div class="auth-card" style="text-align: center;">
+        <h2>Welcome, {{ request.user.first_name|default:request.user.email }}!</h2>
+        <p class="sub">Your Google account is connected. Please select how you will use MorgiHome.</p>
+
+        <form method="post" action="">
+          {% csrf_token %}
+          <div class="role-grid">
+            <label class="role-card customer">
+              <input type="radio" name="role" value="customer" required>
+              <div class="icon"><i class="bi bi-person"></i></div>
+              <h3>Mortgage Applicant</h3>
+              <p>I want to buy or rent a property and apply for a mortgage.</p>
+              <div class="check"><i class="bi bi-check-circle"></i> Select</div>
+            </label>
+
+            <label class="role-card seller">
+              <input type="radio" name="role" value="seller" required>
+              <div class="icon"><i class="bi bi-house-door"></i></div>
+              <h3>Property Seller</h3>
+              <p>I want to list and sell my property on MorgiHome.</p>
+              <div class="check"><i class="bi bi-check-circle"></i> Select</div>
+            </label>
+          </div>
+
+          {% if error %}
+          <div class="role-error">{{ error }}</div>
+          {% endif %}
+
+          <button type="submit" class="btn btn--primary auth-submit" style="margin-top: 26px;">
+            Continue
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"></path></svg>
+          </button>
+        </form>
+      </div>
+
+      <div class="auth-main-bottom">Need help? <a href="{% url 'faq_page' %}">Visit our FAQ</a></div>
+    </main>
+
+  </div>
+
+</body>
+
+</html>

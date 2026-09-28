@@ -14,7 +14,7 @@
         <div class="form-section mb-4"><h6 class="form-section-title" style="color:#0A2B4E;font-weight:700"><span class="badge me-2" style="background:#0077B6">1</span> Basic Information</h6>
           <div class="row g-3">
             <div class="col-md-6"><label class="form-label">Title * <small class="text-muted">- House Name</small></label><input id="spTitle" name="title" class="form-control" placeholder="Modern Villa Mikocheni" required></div>
-            <div class="col-md-6"><label class="form-label">Price (TZS) *</label><input id="spPrice" name="price" type="number" class="form-control" placeholder="250000000" required min="1000000"></div>
+            <div class="col-md-6"><label class="form-label">Price (TZS) *</label><input id="spPrice" name="price" type="text" inputmode="numeric" class="form-control" placeholder="250000000" required min="1000000"></div>
             <div class="col-md-6"><label class="form-label">Location *</label><input id="spLocation" name="location" class="form-control" placeholder="Dar es Salaam - Mikocheni" required></div>
             <div class="col-md-6"><label class="form-label">Area (sqm) *</label><input id="spArea" name="area" type="number" class="form-control" placeholder="200" required></div>
           </div>
@@ -37,9 +37,9 @@
         </div>
         <div class="form-section"><h6 class="form-section-title" style="color:#0A2B4E;font-weight:700"><span class="badge me-2" style="background:#0077B6">5</span> Images (5 max) + Cover</h6>
           <div class="row g-3"><div class="col-12">
-            <label class="form-label">House Photos (choose up to 5 - JPG/PNG, max 5MB each)</label>
+            <label class="form-label">House Photos (choose 10 to 20 - JPG/PNG, min 10, max 20MB each)</label>
             <input id="spImages" name="images" type="file" class="form-control" accept=".jpg,.jpeg,.png,.webp" multiple>
-            <div class="form-text">Choose up to 5 photos. Choose one to be the <strong>Cover</strong> shown to banks and customers in the listing.</div>
+            <div class="form-text">Choose 10 to 20 photos. Choose one to be the <strong>Cover</strong> shown to banks and customers in the listing.</div>
             <div id="spPreview" class="mt-3 row g-2"></div>
             <div id="spCoverHelp" class="form-text mt-2 d-none"><i class="bi bi-star-fill me-1" style="color:#FFC107"></i> Click <strong>★</strong> on a photo to set it as the cover</div>
           </div></div>
@@ -50,4 +50,18 @@
   </form>
 </section>
 {% endblock %}
-{% block extra_js %}<script src="{% static 'js/seller_add_property.js' %}?v=2"></script>{% endblock %}
+{% block extra_js %}<script src="{% static 'js/seller_add_property.js' %}?v=2"></script><script>
+(function(){
+  // TZS money formatting: display with commas, submit raw numbers
+  function fmt(v){ var r=String(v==null?'':v).replace(/,/g,'').replace(/[^0-9.]/g,''); if(!r) return ''; var p=r.split('.'); p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); return p.length>1?p[0]+'.'+p[1].slice(0,2):p[0]; }
+  document.querySelectorAll('input[name="price"]').forEach(function(el){
+    el.setAttribute('type','text'); el.setAttribute('inputmode','numeric');
+    if(el.value) el.value=fmt(el.value);
+    el.addEventListener('input', function(){ el.value=fmt(el.value); });
+    el.addEventListener('blur', function(){ if(el.value) el.value=fmt(el.value); });
+    var f=el.closest('form');
+    if(f && !f.dataset.moneyStrip){ f.dataset.moneyStrip='1'; f.addEventListener('submit', function(){ document.querySelectorAll('input[name="price"]').forEach(function(x){ x.value=String(x.value).replace(/,/g,''); }); }); }
+  });
+})();
+</script>
+{% endblock %}

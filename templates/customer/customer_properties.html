@@ -63,6 +63,7 @@
           <div style="width:100%; height:200px; background:#2c2e33; display:flex; align-items:center; justify-content:center;"><i class="mdi mdi-home" style="font-size:48px; color:#6c7293;"></i></div>
         {% endif %}
         <span style="position:absolute; top:12px; left:12px; background:rgba(255,255,255,0.95); color:#0A2B4E; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:600;">{{ prop.get_property_type_display }}</span>
+        {% if prop.seller.is_verified %}<span style="position:absolute; bottom:12px; left:12px; background:#00d25b; color:#fff; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700;"><i class="mdi mdi-check-decagram"></i> Verified</span>{% endif %}
         <span style="position:absolute; top:12px; right:12px; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:600; {% if prop.status == 'available' %}background:#00d25b; color:#fff;{% else %}background:#444; color:#fff;{% endif %}">{{ prop.get_status_display }}</span>
       </div>
       <div class="card-body">

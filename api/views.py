@@ -76,7 +76,7 @@ class PropertyViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], url_path='gallery')
     def gallery(self, request, pk=None):
-        """Upload gallery images (mobile seller) - multipart field 'images' (max 5 per request, 5MB each)."""
+        """Upload gallery images (mobile seller) - multipart field 'images' (min 10, max 20 total, 5MB each)."""
         prop = self.get_object()
         if prop.seller != request.user and not (request.user.is_staff or request.user.is_superuser):
             return Response({'error': 'You can only add photos to your own properties.'}, status=status.HTTP_403_FORBIDDEN)
@@ -84,8 +84,10 @@ class PropertyViewSet(viewsets.ModelViewSet):
         files = request.FILES.getlist('images')
         if not files:
             return Response({'error': 'No images provided. Use multipart field "images".'}, status=status.HTTP_400_BAD_REQUEST)
-        if len(files) > 5:
-            return Response({'error': 'Maximum 5 images per upload.'}, status=status.HTTP_400_BAD_REQUEST)
+        if len(files) > 20 or (prop.gallery.count() + len(files)) > 20:
+            return Response({'error': 'Maximum 20 images total.'}, status=status.HTTP_400_BAD_REQUEST)
+        if (prop.gallery.count() + len(files)) < 10:
+            return Response({'error': 'Minimum 10 images required (max 20).'}, status=status.HTTP_400_BAD_REQUEST)
         created = []
         existing = prop.gallery.count()
         for idx, f in enumerate(files):
