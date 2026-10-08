@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 import 'services/api_service.dart';
 import 'screens/welcome_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
+import 'screens/forgot_password_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/dashboard_screen.dart';
+import 'screens/eligibility_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/verify_property_screen.dart';
 import 'screens/property_detail_screen.dart';
@@ -99,8 +102,10 @@ class MorgiHomeApp extends StatelessWidget {
           '/welcome': (context) => const WelcomeScreen(),
           '/login': (context) => const LoginScreen(),
           '/register': (context) => const RegisterScreen(),
+          '/forgot-password': (context) => const ForgotPasswordScreen(),
           // Customer (mortgage applicant) — same items as web sidebar
           '/dashboard': (context) => const DashboardScreen(),
+          '/eligibility': (context) => const EligibilityScreen(),
           '/home': (context) => const HomeScreen(),
           '/search': (context) => const SearchScreen(),
           '/verify-property': (context) => const VerifyPropertyScreen(),
@@ -145,12 +150,28 @@ class _AuthCheckerState extends State<AuthChecker> {
     final token = await api.getAccessToken();
     await Future.delayed(const Duration(milliseconds: 800));
     if (!mounted) return;
+    final nav = Navigator.of(context);
     if (token != null && token.isNotEmpty) {
-      // Role-based home like web
+      // Role-based home like web (customer -> /home, seller -> /seller)
       final user = await api.getStoredUser();
-      Navigator.pushReplacementNamed(context, user?.role == 'seller' ? '/seller' : '/home');
+      final role = user?.role ?? 'customer';
+      if (role == 'seller') {
+        nav.pushReplacementNamed('/seller');
+      } else if (role == 'bank' || role == 'realestate') {
+        // No dedicated mobile portal for bank/real-estate yet (web-only) —
+        // send them to login with an explanation instead of the wrong portal.
+        await api.logout();
+        if (!mounted) return;
+        Fluttertoast.showToast(
+            msg:
+                'The $role portal is available on web only. Please log in with a customer or seller account.',
+            toastLength: Toast.LENGTH_LONG);
+        nav.pushReplacementNamed('/login');
+      } else {
+        nav.pushReplacementNamed('/home');
+      }
     } else {
-      Navigator.pushReplacementNamed(context, '/welcome');
+      nav.pushReplacementNamed('/welcome');
     }
   }
 

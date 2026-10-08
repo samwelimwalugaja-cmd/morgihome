@@ -304,9 +304,12 @@
   <div id="approveModalWiz" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
     <div class="morgi-card w-full max-w-md p-6">
       <h3 class="font-bold text-lg">Confirm Approval</h3>
+      <p class="text-xs text-[var(--morgi-muted)] mt-1">Approval will generate the house sale contract and notify the seller and buyer.</p>
       <form method="post" action="{% url 'bank_application_approve' application.id %}" class="mt-4 space-y-3">
         {% csrf_token %}
         <div><label class="text-xs font-semibold">Approved Amount (TZS)</label><input name="approved_amount" type="number" value="{{ application.amount|floatformat:0 }}" class="morgi-input w-full rounded-lg px-3 py-2.5 mt-1 text-sm"></div>
+        <div><label class="text-xs font-semibold">Physical Signing Date <span class="text-red-500">*</span></label><input name="signing_date" type="date" required class="morgi-input w-full rounded-lg px-3 py-2.5 mt-1 text-sm"></div>
+        <div><label class="text-xs font-semibold">Physical Signing Location <span class="text-red-500">*</span></label><input name="signing_location" required placeholder="e.g. Bank branch, City" class="morgi-input w-full rounded-lg px-3 py-2.5 mt-1 text-sm"></div>
         <div><label class="text-xs font-semibold">Notes</label><textarea name="notes" class="morgi-input w-full rounded-lg p-3 mt-1 text-sm"></textarea></div>
         <div class="flex gap-2"><button type="submit" class="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white" style="background:#28A745">Confirm Approval</button><button type="button" onclick="document.getElementById('approveModalWiz').classList.add('hidden')" class="flex-1 py-2.5 rounded-lg text-sm border">Cancel</button></div>
       </form>

@@ -96,8 +96,9 @@
             <label class="field-label" for="phone_number">Phone Number <span class="field-help" style="display:inline">*</span></label>
             <div class="input-icon">
               <span class="ico"><i class="bi bi-telephone"></i></span>
-              <input id="phone_number" class="input" type="text" placeholder="+255 712 345 678" autocomplete="tel" required>
+              <input id="phone_number" class="input" type="tel" placeholder="0712345678" autocomplete="tel" inputmode="numeric" maxlength="10" pattern="0[67][0-9]{8}" title="Start with 07 or 06, 10 digits, no spaces" required>
             </div>
+            <small class="field-hint" style="color:#6b7280;font-size:12px;">Start with 07 or 06, 10 digits, no spaces.</small>
             <div class="field-error" id="phone_number-error"></div>
           </div>
 

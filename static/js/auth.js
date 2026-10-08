@@ -318,7 +318,7 @@
     attachLiveValidation('first_name', function(v){ if(!v) return 'First Name is required'; if(v.length<2) return 'At least 2 characters'; return ''; });
     attachLiveValidation('last_name', function(v){ if(!v) return 'Last Name is required'; if(v.length<2) return 'At least 2 characters'; return ''; });
     attachLiveValidation('email', function(v){ if(!v) return 'Email is required'; if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return 'Enter a valid email'; return ''; });
-    attachLiveValidation('phone_number', function(v){ if(!v) return 'Phone is required'; if(!/^\+?\d{9,15}$/.test(v.replace(/\s/g,''))) return 'Enter valid phone e.g. +255 712 345 678'; return ''; });
+    attachLiveValidation('phone_number', function(v){ if(!v) return 'Phone is required'; if(/\s/.test(v)) return 'No spaces allowed. Use e.g. 0712345678'; if(!/^0[67]\d{8}$/.test(v)) return 'Start with 07 or 06, 10 digits, e.g. 0712345678'; return ''; });
     attachLiveValidation('role', function(v){ if(!v) return 'Please select account type'; return ''; });
     attachLiveValidation('password', function(v){ if(!v) return 'Password is required'; if(v.length<8) return 'At least 8 characters'; return ''; });
     attachLiveValidation('confirm_password', function(v, el){
@@ -541,7 +541,7 @@
     var signupForm = document.getElementById("signup-form");
     if (signupForm) {
       function isValidEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
-      function isValidPhone(phone) { return /^\+?\d{9,15}$/.test(phone.replace(/\s/g, "")); }
+      function isValidPhone(phone) { return /^0[67]\d{8}$/.test(phone) && !/\s/.test(phone); }
 
       var signupFields = ["first_name","last_name","email","phone_number","password","confirm_password","role"];
       signupFields.forEach(function (id) {
@@ -581,7 +581,7 @@
         else if (!isValidEmail(email)) { setError("email", "Please enter a valid email address"); valid = false; }
 
         if (!phone) { setError("phone_number", "Phone number is required"); valid = false; }
-        else if (!isValidPhone(phone)) { setError("phone_number", "Please enter a valid phone number (e.g. +255 712 345 678)"); valid = false; }
+        else if (!isValidPhone(phone)) { setError("phone_number", "Start with 07 or 06, 10 digits, no spaces (e.g. 0712345678)"); valid = false; }
 
         if (!role) { setError("role", "Please select an account type"); valid = false; }
 
@@ -614,8 +614,10 @@
           var text = await res.text();
           var data = {};
           try { data = text ? JSON.parse(text) : {}; } catch(e) { data = { detail: text.slice(0,300) || "Server error ("+res.status+")" }; }
-          if (res.status === 201) {
-            sweetAlert('success','Check your email', data.message || 'Account created. Please verify your email to continue.');
+          if (res.status === 201 || (res.ok && data.redirect_url)) {
+            var msg = data.message || 'Account created. Please verify your email to continue.';
+            if (data.warning) msg += ' (' + data.warning + ')';
+            sweetAlert(data.warning ? 'warning' : 'success', data.warning ? 'Account created' : 'Check your email', msg);
             setTimeout(function () { window.location.href = data.redirect_url || '/verify/email/sent/'; }, 1500);
           } else {
             if (data.first_name) setError("first_name", Array.isArray(data.first_name) ? data.first_name[0] : data.first_name);
@@ -628,7 +630,16 @@
             if (data.non_field_errors) setError("confirm_password", Array.isArray(data.non_field_errors) ? data.non_field_errors[0] : data.non_field_errors);
             var err = data.email ? (Array.isArray(data.email)?data.email[0]:data.email) : (data.first_name ? (Array.isArray(data.first_name)?data.first_name[0]:data.first_name) : (data.last_name ? (Array.isArray(data.last_name)?data.last_name[0]:data.last_name) : (data.phone_number ? (Array.isArray(data.phone_number)?data.phone_number[0]:data.phone_number) : (data.password ? (Array.isArray(data.password)?data.password[0]:data.password) : (data.confirm_password ? (Array.isArray(data.confirm_password)?data.confirm_password[0]:data.confirm_password) : (data.detail || data.error || JSON.stringify(data).slice(0,200) || "Registration failed"))))));
             if (res.status === 429) err = "Too many attempts. Please wait a minute.";
-            sweetAlert('error','Registration failed ('+res.status+')', err);
+            // Kama email tayari ipo na ime-verify: mwelekeze user kwenye Login.
+            if (err.toLowerCase().indexOf('already registered') !== -1 && err.toLowerCase().indexOf('log in') !== -1) {
+              if (window.Swal && typeof window.Swal.fire === 'function') {
+                window.Swal.fire({icon: 'info', title: 'Already registered', text: err, confirmButtonColor: '#0077B6', showCancelButton: true, confirmButtonText: 'Go to Login', cancelButtonText: 'Stay here'}).then(function(r){ if (r.isConfirmed) window.location.href = '/login/'; });
+              } else {
+                sweetAlert('error','Registration failed ('+res.status+')', err + ' Go to Login page.');
+              }
+            } else {
+              sweetAlert('error','Registration failed ('+res.status+')', err);
+            }
             console.error("Signup failed", res.status, text);
           }
         } catch (err) {

@@ -8,6 +8,10 @@ from .managers import CustomUserManager
 
 
 class User(AbstractUser):
+    # Pilot bank - mfumo unauzwa bank moja moja. Kwa sasa pilot ni NCBA pekee.
+    # Customer na watumiaji wengine wanaona/omba kupitia bank hii tu.
+    # Website ya mbele (index.html #banks) inabaki na bank zote kwa matangazo.
+    PILOT_BANK_SLUG = 'ncba'
     # Remove username completely - use email as identifier
     username = None
     USERNAME_FIELD = 'email'
@@ -139,3 +143,74 @@ class User(AbstractUser):
         if self.profile_image and hasattr(self.profile_image, 'url'):
             return self.profile_image.url
         return None
+
+    def get_account_deletion_blockers(self):
+        """Return a list of reasons why this user cannot delete their account.
+        Empty list means deletion is allowed."""
+        from django.db.models import Q
+        blockers = []
+
+        # 1) Verification requirements per role
+        if self.role == 'customer':
+            if not self.email_verified:
+                blockers.append("Email address is not verified. Please verify your email first.")
+        elif self.role in ['bank', 'realestate']:
+            if not self.is_fully_verified():
+                blockers.append("Business documents are not fully verified. Complete verification first.")
+
+        # 2) Active / pending loans or mortgage applications
+        try:
+            from mortgages.models import MortgageApplication
+            active_loans = MortgageApplication.objects.filter(
+                customer=self,
+                status__in=['pending', 'document_verification', 'crb_check', 'valuation',
+                            'credit_assessment', 'approved', 'disbursed']
+            )
+            if active_loans.exists():
+                statuses = set(active_loans.values_list('status', flat=True))
+                if 'approved' in statuses or 'disbursed' in statuses:
+                    blockers.append("You have an active mortgage loan. Close or complete it first.")
+                else:
+                    blockers.append("You have a mortgage application in progress or pending. Cancel or complete it first.")
+        except Exception:
+            pass
+
+        # 3) Active hold by a bank
+        try:
+            from mortgages.models import CustomerHold
+            active_holds = CustomerHold.objects.filter(customer=self, is_active=True).select_related('bank')
+            if active_holds.exists():
+                hold = active_holds.first()
+                bank_name = hold.bank.get_full_name() if hold.bank else 'a partner bank'
+                reason = f" Reason: {hold.reason}" if hold.reason else ''
+                blockers.append(f"Your account is on hold by {bank_name}.{reason} Contact the bank to release the hold before deleting your account.")
+        except Exception:
+            pass
+
+        return blockers
+
+    def can_delete_account(self):
+        return len(self.get_account_deletion_blockers()) == 0
+
+    @classmethod
+    def get_pilot_bank(cls):
+        """Rudisha bank ya pilot (NCBA). None kama haipo."""
+        from django.db.models import Q
+        pilot = cls.objects.filter(
+            role='bank', is_active=True
+        ).filter(
+            Q(first_name__icontains=cls.PILOT_BANK_SLUG)
+            | Q(last_name__icontains=cls.PILOT_BANK_SLUG)
+            | Q(email__icontains=cls.PILOT_BANK_SLUG)
+        ).order_by('id').first()
+        return pilot
+
+    @classmethod
+    def get_pilot_banks_qs(cls):
+        """Queryset ya bank za kuonyesha kwa customer/users - pilot pekee (NCBA)."""
+        from django.db.models import Q
+        return cls.objects.filter(role='bank', is_active=True).filter(
+            Q(first_name__icontains=cls.PILOT_BANK_SLUG)
+            | Q(last_name__icontains=cls.PILOT_BANK_SLUG)
+            | Q(email__icontains=cls.PILOT_BANK_SLUG)
+        ).order_by('id')

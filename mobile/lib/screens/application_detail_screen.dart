@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import '../models/mortgage.dart';
 import '../services/api_service.dart';
 import '../utils/constants.dart';
@@ -16,6 +17,15 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
   MortgageApplication? _app;
   bool _loading = true;
   String? _error;
+  int? _appId;
+  final _corrCtrl = TextEditingController();
+  final Set<int> _responding = {};
+
+  @override
+  void dispose() {
+    _corrCtrl.dispose();
+    super.dispose();
+  }
 
   static const _steps = ['pending', 'document_verification', 'crb_check', 'valuation', 'credit_assessment', 'approved', 'disbursed'];
   static const _labels = ['Pending', 'Documents', 'CRB Check', 'Valuation', 'Credit Check', 'Approved', 'Disbursed'];
@@ -24,7 +34,10 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final id = ModalRoute.of(context)!.settings.arguments as int?;
-    if (id != null && _app == null && _error == null) _load(id);
+    if (id != null && _appId == null && _error == null) {
+      _appId = id;
+      _load(id);
+    }
   }
 
   Future<void> _load(int id) async {
@@ -36,6 +49,10 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
         final events = (t['events'] as List? ?? [])
             .whereType<Map>()
             .map((e) => TimelineEntry.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
+        final corrs = (t['corrections'] as List? ?? [])
+            .whereType<Map>()
+            .map((e) => CorrectionEntry.fromJson(Map<String, dynamic>.from(e)))
             .toList();
         final merged = MortgageApplication(
           id: a.id,
@@ -62,13 +79,44 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
           reviewMessage: (t['review_message'] ?? a.reviewMessage)?.toString(),
           reviewNote: a.reviewNote,
           timeline: events.isNotEmpty ? events : a.timeline,
+          corrections: corrs,
         );
         if (mounted) setState(() { _app = merged; _loading = false; });
       } catch (_) {
         if (mounted) setState(() { _app = a; _loading = false; });
       }
     } catch (e) {
-      if (mounted) setState(() { _loading = false; _error = e.toString().replaceAll('Exception:', '').trim(); });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = e.toString().replaceAll('Exception:', '').trim();
+        });
+      }
+    }
+  }
+
+  Future<void> _respond(int correctionId) async {
+    final text = _corrCtrl.text.trim();
+    if (text.isEmpty) {
+      Fluttertoast.showToast(msg: 'Write an answer first');
+      return;
+    }
+    if (_appId == null) return;
+    setState(() => _responding.add(correctionId));
+    try {
+      await _api.respondCorrection(applicationId: _appId!, correctionId: correctionId, text: text);
+      if (!mounted) return;
+      _corrCtrl.clear();
+      Fluttertoast.showToast(msg: 'Response sent — the bank will continue review');
+      _load(_appId!);
+    } catch (e) {
+      if (mounted) {
+        Fluttertoast.showToast(
+            msg: e.toString().replaceAll('Exception:', '').trim(),
+            backgroundColor: const Color(AppConstants.errorColorValue));
+      }
+    } finally {
+      if (mounted) setState(() => _responding.remove(correctionId));
     }
   }
 
@@ -118,6 +166,54 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                       ]),
                     ),
                     const SizedBox(height: 16),
+                    if (_app!.corrections.where((c) => c.status == 'pending').isNotEmpty) ...[
+                      _card(children: [
+                        const Row(children: [
+                          Icon(Icons.warning_amber_rounded, color: Color(0xFFD97706), size: 20),
+                          SizedBox(width: 8),
+                          Text('Bank Needs Your Response', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+                        ]),
+                        const SizedBox(height: 8),
+                        ..._app!.corrections.where((c) => c.status == 'pending').map((c) => Container(
+                              margin: const EdgeInsets.only(bottom: 10),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                  color: const Color(0xFFFFFBEB),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0xFFFDE68A))),
+                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Text(
+                                    c.target.isNotEmpty ? c.target : c.kind,
+                                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                                const SizedBox(height: 4),
+                                Text(c.instructions, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                const SizedBox(height: 8),
+                                TextField(
+                                  controller: _corrCtrl,
+                                  maxLines: 2,
+                                  decoration: const InputDecoration(
+                                      hintText: 'Write your answer…', border: OutlineInputBorder()),
+                                ),
+                                const SizedBox(height: 8),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed: _responding.contains(c.id) ? null : () => _respond(c.id),
+                                    style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(AppConstants.primaryColorValue)),
+                                    child: _responding.contains(c.id)
+                                        ? const SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                        : const Text('Send Response'),
+                                  ),
+                                ),
+                              ]),
+                            )),
+                      ]),
+                      const SizedBox(height: 16),
+                    ],
                     _card(children: [
                       const Text('Progress', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
                       const SizedBox(height: 12),

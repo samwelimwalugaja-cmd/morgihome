@@ -63,6 +63,22 @@ class MortgageApplicationViewSet(viewsets.ModelViewSet):
         # As requested: don't block apply because of verification - badge only shows verified/not verified
         # Bank/realestate/lawyer will see badge on application
         user = self.request.user
+        # PILOT: mortgage zote zinaelekezwa kwa NCBA pekee (mfumo unauzwa bank moja moja)
+        try:
+            from accounts.models import User as _U
+            _pilot = _U.get_pilot_bank()
+            if _pilot is not None:
+                serializer.validated_data['bank'] = _pilot
+                try:
+                    if hasattr(self.request.data, '_mutable'):
+                        _was = self.request.data._mutable
+                        self.request.data._mutable = True
+                        self.request.data['bank'] = str(_pilot.id)
+                        self.request.data._mutable = _was
+                except Exception:
+                    pass
+        except Exception:
+            pass
         # Strip thousand-separator commas from all money fields (form sends formatted values)
         for _f in ['loan_amount', 'down_payment', 'monthly_income', 'monthly_expenses',
                    'annual_income', 'other_loan_amount', 'other_loan_balance',
@@ -91,7 +107,7 @@ class MortgageApplicationViewSet(viewsets.ModelViewSet):
             except Exception:
                 serializer.validated_data['monthly_expenses'] = 0
         # Persist fields that the form sends but that may only live in draft_data/request
-        for _f in ['gender', 'dependents', 'employer_name', 'job_title', 'years_employed',
+        for _f in ['gender', 'dependents', 'nationality', 'employer_name', 'job_title', 'years_employed',
                    'contract_type', 'business_name', 'business_years',
                    'bank_account_number', 'bank_account_name']:
             try:
@@ -514,15 +530,21 @@ class MortgageApplicationViewSet(viewsets.ModelViewSet):
 
             annual_rate = 0.12
             bank_name = None
-            if bank_id:
-                try:
+            # PILOT: tumia riba ya NCBA pekee
+            try:
+                from accounts.models import User as _AU
+                _pilot = _AU.get_pilot_bank()
+                if _pilot is not None and _pilot.interest_rate:
+                    annual_rate = float(_pilot.interest_rate) / 100.0
+                    bank_name = _pilot.get_full_name()
+                elif bank_id:
                     from accounts.models import User
                     bk = User.objects.filter(id=bank_id, role='bank').first()
                     if bk and bk.interest_rate:
                         annual_rate = float(bk.interest_rate) / 100.0
                         bank_name = bk.get_full_name()
-                except:
-                    pass
+            except:
+                pass
             monthly_installment = calculate_monthly_installment(loan_amount, annual_rate, repayment_period)
             affordability_score, dti_ratio = calculate_affordability(effective_income, effective_expenses, monthly_installment)
             if has_other_norm == 'yes' and str(other_consol or 'no').lower() == 'no' and other_pay_val:
@@ -731,7 +753,18 @@ class MortgageApplicationViewSet(viewsets.ModelViewSet):
                 balance_remaining=schedule['balance_remaining']
             )
 
-        return Response({'status': 'approved', 'message': 'Mortgage approved successfully'})
+        # Generate sale contract PDF and notify seller/buyer
+        try:
+            from bank.views import _ensure_repayment_and_contract
+            _ensure_repayment_and_contract(
+                mortgage, user=request.user,
+                signing_date=request.data.get('signing_date'),
+                signing_location=request.data.get('signing_location', '')
+            )
+        except Exception:
+            pass
+
+        return Response({'status': 'approved', 'message': 'Mortgage approved successfully. Contract generated.'})
 
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
@@ -851,20 +884,25 @@ class MortgageApplicationViewSet(viewsets.ModelViewSet):
                 except:
                     pass
             bank_id = data.get('bank')
-            if bank_id:
-                try:
+            # PILOT: draft zote zinafungwa kwa NCBA pekee - bank nyingine inapuuza
+            try:
+                from accounts.models import User as _PU
+                _pilot_bk = _PU.get_pilot_bank()
+                if _pilot_bk is not None:
+                    draft.bank = _pilot_bk
+                elif bank_id:
                     from accounts.models import User
                     bk = User.objects.filter(id=bank_id, role='bank').first()
                     if bk:
                         draft.bank = bk
-                except:
-                    pass
+            except Exception:
+                pass
             # Try to parse numeric / text fields if present (including new deduction & other loan fields)
             for fld in ['loan_amount', 'down_payment', 'repayment_period', 'monthly_income', 'monthly_expenses',
                         'annual_income', 'business_name', 'business_years', 'business_type', 'business_registration_number',
                         'employment_sector', 'has_other_loan', 'other_loan_bank', 'other_loan_amount', 'other_loan_balance', 'other_loan_monthly_payment', 'other_loan_consolidate',
                         'has_existing_loan', 'existing_loan_bank', 'existing_loan_amount', 'existing_loan_repayment', 'existing_loan_balance',
-                        'nida_number', 'dob', 'gender', 'dependents', 'marital_status', 'marriage_certificate_number',
+                        'nida_number', 'dob', 'gender', 'dependents', 'nationality', 'marital_status', 'marriage_certificate_number',
                         'employer_name', 'job_title', 'years_employed', 'contract_type',
                         'bank_account_number', 'bank_account_name']:
                 val = data.get(fld)
@@ -918,19 +956,24 @@ class MortgageApplicationViewSet(viewsets.ModelViewSet):
                 except:
                     pass
             bank_id = data.get('bank')
-            if bank_id:
-                try:
+            # PILOT: draft mpya pia inaelekezwa kwa NCBA pekee
+            try:
+                from accounts.models import User as _PU2
+                _pilot_bk2 = _PU2.get_pilot_bank()
+                if _pilot_bk2 is not None:
+                    create_data['bank'] = _pilot_bk2
+                elif bank_id:
                     from accounts.models import User
                     bk = User.objects.filter(id=bank_id, role='bank').first()
                     if bk:
                         create_data['bank'] = bk
-                except:
-                    pass
+            except Exception:
+                pass
             for fld in ['loan_amount', 'down_payment', 'repayment_period', 'monthly_income', 'monthly_expenses',
                         'annual_income', 'business_name', 'business_years', 'business_type', 'business_registration_number',
                         'employment_sector', 'has_other_loan', 'other_loan_bank', 'other_loan_amount', 'other_loan_balance', 'other_loan_monthly_payment', 'other_loan_consolidate',
                         'has_existing_loan', 'existing_loan_bank', 'existing_loan_amount', 'existing_loan_repayment', 'existing_loan_balance',
-                        'employment_status', 'nida_number', 'dob', 'gender', 'dependents', 'marital_status', 'marriage_certificate_number',
+                        'employment_status', 'nida_number', 'dob', 'gender', 'dependents', 'nationality', 'marital_status', 'marriage_certificate_number',
                         'employer_name', 'job_title', 'years_employed', 'contract_type',
                         'bank_account_number', 'bank_account_name',
                         'deduction_psssf','deduction_heslb','deduction_paye']:

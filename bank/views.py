@@ -10,7 +10,7 @@ Mock data - replace with real queries from Application, Contract, Repayment mode
 """
 from django.shortcuts import render
 from django.utils import timezone
-from datetime import timedelta
+from datetime import date, timedelta
 from django.views.decorators.csrf import csrf_exempt
 
 
@@ -39,10 +39,27 @@ STAGE_SUCCESS_MESSAGES = {
 }
 
 
-def _ensure_repayment_and_contract(app, user=None):
+def _parse_signing_date(raw_date):
+    """Parse YYYY-MM-DD string to date object, or return None."""
+    if not raw_date:
+        return None
+    from datetime import datetime
+    for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y'):
+        try:
+            return datetime.strptime(str(raw_date).strip(), fmt).date()
+        except Exception:
+            pass
+    return None
+
+
+def _ensure_repayment_and_contract(app, user=None, signing_date=None, signing_location=None):
     """After approval the customer repayment page + disbursement figures read from
     RepaymentSchedule + Contract. The web approve path never created them (only the
-    API did), so totals read as zero. Generate both idempotently here."""
+    API did), so totals read as zero. Generate both idempotently here.
+
+    signing_date / signing_location are saved on the contract and embedded in the
+    generated Swahili sale contract PDF. Seller, buyer and real estate are notified.
+    """
     try:
         from datetime import date, timedelta
         from dateutil.relativedelta import relativedelta
@@ -80,7 +97,11 @@ def _ensure_repayment_and_contract(app, user=None):
                         balance_remaining=s.get('balance_remaining', 0))
                 except Exception:
                     pass
-        # Ensure a contract exists so disbursement reports stop reading zero
+        # Ensure a contract exists so disbursement reports stop reading zero.
+        # When created on approval, the contract starts as pending signature and
+        # a PDF is generated immediately by the bank for seller/buyer review.
+        _contract_created = False
+        _signing_changed = False
         try:
             _c = Contract.objects.filter(mortgage=app).first()
             if not _c:
@@ -91,9 +112,45 @@ def _ensure_repayment_and_contract(app, user=None):
                     _c = Contract.objects.create(
                         mortgage=app, customer=app.customer,
                         seller=_seller, bank=_bank,
-                        status='signed' if app.status == 'approved' else 'draft',
-                        customer_signed=True, seller_signed=True, bank_signed=True,
-                        signed_date=date.today() if app.status == 'approved' else None)
+                        status='pending_signature',
+                        customer_signed=False, seller_signed=False, bank_signed=False)
+                    _contract_created = True
+
+            if _c is not None:
+                # Update physical signing arrangement when provided
+                _parsed_date = _parse_signing_date(signing_date)
+                if _parsed_date and _c.physical_signing_date != _parsed_date:
+                    _c.physical_signing_date = _parsed_date
+                    _signing_changed = True
+                if signing_location and str(signing_location).strip() and _c.physical_signing_location != str(signing_location).strip():
+                    _c.physical_signing_location = str(signing_location).strip()
+                    _signing_changed = True
+                if _signing_changed:
+                    _c.save(update_fields=['physical_signing_date', 'physical_signing_location', 'updated_at'])
+
+                # (Re)generate the sale contract PDF so signing details are always current
+                try:
+                    from mortgages.contract_pdf import generate_sale_contract_pdf
+                    from django.core.files.base import ContentFile
+                    pdf_buffer = generate_sale_contract_pdf(
+                        _c,
+                        physical_signing_date=_c.physical_signing_date,
+                        physical_signing_location=_c.physical_signing_location
+                    )
+                    filename = f"sale_contract_{app.application_number or app.id}.pdf"
+                    if _c.contract_file:
+                        try:
+                            _c.contract_file.delete(save=False)
+                        except Exception:
+                            pass
+                    _c.contract_file.save(filename, ContentFile(pdf_buffer.read()), save=True)
+                except Exception:
+                    pass
+
+                # Notify parties when contract is first created or signing details change
+                if _contract_created or _signing_changed:
+                    _notify_contract_signing(app, _c, user=user)
+
             # Disbursed applications must have an executed contract + disbursement transaction
             if getattr(app, 'status', '') == 'disbursed' and _c is not None:
                 _upd = []
@@ -115,6 +172,161 @@ def _ensure_repayment_and_contract(app, user=None):
                         pass
         except Exception:
             pass
+    except Exception:
+        pass
+
+
+def _notify_contract_signing(app, contract, user=None):
+    """Notify customer, seller/real estate and bank about the generated contract
+    and physical signing arrangement. Uses timeline events for the customer and
+    BankNotification rows for seller/real estate (BankNotification supports any user)."""
+    try:
+        from mortgages.models import ApplicationTimelineEvent, BankNotification
+        _seller = contract.seller
+        _buyer = contract.customer
+        _bank = contract.bank
+        _prop_title = getattr(getattr(app, 'property', None), 'title', 'Property') or 'Property'
+        _app_no = getattr(app, 'application_number', f"APP-{app.id}")
+        _date = contract.physical_signing_date.strftime('%d/%m/%Y') if contract.physical_signing_date else 'TBA'
+        _loc = contract.physical_signing_location or 'TBA'
+
+        # Customer timeline event (shows in track + bell)
+        try:
+            ApplicationTimelineEvent.log(
+                app, 'approved',
+                title='Sale contract generated',
+                message=(f"The sale contract for {_prop_title} has been generated. "
+                         f"Physical signing date: {_date}. Location: {_loc}. "
+                         f"Please come to sign the contract on that day together with the Seller."),
+                user=user,
+            )
+        except Exception:
+            pass
+
+        # Persistent notification for seller / real estate
+        _seller_msg = (f"The sale contract for {_prop_title} has been generated by the bank. "
+                       f"Signing date: {_date}. Location: {_loc}.")
+        if _seller and getattr(_seller, 'id', None):
+            try:
+                BankNotification.notify(
+                    _seller,
+                    'Sale Contract Generated',
+                    _seller_msg,
+                    link=f"/realestate/contracts/" if getattr(_seller, 'role', '') == 'realestate' else f"/seller/contracts/",
+                    icon='file-sign',
+                    color='emerald'
+                )
+            except Exception:
+                pass
+
+        # Persistent notification for the buyer (if they can log in as customer)
+        if _buyer and getattr(_buyer, 'id', None):
+            try:
+                BankNotification.notify(
+                    _buyer,
+                    'Sale Contract Generated',
+                    f"The sale contract for {_prop_title} has been generated. Signing date: {_date}. Location: {_loc}.",
+                    link=f"/customer/contracts/",
+                    icon='file-sign',
+                    color='emerald'
+                )
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
+def _notify_contract_published(contract, user=None):
+    """Notify seller/real estate and buyer that the contract has been published
+    and is now visible in their portals."""
+    try:
+        from mortgages.models import BankNotification
+        _seller = contract.seller
+        _buyer = contract.customer
+        _prop_title = getattr(getattr(contract, 'mortgage', None), 'property', None)
+        _prop_title = getattr(_prop_title, 'title', 'the property') or 'the property'
+        _date = contract.physical_signing_date.strftime('%d/%m/%Y') if contract.physical_signing_date else 'TBA'
+        _loc = contract.physical_signing_location or 'TBA'
+        _msg = (f"The sale contract for {_prop_title} has been published by the bank. "
+                f"Physical signing is scheduled for {_date} at {_loc}. Please review the contract.")
+
+        if _seller and getattr(_seller, 'id', None):
+            try:
+                BankNotification.notify(
+                    _seller,
+                    'Sale Contract Published',
+                    _msg,
+                    link="/realestate/contracts/" if getattr(_seller, 'role', '') == 'realestate' else "/seller/contracts/",
+                    icon='file-sign',
+                    color='emerald'
+                )
+            except Exception:
+                pass
+
+        if _buyer and getattr(_buyer, 'id', None):
+            try:
+                BankNotification.notify(
+                    _buyer,
+                    'Sale Contract Published',
+                    _msg,
+                    link="/customer/contracts/",
+                    icon='file-sign',
+                    color='emerald'
+                )
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
+def _notify_contract_signed_published(contract, user=None):
+    """Notify all parties that the signed contract has been published."""
+    try:
+        from mortgages.models import ApplicationTimelineEvent, BankNotification
+        app = getattr(contract, 'mortgage', None)
+        _seller = contract.seller
+        _buyer = contract.customer
+        _prop_title = getattr(getattr(app, 'property', None), 'title', 'the property') or 'the property'
+        _msg = (f"The signed sale contract for {_prop_title} has been published by the bank. "
+                f"The contract is now complete.")
+
+        # Customer timeline event
+        if app:
+            try:
+                ApplicationTimelineEvent.log(
+                    app, 'approved',
+                    title='Signed contract published',
+                    message=_msg,
+                    user=user,
+                )
+            except Exception:
+                pass
+
+        if _seller and getattr(_seller, 'id', None):
+            try:
+                BankNotification.notify(
+                    _seller,
+                    'Signed Contract Published',
+                    _msg,
+                    link="/realestate/contracts/" if getattr(_seller, 'role', '') == 'realestate' else "/seller/contracts/",
+                    icon='check-circle',
+                    color='emerald'
+                )
+            except Exception:
+                pass
+
+        if _buyer and getattr(_buyer, 'id', None):
+            try:
+                BankNotification.notify(
+                    _buyer,
+                    'Signed Contract Published',
+                    _msg,
+                    link="/customer/contracts/",
+                    icon='check-circle',
+                    color='emerald'
+                )
+            except Exception:
+                pass
     except Exception:
         pass
 
@@ -243,12 +455,74 @@ def _app_dict(app):
 
 def _scoped_apps(request):
     """Applications of logged-in bank (bank=user); guests see all."""
+    from django.db.models import Q
     from mortgages.models import MortgageApplication
     qs = MortgageApplication.objects.exclude(status='draft').select_related('customer', 'property', 'bank')
     bu = _bank_user(request)
     if bu is not None:
-        qs = qs.filter(bank=bu)
+        # Pilot (NCBA) + legacy rows: old applications may have bank=NULL
+        # (created before pilot routing). Show them to the pilot bank so
+        # notifications never point to an "invisible" application.
+        try:
+            from accounts.models import User as _U
+            _pilot = _U.get_pilot_bank() if hasattr(_U, 'get_pilot_bank') else None
+            if _pilot is not None and getattr(_pilot, 'id', None) == getattr(bu, 'id', None):
+                qs = qs.filter(Q(bank=bu) | Q(bank__isnull=True))
+            else:
+                qs = qs.filter(bank=bu)
+        except Exception:
+            qs = qs.filter(bank=bu)
     return qs
+
+
+def _extract_app_pk_from_link(link):
+    """Extract /bank/applications/<pk>/ -> int pk or None."""
+    try:
+        import re
+        m = re.search(r'/bank/applications/(\d+)/?', str(link or ''))
+        if m:
+            return int(m.group(1))
+    except Exception:
+        pass
+    return None
+
+
+def _cleanup_orphan_bank_notifications(recipient=None):
+    """Delete BankNotifications whose /bank/applications/<id>/ target no longer exists.
+
+    Notifications store only a link string (no FK to the application), so when an
+    application is deleted the notification becomes an orphan and the bank gets
+    a 404 on click. Returns number of rows deleted.
+    """
+    try:
+        from mortgages.models import BankNotification, MortgageApplication
+        q = BankNotification.objects.filter(link__contains='/bank/applications/')
+        if recipient is not None:
+            q = q.filter(recipient=recipient)
+        pks = set()
+        for lk in q.values_list('link', flat=True)[:200]:
+            pk = _extract_app_pk_from_link(lk)
+            if pk:
+                pks.add(pk)
+        if not pks:
+            return 0
+        existing = set(MortgageApplication.objects.filter(pk__in=list(pks)).values_list('pk', flat=True))
+        orphans = [pk for pk in pks if pk not in existing]
+        if not orphans:
+            return 0
+        deleted = 0
+        for pk in orphans:
+            try:
+                dq = BankNotification.objects.filter(link__contains=f'/bank/applications/{pk}/')
+                if recipient is not None:
+                    dq = dq.filter(recipient=recipient)
+                d, _ = dq.delete()
+                deleted += d
+            except Exception:
+                pass
+        return deleted
+    except Exception:
+        return 0
 
 
 def _scoped_contracts(request):
@@ -279,30 +553,65 @@ def bank_dashboard(request):
     """
     GET /bank/dashboard/ - REAL DATA from DB (no mock).
     If logged in as bank, you see only your bank's data.
+    Optimized to use a small number of aggregate queries.
     """
     from transactions.models import Contract
-    from django.db.models import Sum
+    from django.db.models import Sum, Count, Q, Case, When, IntegerField, Value
     qs = _scoped_apps(request)
-    total = qs.count()
-    pending = qs.filter(status__in=PENDING_STATUSES).count()
-    approved = qs.filter(status='approved').count()
+
+    # Single aggregate query for all application counts + risk buckets
+    agg = qs.aggregate(
+        total=Count('id'),
+        pending=Count('id', filter=Q(status__in=PENDING_STATUSES)),
+        approved=Count('id', filter=Q(status='approved')),
+        low=Count('id', filter=Q(risk_score__lt=40)),
+        medium=Count('id', filter=Q(risk_score__gte=40, risk_score__lt=70)),
+        high=Count('id', filter=Q(risk_score__gte=70)),
+    )
+    total = agg['total'] or 0
+    pending = agg['pending'] or 0
+    approved = agg['approved'] or 0
+    low = agg['low'] or 0
+    medium = agg['medium'] or 0
+    high = agg['high'] or 0
+
     cqs = _scoped_contracts(request)
-    disbursed = cqs.filter(status='executed').count()
-    disbursed_amount = cqs.filter(status='executed').aggregate(total=Sum('mortgage__loan_amount'))['total'] or 0
-    low = qs.filter(risk_score__lt=40).count()
-    medium = qs.filter(risk_score__gte=40, risk_score__lt=70).count()
-    high = qs.filter(risk_score__gte=70).count()
-    ai_summary = {"low": low, "medium": medium, "high": high,
-                  "low_pct": round(low / total * 100) if total else 0,
-                  "medium_pct": round(medium / total * 100) if total else 0,
-                  "high_pct": round(high / total * 100) if total else 0}
+    cagg = cqs.filter(status='executed').aggregate(
+        disbursed=Count('id'),
+        disbursed_amount=Sum('mortgage__loan_amount'),
+    )
+    disbursed = cagg['disbursed'] or 0
+    disbursed_amount = cagg['disbursed_amount'] or 0
+
+    ai_summary = {
+        "low": low, "medium": medium, "high": high,
+        "low_pct": round(low / total * 100) if total else 0,
+        "medium_pct": round(medium / total * 100) if total else 0,
+        "high_pct": round(high / total * 100) if total else 0,
+    }
+
+    # Chart data in two annotate queries (one total, one approved/disbursed)
     months = _month_buckets(6)
-    chart_labels, chart_apps, chart_appr = [], [], []
+    chart_labels = [b['label'] for b in months]
+    month_filters = Q()
     for b in months:
-        chart_labels.append(b['label'])
-        mqs = qs.filter(created_at__year=b['year'], created_at__month=b['month'])
-        chart_apps.append(mqs.count())
-        chart_appr.append(mqs.filter(status__in=['approved', 'disbursed']).count())
+        month_filters |= Q(created_at__year=b['year'], created_at__month=b['month'])
+
+    chart_rows = {b['label']: {'apps': 0, 'appr': 0} for b in months}
+    if month_filters:
+        apps_by_month = qs.filter(month_filters).values('created_at__year', 'created_at__month').annotate(
+            apps=Count('id'),
+            appr=Count('id', filter=Q(status__in=['approved', 'disbursed']))
+        )
+        for row in apps_by_month:
+            label = date(row['created_at__year'], row['created_at__month'], 1).strftime('%b')
+            if label in chart_rows:
+                chart_rows[label]['apps'] = row['apps']
+                chart_rows[label]['appr'] = row['appr']
+
+    chart_apps = [chart_rows[label]['apps'] for label in chart_labels]
+    chart_appr = [chart_rows[label]['appr'] for label in chart_labels]
+
     recent = [_app_dict(a) for a in qs.order_by('-created_at')[:5]]
     bu = _bank_user(request)
     context = {
@@ -480,6 +789,30 @@ def _advance_application(app, stage, user=None, note='', next_stage=''):
     return msg
 
 
+def _contract_info(app):
+    """Return a dict of the latest contract for an application, or None."""
+    try:
+        from transactions.models import Contract
+        c = Contract.objects.filter(mortgage=app).select_related('seller', 'customer', 'bank').first()
+        if not c:
+            return None
+        return {
+            'id': c.id,
+            'status': c.status,
+            'status_display': c.get_status_display(),
+            'customer_signed': c.customer_signed,
+            'seller_signed': c.seller_signed,
+            'bank_signed': c.bank_signed,
+            'is_fully_signed': c.is_fully_signed(),
+            'file_url': c.contract_file.url if c.contract_file else '',
+            'physical_signing_date': c.physical_signing_date.strftime('%Y-%m-%d') if c.physical_signing_date else '',
+            'physical_signing_location': c.physical_signing_location or '',
+            'created_at': c.created_at.strftime('%d %b %Y') if c.created_at else '',
+        }
+    except Exception:
+        return None
+
+
 def _real_application_detail(pk):
     """Try loading real MortgageApplication from DB; return None if missing."""
     try:
@@ -519,6 +852,11 @@ def _real_application_detail(pk):
         cust = app.customer
         prop = app.property
         risk = float(app.risk_score or 0)
+        try:
+            from mortgages.models import CustomerHold
+            customer_is_held = CustomerHold.objects.filter(customer=cust, bank=app.bank, is_active=True).exists() if cust and app.bank else False
+        except Exception:
+            customer_is_held = False
         try:
             cust_photo = cust.profile_image.url if cust and cust.profile_image else ''
         except Exception:
@@ -690,6 +1028,7 @@ def _real_application_detail(pk):
             "bank_name": app.bank.get_full_name() if getattr(app, 'bank', None) else '',
             "customer_is_verified": bool(getattr(cust, 'is_verified', False)) if cust else False,
             "customer_verification": getattr(cust, 'verification_level', 'not_verified') if cust else 'not_verified',
+            "customer_is_held": customer_is_held,
             "property_info": prop_info,
             "house_photos": [g.image.url for g in app.house_photos.all() if g.image] if hasattr(app, 'house_photos') else [],
             "house_cover": (lambda _hs: _hs.image.url if _hs and _hs.image else '')(next((g for g in app.house_photos.all() if g.is_cover), app.house_photos.first() if hasattr(app, 'house_photos') and app.house_photos.exists() else None)) if hasattr(app, 'house_photos') else '',
@@ -708,6 +1047,7 @@ def _real_application_detail(pk):
             "steps": steps,
             "avatar": "https://i.pravatar.cc/100?img=5",
             "is_real": True,
+            "contract": _contract_info(app),
         }
     except Exception:
         return None
@@ -722,8 +1062,16 @@ def bank_application_detail(request, pk):
     real = _real_application_detail(pk)
     if real:
         return render(request, "bank/bank_application_detail.html", {"application": real})
-    from django.http import Http404
-    raise Http404("Application not found.")
+    # Application was deleted (orphan notification) -> friendly redirect, not raw 404.
+    # Clean the stale notification so the bell never points here again.
+    from django.contrib import messages
+    from django.shortcuts import redirect
+    try:
+        _cleanup_orphan_bank_notifications()
+    except Exception:
+        pass
+    messages.warning(request, f"Application #{pk} no longer exists (it was deleted or was never saved). Please select another application from the list.")
+    return redirect("bank_applications")
 
 
 def bank_application_review(request, pk):
@@ -802,10 +1150,14 @@ def bank_application_review(request, pk):
                 except Exception:
                     pass
                 try:
-                    _ensure_repayment_and_contract(app, user=user)
+                    _ensure_repayment_and_contract(
+                        app, user=user,
+                        signing_date=request.POST.get("signing_date"),
+                        signing_location=request.POST.get("signing_location", "")
+                    )
                 except Exception:
                     pass
-                messages.success(request, "Application approved successfully.")
+                messages.success(request, "Application approved successfully. Contract generated and parties notified.")
             else:
                 app.status = "rejected"
                 app.review_stage = 'approval_decision'
@@ -829,7 +1181,17 @@ def bank_application_review(request, pk):
         return redirect("bank_application_detail", pk=pk)
 
     real = _real_application_detail(pk)
-    return render(request, "bank/bank_application_review.html", {"application": real or application})
+    if real:
+        return render(request, "bank/bank_application_review.html", {"application": real})
+    # Orphan review link -> same friendly handling as detail.
+    from django.contrib import messages as _msg
+    from django.shortcuts import redirect as _redirect
+    try:
+        _cleanup_orphan_bank_notifications()
+    except Exception:
+        pass
+    _msg.warning(request, f"Application #{pk} no longer exists (it was deleted or was never saved).")
+    return _redirect("bank_applications")
 
 
 def bank_application_correction(request, pk):
@@ -951,10 +1313,14 @@ def bank_application_approve(request, pk):
         except Exception:
             pass
         try:
-            _ensure_repayment_and_contract(app, user=user)
+            _ensure_repayment_and_contract(
+                app, user=user,
+                signing_date=request.POST.get("signing_date"),
+                signing_location=request.POST.get("signing_location", "")
+            )
         except Exception:
             pass
-        messages.success(request, "Application approved successfully.")
+        messages.success(request, "Application approved successfully. Contract generated and parties notified.")
     except Exception as e:
         messages.error(request, "Failed to approve.")
     return redirect("bank_application_detail", pk=pk)
@@ -1023,6 +1389,50 @@ def bank_application_reject(request, pk):
         messages.success(request, "Application rejected successfully.")
     except Exception as e:
         messages.error(request, "Failed to reject.")
+    return redirect("bank_application_detail", pk=pk)
+
+
+def bank_application_hold(request, pk):
+    """POST /bank/applications/<id>/hold/ - Place an active hold on the applicant.
+    While held, the customer cannot delete their account."""
+    from django.contrib import messages
+    from django.shortcuts import redirect
+    if request.method != "POST":
+        return redirect("bank_application_detail", pk=pk)
+    try:
+        from mortgages.models import CustomerHold, MortgageApplication
+        app = MortgageApplication.objects.select_related('customer', 'bank').get(pk=pk)
+        bank = request.user if getattr(request.user, 'is_authenticated', False) and getattr(request.user, 'role', '') == 'bank' else app.bank
+        reason = request.POST.get("reason", "").strip()
+        CustomerHold.objects.update_or_create(
+            customer=app.customer, bank=bank, is_active=True,
+            defaults={'reason': reason or 'Account held by bank during review.'}
+        )
+        messages.success(request, f"Customer {app.customer.get_full_name() or app.customer.email} has been placed on hold.")
+    except Exception as e:
+        messages.error(request, "Failed to place hold on customer.")
+    return redirect("bank_application_detail", pk=pk)
+
+
+def bank_application_release_hold(request, pk):
+    """POST /bank/applications/<id>/release-hold/ - Release the bank's hold on the applicant."""
+    from django.contrib import messages
+    from django.shortcuts import redirect
+    if request.method != "POST":
+        return redirect("bank_application_detail", pk=pk)
+    try:
+        from mortgages.models import CustomerHold, MortgageApplication
+        app = MortgageApplication.objects.select_related('customer', 'bank').get(pk=pk)
+        bank = request.user if getattr(request.user, 'is_authenticated', False) and getattr(request.user, 'role', '') == 'bank' else app.bank
+        holds = CustomerHold.objects.filter(customer=app.customer, bank=bank, is_active=True)
+        count = holds.count()
+        holds.update(is_active=False)
+        if count:
+            messages.success(request, f"Hold released for {app.customer.get_full_name() or app.customer.email}.")
+        else:
+            messages.info(request, "No active hold found for this customer.")
+    except Exception as e:
+        messages.error(request, "Failed to release hold.")
     return redirect("bank_application_detail", pk=pk)
 
 
@@ -1383,36 +1793,107 @@ def bank_application_pdf(request, pk):
 
 def bank_contract_detail(request, pk):
     """GET /bank/contracts/<id>/ - Contract details + signature status + PDF."""
+    from django.contrib import messages
+    from django.shortcuts import redirect
+    from transactions.models import Contract
     try:
-        from transactions.models import Contract
-        c = Contract.objects.select_related('mortgage', 'customer', 'bank').get(pk=pk)
-        contract = {
-            "id": c.id, "ref": f"CTR-2026-{c.id:04d}",
-            "customer": c.customer.get_full_name() if c.customer else "-",
-            "property_name": getattr(getattr(c.mortgage, 'property', None), 'title', '-'),
-            "amount": float(getattr(c.mortgage, 'loan_amount', 0) or 0),
-            "status": c.status, "created": c.created_at,
-            "customer_signed": c.customer_signed, "seller_signed": c.seller_signed,
-            "bank_signed": c.bank_signed, "file_url": c.contract_file.url if c.contract_file else None,
-            "notes": c.notes or "",
-        }
+        c = Contract.objects.select_related('mortgage__property', 'customer', 'bank', 'seller').get(pk=pk)
     except Exception:
-        contract = {"id": pk, "ref": f"CTR-2026-{int(pk):04d}", "customer": "Neema Sanga",
-                    "property_name": "House - Tegeta", "amount": 120000000, "status": "pending_signature",
-                    "created": None, "customer_signed": True, "seller_signed": False,
-                    "bank_signed": False, "file_url": None, "notes": ""}
-    if request.method == "POST" and request.POST.get("action") == "sign":
-        try:
-            from django.contrib import messages
-            from django.shortcuts import redirect
-            c.bank_signed = True
-            if c.is_fully_signed():
-                c.status = "signed"
-            c.save(update_fields=["bank_signed", "status", "updated_at"])
-            messages.success(request, "Contract signed successfully.")
-        except Exception:
-            pass
-        return redirect("bank_contract_detail", pk=pk)
+        messages.error(request, "Contract not found.")
+        return redirect("bank_contracts")
+
+    user = request.user if getattr(request.user, 'is_authenticated', False) else None
+    if user and getattr(user, 'role', '') != 'bank':
+        messages.error(request, "Only a bank user can view this page.")
+        return redirect("bank_contracts")
+
+    if request.method == "POST":
+        action = request.POST.get("action", "")
+        if action == "sign":
+            try:
+                c.bank_signed = True
+                if c.is_fully_signed():
+                    c.status = "signed"
+                c.save(update_fields=["bank_signed", "status", "updated_at"])
+                messages.success(request, "Contract signed successfully.")
+            except Exception:
+                messages.error(request, "Failed to sign contract.")
+            return redirect("bank_contract_detail", pk=pk)
+
+        if action == "publish":
+            try:
+                from django.utils import timezone
+                c.is_published = True
+                c.published_at = timezone.now()
+                c.save(update_fields=["is_published", "published_at", "updated_at"])
+                _notify_contract_published(c, user=user)
+                messages.success(request, "Contract published successfully. Seller/real estate and buyer can now view it.")
+            except Exception:
+                messages.error(request, "Failed to publish contract.")
+            return redirect("bank_contract_detail", pk=pk)
+
+        if action == "publish_signed":
+            try:
+                from django.utils import timezone
+                from django.core.files.base import ContentFile
+                from mortgages.contract_pdf import generate_sale_contract_pdf
+                signed_file = request.FILES.get('signed_contract_file')
+                if signed_file:
+                    if c.signed_contract_file:
+                        c.signed_contract_file.delete(save=False)
+                    c.signed_contract_file.save(signed_file.name, signed_file, save=True)
+                else:
+                    # Regenerate PDF as signed version if no scanned file uploaded
+                    pdf_buffer = generate_sale_contract_pdf(
+                        c,
+                        physical_signing_date=c.physical_signing_date,
+                        physical_signing_location=c.physical_signing_location
+                    )
+                    filename = f"signed_sale_contract_{c.id:06d}.pdf"
+                    if c.signed_contract_file:
+                        c.signed_contract_file.delete(save=False)
+                    c.signed_contract_file.save(filename, ContentFile(pdf_buffer.read()), save=True)
+
+                c.is_published = True
+                c.published_at = timezone.now()
+                if c.is_fully_signed():
+                    c.status = "signed"
+                c.save(update_fields=["signed_contract_file", "is_published", "published_at", "status", "updated_at"])
+                _notify_contract_signed_published(c, user=user)
+                messages.success(request, "Signed contract published successfully. All parties can now view the completed contract.")
+            except Exception:
+                messages.error(request, "Failed to publish signed contract.")
+            return redirect("bank_contract_detail", pk=pk)
+
+    seller = c.seller
+    seller_role = "Real Estate" if seller and getattr(seller, 'role', '') == 'realestate' else "Seller"
+    prop = getattr(c.mortgage, 'property', None) if c.mortgage else None
+    contract = {
+        "id": c.id, "ref": f"CTR-{c.id:06d}",
+        "customer": c.customer.get_full_name() if c.customer else "-",
+        "customer_email": getattr(c.customer, 'email', '') if c.customer else "",
+        "customer_phone": getattr(c.customer, 'phone_number', '') if c.customer else "",
+        "seller": seller.get_full_name() if seller else "-",
+        "seller_role": seller_role,
+        "seller_email": getattr(seller, 'email', '') if seller else "",
+        "seller_phone": getattr(seller, 'phone_number', '') if seller else "",
+        "bank": c.bank.get_full_name() if c.bank else "-",
+        "property_name": getattr(prop, 'title', '-'),
+        "property_location": getattr(prop, 'location', '-'),
+        "amount": float(getattr(c.mortgage, 'loan_amount', 0) or 0),
+        "status": c.status,
+        "is_published": c.is_published,
+        "published_at": c.published_at,
+        "created": c.created_at,
+        "physical_signing_date": c.physical_signing_date,
+        "physical_signing_location": c.physical_signing_location,
+        "customer_signed": c.customer_signed,
+        "seller_signed": c.seller_signed,
+        "bank_signed": c.bank_signed,
+        "file_url": c.contract_file.url if c.contract_file else None,
+        "signed_file_url": c.signed_contract_file.url if c.signed_contract_file else None,
+        "notes": c.notes or "",
+    }
     return render(request, "bank/bank_contract_detail.html", {"contract": contract})
 
 
@@ -1455,8 +1936,8 @@ def bank_profile(request):
     except Exception:
         total, approved, disbursed_amount = 0, 0, 0
     context = {
-        "bank_name": user.get_full_name() if user and getattr(user, 'role', '') == 'bank' else "CRDB Bank",
-        "email": getattr(user, 'email', 'admin@crdb.co.tz') if user else 'admin@crdb.co.tz',
+        "bank_name": user.get_full_name() if user and getattr(user, 'role', '') == 'bank' else "NCBA Bank",
+        "email": getattr(user, 'email', 'ncba@gmail.com') if user else 'ncba@gmail.com',
         "role": "Bank",
         "verified": bool(getattr(user, 'is_verified', True)) if user else True,
         "stats": {"total": total, "approved": approved, "disbursed_amount": disbursed_amount},
@@ -1490,6 +1971,7 @@ def _contract_dict(c):
         "date": c.created_at.strftime('%Y-%m-%d') if getattr(c, 'created_at', None) else '',
         "status": c.status,
         "status_display": status_map.get(c.status, c.status),
+        "is_published": getattr(c, 'is_published', False),
         "link": f"/bank/contracts/{c.id}/",
     }
 
@@ -1745,12 +2227,24 @@ def _notifications_data(request):
     bu = _bank_user(request)
     if bu is not None:
         try:
-            from mortgages.models import BankNotification
-            rows = BankNotification.objects.filter(recipient=bu).order_by('-created_at')[:30]
-            return [{"id": f"bn-{n.id}", "db_id": n.id, "title": n.title, "message": n.message,
+            from mortgages.models import BankNotification, MortgageApplication
+            rows = list(BankNotification.objects.filter(recipient=bu).order_by('-created_at')[:30])
+            # Hide (and lazily clean) orphan links -> application deleted.
+            pks = [_extract_app_pk_from_link(n.link) for n in rows]
+            pks = [p for p in pks if p]
+            existing = set()
+            if pks:
+                existing = set(MortgageApplication.objects.filter(pk__in=pks).values_list('pk', flat=True))
+            out = []
+            for n in rows:
+                pk = _extract_app_pk_from_link(n.link)
+                if pk and pk not in existing:
+                    continue  # orphan - skip in bell/list; cleaned on detail click
+                out.append({"id": f"bn-{n.id}", "db_id": n.id, "title": n.title, "message": n.message,
                      "time": naturaltime(n.created_at), "read": n.is_read,
                      "icon": n.icon or "file-text", "color": n.color or "blue",
-                     "link": n.link or "#"} for n in rows]
+                     "link": n.link or "#"})
+            return out
         except Exception:
             pass
     # Guest fallback: derived live snapshot (previous behavior).
@@ -1826,4 +2320,76 @@ def bank_notifications_read(request):
         return JsonResponse({"ok": True})
     if bu is not None:
         messages.success(request, "All notifications marked as read.")
-    return redirect("bank_notifications")
+def bank_application_contract_generate(request, pk):
+    """POST /bank/applications/<id>/contract/generate/ -
+    Generate (or regenerate) the Swahili house sale contract PDF for this
+    approved application. The bank sets the physical signing date/location."""
+    from django.contrib import messages
+    from django.http import HttpResponseRedirect
+    from django.shortcuts import redirect
+    from django.core.files.base import ContentFile
+    from mortgages.contract_pdf import generate_sale_contract_pdf
+    from transactions.models import Contract
+    from mortgages.models import MortgageApplication
+
+    if request.method != "POST":
+        return redirect("bank_application_detail", pk=pk)
+    try:
+        app = MortgageApplication.objects.select_related('property', 'customer', 'bank').get(pk=pk)
+        user = request.user if getattr(request.user, 'is_authenticated', False) else None
+        if user and getattr(user, 'role', '') != 'bank':
+            messages.error(request, "Only a bank user can generate the contract.")
+            return redirect("bank_application_detail", pk=pk)
+
+        contract = Contract.objects.filter(mortgage=app).first()
+        if not contract:
+            seller = getattr(app.property, 'seller', None)
+            bank = app.bank or user
+            if not seller or not bank:
+                messages.error(request, "Missing seller or bank for this application.")
+                return redirect("bank_application_detail", pk=pk)
+            contract = Contract.objects.create(
+                mortgage=app, customer=app.customer, seller=seller, bank=bank,
+                status='pending_signature')
+
+        # Read physical signing details from the bank form
+        signing_date_raw = request.POST.get('physical_signing_date', '').strip()
+        signing_location = request.POST.get('physical_signing_location', '').strip()
+        if signing_date_raw:
+            try:
+                from datetime import datetime
+                contract.physical_signing_date = datetime.strptime(signing_date_raw, '%Y-%m-%d').date()
+            except Exception:
+                pass
+        if signing_location:
+            contract.physical_signing_location = signing_location
+
+        # Reset signatures when regenerating so the new PDF is the authoritative copy
+        contract.customer_signed = False
+        contract.seller_signed = False
+        contract.bank_signed = False
+        contract.status = 'pending_signature'
+
+        pdf_buffer = generate_sale_contract_pdf(
+            contract,
+            physical_signing_date=contract.physical_signing_date,
+            physical_signing_location=contract.physical_signing_location
+        )
+        filename = f"sale_contract_{app.application_number or app.id}.pdf"
+        if contract.contract_file:
+            contract.contract_file.delete(save=False)
+        contract.contract_file.save(filename, ContentFile(pdf_buffer.read()), save=True)
+        contract.save()
+
+        # Notify seller/real estate and buyer about the generated contract
+        try:
+            _notify_contract_signing(app, contract, user=user)
+        except Exception:
+            pass
+
+        messages.success(request, "Sale contract PDF generated and submitted successfully. Seller and buyer can now review it.")
+    except MortgageApplication.DoesNotExist:
+        messages.error(request, "Application not found.")
+    except Exception as e:
+        messages.error(request, "Failed to generate contract PDF.")
+    return redirect("bank_application_detail", pk=pk)

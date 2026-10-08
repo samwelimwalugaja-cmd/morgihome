@@ -73,7 +73,7 @@ class MortgageApplicationSerializer(serializers.ModelSerializer):
                   'bank', 'bank_name', 'bank_details',
                   'loan_amount', 'down_payment', 'repayment_period',
                   'monthly_income', 'monthly_expenses', 'employment_status',
-                  'marital_status', 'dob', 'nida_number', 'gender', 'dependents',
+                  'marital_status', 'dob', 'nida_number', 'gender', 'dependents', 'nationality',
                   'employer_name', 'job_title', 'years_employed', 'contract_type',
                   'bank_account_number', 'bank_account_name',
                   'marriage_certificate_number', 'marriage_certificate_file',
@@ -257,7 +257,7 @@ class MortgageApplicationSerializer(serializers.ModelSerializer):
         # E.g. property worth 2M with a 10M request must be rejected outright.
         prop = attrs.get('property') or (self.instance.property if self.instance else None)
         mtype = attrs.get('mortgage_type') or (self.instance.mortgage_type if self.instance else None)
-        if prop and loan and mtype in ('residential', 'commercial', 'land'):
+        if prop and loan and mtype in ('residential', 'commercial'):
             try:
                 price = float(prop.price or 0)
             except (TypeError, ValueError):
@@ -290,9 +290,9 @@ class MortgageApplicationSerializer(serializers.ModelSerializer):
             other_bank = attrs.get('other_loan_bank') or (self.instance.other_loan_bank if self.instance else None)
             other_bal = attrs.get('other_loan_balance') or (self.instance.other_loan_balance if self.instance else None)
             if not other_bank:
-                raise serializers.ValidationError({'other_loan_bank': 'Benki ya mkopo wa zamani inahitajika kama una mkopo mwingine.'})
+                raise serializers.ValidationError({'other_loan_bank': 'The previous loan bank is required if you have another loan.'})
             if not other_bal:
-                raise serializers.ValidationError({'other_loan_balance': 'Deni lililobaki linahitajika.'})
+                raise serializers.ValidationError({'other_loan_balance': 'The outstanding balance is required.'})
             # consolidate flag required when customer has another loan
             consolidate = attrs.get('other_loan_consolidate') or (self.instance.other_loan_consolidate if self.instance else None)
             if not consolidate:

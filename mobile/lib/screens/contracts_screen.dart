@@ -18,10 +18,14 @@ class _ContractsScreenState extends State<ContractsScreen> {
   List<Contract> _contracts = [];
   bool _loading = true;
   final Set<int> _signing = {};
+  String _role = 'customer';
 
   @override
   void initState() {
     super.initState();
+    _api.getStoredUser().then((u) {
+      if (mounted) setState(() => _role = u?.role ?? 'customer');
+    });
     _load();
   }
 
@@ -72,7 +76,7 @@ class _ContractsScreenState extends State<ContractsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(backgroundColor: const Color(AppConstants.secondaryColorValue), title: const Text('My Contracts', style: TextStyle(color: Colors.white)), centerTitle: true),
-      drawer: const CustomerDrawer(active: 'contracts'),
+      drawer: _role == 'seller' ? null : const CustomerDrawer(active: 'contracts'),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _contracts.isEmpty

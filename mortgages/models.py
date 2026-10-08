@@ -16,6 +16,58 @@ REVIEW_STAGES = (
     ('disbursed', 'Disbursed'),
 )
 
+COUNTRY_CHOICES = (
+    ('AF', 'Afghanistan'), ('AL', 'Albania'), ('DZ', 'Algeria'), ('AD', 'Andorra'),
+    ('AO', 'Angola'), ('AG', 'Antigua and Barbuda'), ('AR', 'Argentina'), ('AM', 'Armenia'),
+    ('AU', 'Australia'), ('AT', 'Austria'), ('AZ', 'Azerbaijan'), ('BS', 'Bahamas'),
+    ('BH', 'Bahrain'), ('BD', 'Bangladesh'), ('BB', 'Barbados'), ('BY', 'Belarus'),
+    ('BE', 'Belgium'), ('BZ', 'Belize'), ('BJ', 'Benin'), ('BT', 'Bhutan'),
+    ('BO', 'Bolivia'), ('BA', 'Bosnia and Herzegovina'), ('BW', 'Botswana'), ('BR', 'Brazil'),
+    ('BN', 'Brunei'), ('BG', 'Bulgaria'), ('BF', 'Burkina Faso'), ('BI', 'Burundi'),
+    ('CV', 'Cabo Verde'), ('KH', 'Cambodia'), ('CM', 'Cameroon'), ('CA', 'Canada'),
+    ('CF', 'Central African Republic'), ('TD', 'Chad'), ('CL', 'Chile'), ('CN', 'China'),
+    ('CO', 'Colombia'), ('KM', 'Comoros'), ('CG', 'Congo'), ('CD', 'Congo, Democratic Republic'),
+    ('CR', 'Costa Rica'), ('HR', 'Croatia'), ('CU', 'Cuba'), ('CY', 'Cyprus'),
+    ('CZ', 'Czech Republic'), ('DK', 'Denmark'), ('DJ', 'Djibouti'), ('DM', 'Dominica'),
+    ('DO', 'Dominican Republic'), ('EC', 'Ecuador'), ('EG', 'Egypt'), ('SV', 'El Salvador'),
+    ('GQ', 'Equatorial Guinea'), ('ER', 'Eritrea'), ('EE', 'Estonia'), ('SZ', 'Eswatini'),
+    ('ET', 'Ethiopia'), ('FJ', 'Fiji'), ('FI', 'Finland'), ('FR', 'France'),
+    ('GA', 'Gabon'), ('GM', 'Gambia'), ('GE', 'Georgia'), ('DE', 'Germany'),
+    ('GH', 'Ghana'), ('GR', 'Greece'), ('GD', 'Grenada'), ('GT', 'Guatemala'),
+    ('GN', 'Guinea'), ('GW', 'Guinea-Bissau'), ('GY', 'Guyana'), ('HT', 'Haiti'),
+    ('HN', 'Honduras'), ('HU', 'Hungary'), ('IS', 'Iceland'), ('IN', 'India'),
+    ('ID', 'Indonesia'), ('IR', 'Iran'), ('IQ', 'Iraq'), ('IE', 'Ireland'),
+    ('IL', 'Israel'), ('IT', 'Italy'), ('JM', 'Jamaica'), ('JP', 'Japan'),
+    ('JO', 'Jordan'), ('KZ', 'Kazakhstan'), ('KE', 'Kenya'), ('KI', 'Kiribati'),
+    ('KP', 'Korea, North'), ('KR', 'Korea, South'), ('KW', 'Kuwait'), ('KG', 'Kyrgyzstan'),
+    ('LA', 'Laos'), ('LV', 'Latvia'), ('LB', 'Lebanon'), ('LS', 'Lesotho'),
+    ('LR', 'Liberia'), ('LY', 'Libya'), ('LI', 'Liechtenstein'), ('LT', 'Lithuania'),
+    ('LU', 'Luxembourg'), ('MG', 'Madagascar'), ('MW', 'Malawi'), ('MY', 'Malaysia'),
+    ('MV', 'Maldives'), ('ML', 'Mali'), ('MT', 'Malta'), ('MH', 'Marshall Islands'),
+    ('MR', 'Mauritania'), ('MU', 'Mauritius'), ('MX', 'Mexico'), ('FM', 'Micronesia'),
+    ('MD', 'Moldova'), ('MC', 'Monaco'), ('MN', 'Mongolia'), ('ME', 'Montenegro'),
+    ('MA', 'Morocco'), ('MZ', 'Mozambique'), ('MM', 'Myanmar'), ('NA', 'Namibia'),
+    ('NR', 'Nauru'), ('NP', 'Nepal'), ('NL', 'Netherlands'), ('NZ', 'New Zealand'),
+    ('NI', 'Nicaragua'), ('NE', 'Niger'), ('NG', 'Nigeria'), ('MK', 'North Macedonia'),
+    ('NO', 'Norway'), ('OM', 'Oman'), ('PK', 'Pakistan'), ('PW', 'Palau'),
+    ('PA', 'Panama'), ('PG', 'Papua New Guinea'), ('PY', 'Paraguay'), ('PE', 'Peru'),
+    ('PH', 'Philippines'), ('PL', 'Poland'), ('PT', 'Portugal'), ('QA', 'Qatar'),
+    ('RO', 'Romania'), ('RU', 'Russia'), ('RW', 'Rwanda'), ('KN', 'Saint Kitts and Nevis'),
+    ('LC', 'Saint Lucia'), ('VC', 'Saint Vincent and the Grenadines'), ('WS', 'Samoa'),
+    ('SM', 'San Marino'), ('ST', 'Sao Tome and Principe'), ('SA', 'Saudi Arabia'), ('SN', 'Senegal'),
+    ('RS', 'Serbia'), ('SC', 'Seychelles'), ('SL', 'Sierra Leone'), ('SG', 'Singapore'),
+    ('SK', 'Slovakia'), ('SI', 'Slovenia'), ('SB', 'Solomon Islands'), ('SO', 'Somalia'),
+    ('ZA', 'South Africa'), ('SS', 'South Sudan'), ('ES', 'Spain'), ('LK', 'Sri Lanka'),
+    ('SD', 'Sudan'), ('SR', 'Suriname'), ('SE', 'Sweden'), ('CH', 'Switzerland'),
+    ('SY', 'Syria'), ('TJ', 'Tajikistan'), ('TZ', 'Tanzania'), ('TH', 'Thailand'),
+    ('TL', 'Timor-Leste'), ('TG', 'Togo'), ('TO', 'Tonga'), ('TT', 'Trinidad and Tobago'),
+    ('TN', 'Tunisia'), ('TR', 'Turkey'), ('TM', 'Turkmenistan'), ('TV', 'Tuvalu'),
+    ('UG', 'Uganda'), ('UA', 'Ukraine'), ('AE', 'United Arab Emirates'), ('GB', 'United Kingdom'),
+    ('US', 'United States'), ('UY', 'Uruguay'), ('UZ', 'Uzbekistan'), ('VU', 'Vanuatu'),
+    ('VA', 'Vatican City'), ('VE', 'Venezuela'), ('VN', 'Vietnam'), ('YE', 'Yemen'),
+    ('ZM', 'Zambia'), ('ZW', 'Zimbabwe'),
+)
+
 # Customer-facing message per stage (English, shown live on web + mobile)
 REVIEW_STAGE_MESSAGES = {
     'received': 'Your application has been sent directly to the bank. The bank has received it and review is starting.',
@@ -47,14 +99,12 @@ class MortgageApplication(models.Model):
         ('refinance', 'Refinance/Equity Release'),
         ('semi_finish', 'Semi Finish'),
         ('construction', 'Construction'),
-        ('land', 'Land Purchase'),
         ('commercial', 'Commercial'),
     )
     MORTGAGE_TYPE_CHOICES = (
         ('residential', 'Residential'),
         ('construction', 'Home Construction'),
         ('renovation', 'Renovation'),
-        ('land', 'Land Purchase'),
         ('commercial', 'Commercial'),
     )
 
@@ -92,6 +142,7 @@ class MortgageApplication(models.Model):
     nida_number = models.CharField(max_length=30, blank=True, null=True, help_text="NIDA number 20 digits - first 8 encode DOB YYYYMMDD")
     gender = models.CharField(max_length=10, blank=True, null=True, choices=(('male','Male'),('female','Female')), help_text="Gender")
     dependents = models.IntegerField(blank=True, null=True, default=0, help_text="Number of dependents")
+    nationality = models.CharField(max_length=2, choices=COUNTRY_CHOICES, default='TZ', blank=True, null=True, help_text="Applicant nationality - default Tanzania")
     # --- Employment details (persisted so bank always sees them, not only draft_data) ---
     employer_name = models.CharField(max_length=200, blank=True, null=True)
     job_title = models.CharField(max_length=200, blank=True, null=True)
@@ -164,7 +215,6 @@ class MortgageApplication(models.Model):
             'residential': 'RES',
             'construction': 'CON',
             'renovation': 'REN',
-            'land': 'LND',
             'commercial': 'COM',
         }
         prefix = type_map.get(self.mortgage_type or self.loan_type or 'residential', 'GEN')
@@ -350,3 +400,40 @@ class MortgageDocument(models.Model):
 
     def __str__(self):
         return f"{self.mortgage.customer.email} - {self.get_doc_type_display()} - {self.file.name}"
+
+
+class CustomerHold(models.Model):
+    """A bank can place a hold on a customer (e.g. during review / dispute).
+    While an active hold exists, the customer cannot delete their account."""
+    customer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, limit_choices_to={'role': 'customer'}, related_name='bank_holds')
+    bank = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, limit_choices_to={'role': 'bank'}, related_name='held_customers')
+    reason = models.TextField(blank=True, default='', help_text="Reason for holding the customer")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = [['customer', 'bank', 'is_active']]
+
+    def __str__(self):
+        return f"Hold: {self.customer.email} by {self.bank.get_full_name()}"
+
+
+# Auto-clean orphan bank notifications when an application is deleted,
+# so the bank bell never points to a 404 URL.
+try:
+    from django.db.models.signals import post_delete
+    from django.dispatch import receiver as _receiver
+
+    @_receiver(post_delete, sender=MortgageApplication)
+    def _delete_orphan_bank_notifications(sender, instance, **kwargs):
+        try:
+            pk = getattr(instance, 'pk', None) or getattr(instance, 'id', None)
+            if pk:
+                BankNotification.objects.filter(
+                    link__contains=f'/bank/applications/{pk}/').delete()
+        except Exception:
+            pass
+except Exception:
+    pass

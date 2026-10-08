@@ -174,11 +174,26 @@
         <div class="row g-3 mt-1">
           <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Full Name *</label><input type="text" class="form-control" value="{% if user.is_authenticated %}{{ user.get_full_name|default:user.email }}{% endif %}" readonly style="background:#2c2e33; border-color:#444; color:#fff;"></div>
           <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Email *</label><input type="email" class="form-control" value="{% if user.is_authenticated %}{{ user.email }}{% endif %}" readonly style="background:#2c2e33; border-color:#444; color:#fff;"></div>
-          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293;">Phone *</label><input type="text" class="form-control" value="{% if user.is_authenticated %}{{ user.phone_number }}{% endif %}" readonly style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+          <div class="col-12 col-md-6">
+            <label class="form-label" style="font-size:12px; color:#6c7293; font-weight:600;">Phone Number <span class="text-danger">*</span></label>
+            {% if user.is_authenticated and user.phone_number %}
+            <input type="text" name="phone_number" id="phoneNumberInput" class="form-control" value="{{ user.phone_number }}" readonly style="background:#2c2e33; border-color:#444; color:#fff;">
+            {% else %}
+            <input type="tel" name="phone_number" id="phoneNumberInput" class="form-control" placeholder="e.g. 0712345678" value="{{ user.phone_number|default:'' }}" required style="background:#2c2e33; border-color:#444; color:#fff;" oninput="markSegmentChanged(2)">
+            <small class="text-muted" style="font-size:11px;">Phone number is required. It will be saved to your profile.</small>
+            {% endif %}
+          </div>
           <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293; font-weight:600;">Date of Birth *</label><input type="date" name="dob" id="dobInput" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;" required><small class="text-muted" style="font-size:11px;">Age 18-57 only. Must match NIDA first 8 digits.</small></div>
           <div class="col-12 col-md-4"><label class="form-label" style="font-size:12px; color:#6c7293;">Gender</label><select name="gender" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;"><option value="">Select</option><option value="male">Male</option><option value="female">Female</option></select></div>
           <div class="col-12 col-md-4"><label class="form-label" style="font-size:12px; color:#6c7293;">Marital Status</label><select name="marital_status" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;"><option value="">Select</option><option value="single">Single</option><option value="married">Married</option></select></div>
           <div class="col-12 col-md-4"><label class="form-label" style="font-size:12px; color:#6c7293;">Dependents</label><input type="number" name="dependents" class="form-control" placeholder="0" min="0" style="background:#2c2e33; border-color:#444; color:#fff;"></div>
+          <div class="col-12 col-md-6"><label class="form-label" style="font-size:12px; color:#6c7293; font-weight:600;">Nationality <span class="text-danger">*</span></label>
+            <select name="nationality" id="nationalitySelect" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;" required>
+              <option value="">Select your nationality</option>
+              {% for code, name in countries %}<option value="{{ code }}" {% if code == 'TZ' %}selected{% endif %}>{{ name }}</option>{% endfor %}
+            </select>
+            <small class="text-muted" style="font-size:11px;">Default is Tanzania. Select your country of citizenship.</small>
+          </div>
           <div class="col-12"><label class="form-label" style="font-size:12px; color:#6c7293; font-weight:600;">NIDA Number (20 digits) <span class="text-danger">*</span></label>
             <input type="text" name="nida_number" id="nidaInput" class="form-control" placeholder="e.g. 19900101123456789012" maxlength="20" pattern="\d{20}" inputmode="numeric" style="background:#2c2e33; border-color:#444; color:#fff;" required>
             <small class="text-muted" style="font-size:11px;">First 8 digits = YYYYMMDD of birth (e.g. 1990-01-01 -> 19900101...). Must match Date of Birth above.</small>
@@ -392,7 +407,8 @@
     <div class="card">
       <div class="card-body">
         <h5 style="font-weight:700;"><span style="display:inline-flex; width:28px; height:28px; background:#0077B6; color:#fff; border-radius:50%; align-items:center; justify-content:center; font-size:13px; margin-right:8px;">5</span> Select Bank</h5>
-        <p class="text-muted" style="font-size:13px;">Select one bank. Interest and fees will be used to calculate repayment.</p>
+        <div class="alert mt-2" style="background:rgba(0,119,182,0.12); border:1px solid rgba(0,119,182,0.25); color:#e5e6ea; border-radius:8px; font-size:13px;"><i class="mdi mdi-bank me-1" style="color:#0077B6;"></i> Your application will be sent directly to <strong>NCBA Bank</strong> (pilot bank). Interest and fees below are from NCBA.</div>
+        <p class="text-muted" style="font-size:13px;">Confirm NCBA Bank. Interest and fees will be used to calculate repayment.</p>
         <div class="row g-3 mt-1">
           {% for bank in banks %}
           <div class="col-12 col-md-6">
@@ -651,6 +667,7 @@ let pendingDraft = null;
 // Track which stages have been explicitly saved and whether current stage was modified
 window._savedSegments = new Set();
 window._segmentChanged = {};
+window._highestReachedStep = 1;
 
 function getMortgageType(){
   const urlParams = new URLSearchParams(window.location.search);
@@ -1624,6 +1641,12 @@ function validateSegment(seg, showErrors){
       valid=false;
       if(showErrors) showFieldError(dob, 'Date of Birth is required');
     } else { if(showErrors) markFieldValid(dob); else dob.classList.remove('is-invalid'); }
+    // Phone number required - editable when empty (e.g. social signup)
+    const phoneEl=document.querySelector('[name=\"phone_number\"]');
+    if(phoneEl && !phoneEl.value.trim()){
+      valid=false;
+      if(showErrors) showFieldError(phoneEl, 'Phone number is required');
+    } else if(phoneEl && showErrors) markFieldValid(phoneEl);
     // Gender and Marital are recommended but not blocking? To satisfy request, we show error if empty when user clicks Next, but allow? We make them required for better data
     const genderEl=document.querySelector('[name=\"gender\"]');
     if(genderEl && !genderEl.value){
@@ -1635,6 +1658,12 @@ function validateSegment(seg, showErrors){
       valid=false;
       if(showErrors) showFieldError(maritalEl, 'Marital status is required');
     } else if(maritalEl && showErrors) markFieldValid(maritalEl);
+    // Nationality required (default Tanzania)
+    const natEl=document.querySelector('[name=\"nationality\"]');
+    if(natEl && !natEl.value){
+      valid=false;
+      if(showErrors) showFieldError(natEl, 'Nationality is required');
+    } else if(natEl && showErrors) markFieldValid(natEl);
     // Show/hide marriage cert based on marital
     toggleMarriageCert();
     if(maritalEl && maritalEl.value==='married'){
@@ -1778,11 +1807,11 @@ function validateSegment(seg, showErrors){
         }
       }
     })();
-    // Purchase loans (residential/commercial/land) can never exceed the property value
+    // Purchase loans (residential/commercial) can never exceed the property value
     (function(){
       var lt5 = document.getElementById('loanType')?.value || '';
       var mt5 = (typeof currentMortgageType!=='undefined' && currentMortgageType) ? currentMortgageType : '';
-      var isPurchaseLike = ['residential','commercial','land'].includes(mt5) || (lt5==='purchase' && ['residential','commercial','land',''].includes(mt5));
+      var isPurchaseLike = ['residential','commercial'].includes(mt5) || (lt5==='purchase' && ['residential','commercial',''].includes(mt5));
       var propSel = document.getElementById('applyProperty');
       var opt = propSel ? propSel.options[propSel.selectedIndex] : null;
       var price = opt ? parseMoney(opt.getAttribute('data-price')||'0') : 0;
@@ -1944,13 +1973,19 @@ function goToSegment(target){
     window.scrollTo({top:0, behavior:'smooth'});
     return;
   }
+  // Forward: cannot jump beyond the highest step the user has legitimately reached
+  const highest = window._highestReachedStep || currentSegment;
+  if(target > highest){
+    if(typeof Swal!=='undefined') Swal.fire({icon:'info', title:'Complete previous steps first', text:'Please complete each step in order. You can only go to step '+target+' after finishing step '+(target-1)+'.', toast:true, position:'top-end', timer:5000, showConfirmButton:false});
+    return;
+  }
   // Forward: current segment must be saved first
   if(!canProceedFromSegment(currentSegment)){
     if(typeof Swal!=='undefined') Swal.fire({icon:'info', title:'Save required', text:'Please click "Save This Step" on the current step before jumping forward.', toast:true, position:'top-end', timer:4000, showConfirmButton:false});
     updateSaveNextState();
     return;
   }
-  // Forward: validate current and intermediate segments, but allow jump with red indication
+  // Forward: validate current and intermediate segments, block if any invalid
   let hasInvalid = false;
   // validate current segment first
   if(!validateSegment(currentSegment, true)) hasInvalid = true;
@@ -1960,14 +1995,15 @@ function goToSegment(target){
     if(s===3 && customerType==='business') continue; // skipped for business
     if(!validateSegment(s, false)) hasInvalid = true;
   }
-  // also validate target-1 etc? we already
+  if(hasInvalid){
+    if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Some fields incomplete', text:'Previous steps have missing required fields - marked with red border. Please complete them before continuing.', toast:true, position:'top-end', timer:5000, showConfirmButton:false});
+    updateStepper(true, true);
+    return;
+  }
   currentSegment = target;
   if(currentSegment===4 && customerType==='employed') currentSegment=5;
   if(currentSegment===3 && customerType==='business') currentSegment=4;
-  updateStepper(true, hasInvalid);
-  if(hasInvalid){
-    if(typeof Swal!=='undefined') Swal.fire({icon:'warning', title:'Some fields incomplete', text:'Previous steps have missing required fields - marked with red border. Please complete them.', toast:true, position:'top-end', timer:5000, showConfirmButton:false});
-  }
+  updateStepper(true, false);
   if(currentSegment===8){ buildReview(); recalcAI(); }
   window.scrollTo({top:0, behavior:'smooth'});
 }
@@ -2269,7 +2305,7 @@ function handlePropertyAutoFill(){
   }
   if(typeParam){
     const loanTypeSel=document.getElementById('loanType');
-    const typeMap2={'residential':'purchase','construction':'construction','renovation':'semi_finish','land':'purchase','commercial':'purchase'};
+    const typeMap2={'residential':'purchase','construction':'construction','renovation':'semi_finish','commercial':'purchase'};
     let desired = typeMap2[typeParam] || typeParam;
     if(loanTypeSel){
       // try to set value if option exists
@@ -2449,7 +2485,8 @@ function nextSegment(){
     updateStepper(true, true);
     return;
   }
-  // Save draft synchronously before moving, so resume is always accurate
+  // Sync phone to profile if needed, then save draft synchronously before moving
+  syncPhoneIfNeeded();
   try{ saveDraftLocal(); saveDraftBackend(); }catch(e){}
   // Track highest legitimately reached step
   window._highestReachedStep = Math.max(window._highestReachedStep || 0, currentSegment + 1);
@@ -2477,8 +2514,37 @@ function nextSegment(){
     window.scrollTo({top:0, behavior:'smooth'});
   }
 }
+function syncPhoneIfNeeded(){
+  const phoneEl=document.getElementById('phoneNumberInput');
+  if(!phoneEl || phoneEl.readOnly) return;
+  const phone=phoneEl.value.trim();
+  if(!phone) return;
+  // Avoid duplicate sync
+  if(window._lastSyncedPhone === phone) return;
+  const token = localStorage.getItem('access') || localStorage.getItem('access_token') || '';
+  const csrftoken = getCookie('csrftoken') || '';
+  const headers = {'Content-Type':'application/json'};
+  if(token && !isJwtExpired(token)) headers['Authorization']='Bearer '+token;
+  if(csrftoken) headers['X-CSRFToken']=csrftoken;
+  fetch('/api/auth/profile/', {method:'PATCH', headers:headers, body:JSON.stringify({phone_number:phone}), credentials:'same-origin'})
+    .then(function(r){ if(r.ok) window._lastSyncedPhone = phone; })
+    .catch(function(){});
+}
+
 function saveCurrentStage(){
-  // Explicit per-stage save: user clicks Save, data is stored without changing step
+  // Explicit per-stage save: validate first, then save
+  clearAllFieldErrors();
+  if(!validateSegment(currentSegment, true)){
+    if(window._nidaNeedsVerify){
+      updateStepper(true, true);
+      return;
+    }
+    if(typeof Swal!=='undefined') Swal.fire({icon:'error', title:'Please complete required fields', text:'Check highlighted fields with red border before saving this step.', toast:true, position:'top-end', timer:5000, showConfirmButton:false});
+    updateStepper(true, true);
+    return;
+  }
+  // Sync phone to user profile if the phone input is editable and changed
+  syncPhoneIfNeeded();
   try{
     saveDraftLocal();
     saveDraftBackend();
@@ -2527,7 +2593,7 @@ function buildReview(){
   // Filter out csrf and empty, map nicely
   const skipKeys = new Set(['csrfmiddlewaretoken','documents']);
   const map = {
-    customer_type:'Customer Type', dob:'Date of Birth', gender:'Gender', marital_status:'Marital Status', dependents:'Dependents', nida_number:'NIDA',
+    customer_type:'Customer Type', dob:'Date of Birth', gender:'Gender', marital_status:'Marital Status', dependents:'Dependents', nationality:'Nationality', nida_number:'NIDA',
     employment_status:'Employment Status', employer_name:'Employer', job_title:'Job Title', years_employed:'Years Employed', monthly_income:'Monthly Income', monthly_expenses:'Monthly Expenses', contract_type:'Contract Type',
     has_existing_loan:'Has Existing Loan', existing_loan_bank:'Existing Loan Bank', existing_loan_amount:'Existing Loan Amount', existing_loan_repayment:'Existing Repayment', existing_loan_balance:'Existing Balance',
     business_name:'Business Name', business_reg:'BRELA Reg No', business_type:'Business Type', business_years:'Years in Business', business_income:'Annual Income',
@@ -2537,7 +2603,7 @@ function buildReview(){
     bank:'Bank', bank_fallback:'Bank'
   };
   const groups = {
-    'Personal Information': ['customer_type','dob','gender','marital_status','dependents','nida_number','marriage_certificate_number'],
+    'Personal Information': ['customer_type','dob','gender','marital_status','dependents','nationality','nida_number','marriage_certificate_number'],
     'Employment Details': ['employment_status','employer_name','job_title','years_employed','monthly_income','monthly_expenses','contract_type','has_existing_loan','existing_loan_bank','existing_loan_amount','existing_loan_repayment','existing_loan_balance','employment_sector','deduction_psssf','deduction_heslb','deduction_paye'],
     'Business Details': ['business_name','business_registration_number','business_type','business_years','annual_income','deduction_heslb','deduction_paye'],
     'Loan Details': ['property','loan_type','loan_amount','down_payment','repayment_period','has_other_loan','other_loan_bank','other_loan_amount','other_loan_balance','other_loan_monthly_payment','other_loan_consolidate'],
@@ -2549,7 +2615,7 @@ function buildReview(){
   if(appNum) html+=`<div class="d-flex justify-content-between align-items-center mb-3 p-2 rounded" style="background:rgba(0,119,182,0.08); border:1px solid rgba(0,119,182,0.15);"><span style="font-weight:700; color:#0077B6;"><i class="mdi mdi-file-document me-1"></i> Application Number</span><span style="font-weight:800; color:#fff;">${appNum}</span></div>`;
   else {
     // generate preview number based on mortgage type
-    const typeMap2={'residential':'RES','construction':'CON','renovation':'REN','land':'LND','commercial':'COM'};
+    const typeMap2={'residential':'RES','construction':'CON','renovation':'REN','commercial':'COM'};
     const prefix = typeMap2[currentMortgageType||'residential']||'GEN';
     html+=`<div class="d-flex justify-content-between align-items-center mb-3 p-2 rounded" style="background:rgba(0,119,182,0.08); border:1px solid rgba(0,119,182,0.15);"><span style="font-weight:700; color:#0077B6;"><i class="mdi mdi-file-document me-1"></i> Application Number (preview)</span><span style="font-weight:800; color:#fff;">MORG-${prefix}-XXXXXX</span></div>`;
   }
@@ -2593,7 +2659,7 @@ function buildReview(){
   if(badge){
     if(appNum){ badge.textContent=appNum; badge.style.display='inline-block'; }
     else {
-      const typeMap2={'residential':'RES','construction':'CON','renovation':'REN','land':'LND','commercial':'COM'};
+      const typeMap2={'residential':'RES','construction':'CON','renovation':'REN','commercial':'COM'};
       const prefix = typeMap2[currentMortgageType||'residential']||'GEN';
       badge.textContent=`MORG-${prefix}-XXXXXX`;
       badge.style.display='inline-block';
@@ -3012,7 +3078,7 @@ document.getElementById('wizardForm').addEventListener('submit', async function(
     }
     var mtS = currentMortgageType || '';
     var ltS = document.getElementById('loanType')?.value || '';
-    var purch = ['residential','commercial','land'].includes(mtS) || (ltS==='purchase' && ['residential','commercial','land',''].includes(mtS));
+    var purch = ['residential','commercial'].includes(mtS) || (ltS==='purchase' && ['residential','commercial',''].includes(mtS));
     if(purch && fd.get('property')){
       var o = document.querySelector('#applyProperty option[value="'+fd.get('property')+'"]');
       var pr = o ? parseMoney(o.getAttribute('data-price')||'0') : 0;
@@ -3142,7 +3208,6 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     'residential': {title:'Residential Mortgage', badge:'Residential', desc:'Loan for buying house/apartment - 90% financed, 5M-700M', loanType:'purchase'},
     'construction': {title:'Home Construction Mortgage', badge:'Construction', desc:'Build new house - 5M-200M, 5 stages BOQ', loanType:'construction'},
     'renovation': {title:'Renovation Mortgage', badge:'Renovation', desc:'Semi-Finish - complete house at lintel stage, 2 stages', loanType:'semi_finish'},
-    'land': {title:'Land Purchase Mortgage', badge:'Land', desc:'Buy land/plot - title deed required', loanType:'purchase'},
     'commercial': {title:'Commercial Property Mortgage', badge:'Commercial', desc:'Buy commercial property/shop/office', loanType:'purchase'}
   };
   if(mortgageType && typeMap[mortgageType]){
@@ -3188,6 +3253,13 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   }
   // Handle bank param from Bank Requirements - auto-fill bank
   handleBankParam();
+  // PILOT: bank moja tu (NCBA) - auto-select moja kwa moja
+  try{
+    const _cards = document.querySelectorAll('.bank-card');
+    if(_cards.length === 1 && !document.querySelector('.bank-card.selected')){
+      selectBank(_cards[0].dataset.bank);
+    }
+  }catch(e){}
   // Auto-fill property and mortgage type from URL
   handlePropertyAutoFill();
   // If resume_draft_id is provided (from My Applications -> Resume), fetch that specific draft

@@ -22,7 +22,10 @@ urlpatterns = [
     path("applications/<int:pk>/approve/", views.bank_application_approve, name="bank_application_approve"),
     path("applications/<int:pk>/reject/", views.bank_application_reject, name="bank_application_reject"),
     path("applications/<int:pk>/disburse/", views.bank_application_disburse, name="bank_application_disburse"),
+    path("applications/<int:pk>/hold/", views.bank_application_hold, name="bank_application_hold"),
+    path("applications/<int:pk>/release-hold/", views.bank_application_release_hold, name="bank_application_release_hold"),
     path("applications/<int:pk>/pdf/", views.bank_application_pdf, name="bank_application_pdf"),
+    path("applications/<int:pk>/contract/generate/", views.bank_application_contract_generate, name="bank_application_contract_generate"),
 
     # Contracts - /bank/contracts/
     path("contracts/", views.bank_contracts, name="bank_contracts"),

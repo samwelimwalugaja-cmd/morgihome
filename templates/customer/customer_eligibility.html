@@ -1,0 +1,222 @@
+{% extends 'customer/customer_base.html' %}
+{% load humanize %}
+{% block title %}Check Eligibility - MorgiHome{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h3 class="page-title">
+    <span class="page-title-icon bg-gradient-primary text-white me-2"><i class="mdi mdi-shield-check"></i></span> Check Your Eligibility
+  </h3>
+  <nav aria-label="breadcrumb">
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item active" aria-current="page">Mortgage Applicant / Eligibility</li>
+    </ul>
+  </nav>
+</div>
+
+<div class="row">
+  <div class="col-12 col-lg-7 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="card-title">Short Qualification</h4>
+        <p class="text-muted" style="font-size:13px;">Answer a few quick questions about your income and the house you want. We will instantly show whether you may qualify for our pilot partner <strong>NCBA Bank</strong>.</p>
+        <form method="post" class="mt-4">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label" style="font-size:12px; color:#6c7293; font-weight:600;">I am a...</label>
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="d-block p-3 rounded text-center" style="background:#191c24; border:1px solid #2c2e33; cursor:pointer;">
+                  <input type="radio" name="customer_type" value="employed" {% if customer_type != 'business' %}checked{% endif %} style="accent-color:#0077B6;">
+                  <div class="mt-2"><i class="mdi mdi-briefcase" style="color:#0077B6; font-size:22px;"></i></div>
+                  <div style="font-weight:600; font-size:13px;">Employed</div>
+                </label>
+              </div>
+              <div class="col-6">
+                <label class="d-block p-3 rounded text-center" style="background:#191c24; border:1px solid #2c2e33; cursor:pointer;">
+                  <input type="radio" name="customer_type" value="business" {% if customer_type == 'business' %}checked{% endif %} style="accent-color:#0077B6;">
+                  <div class="mt-2"><i class="mdi mdi-store" style="color:#0077B6; font-size:22px;"></i></div>
+                  <div style="font-weight:600; font-size:13px;">Business Owner</div>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label id="incomeLabel" class="form-label" style="font-size:12px; color:#6c7293; font-weight:600;">Monthly Gross Salary (TZS)</label>
+            <input type="text" inputmode="numeric" name="monthly_income" id="eligibilityIncome" class="form-control money-input" placeholder="2,000,000" value="{{ monthly_income|default:'' }}" required style="background:#2c2e33; border-color:#444; color:#fff;">
+            <small id="incomeHelp" class="text-muted" style="font-size:11px;">Your total gross salary before any deductions.</small>
+          </div>
+
+          {# Employed-only field #}
+          <div id="employedFields" class="mb-3">
+            <label class="form-label" style="font-size:12px; color:#6c7293; font-weight:600;">Years with Current Employer</label>
+            <input type="number" name="years_in_role" min="0" max="50" step="0.5" class="form-control" placeholder="e.g. 3" value="{{ years_in_role|default:'' }}" style="background:#2c2e33; border-color:#444; color:#fff;">
+            <small class="text-muted" style="font-size:11px;">How long have you worked for your current employer?</small>
+          </div>
+
+          {# Business-only fields #}
+          <div id="businessFields" class="mb-3" style="display:none;">
+            <label class="form-label" style="font-size:12px; color:#6c7293; font-weight:600;">Years in Business</label>
+            <input type="number" name="years_in_role" min="0" max="50" step="0.5" class="form-control" placeholder="e.g. 5" value="{{ years_in_role|default:'' }}" style="background:#2c2e33; border-color:#444; color:#fff;">
+            <small class="text-muted" style="font-size:11px;">How many years has the business been operating?</small>
+          </div>
+          <div id="businessRegField" class="mb-3" style="display:none;">
+            <label class="form-label" style="font-size:12px; color:#6c7293; font-weight:600;">Business Registration Number <span class="text-muted" style="font-weight:400;">(Optional)</span></label>
+            <input type="text" name="business_reg" class="form-control" placeholder="e.g. 123456789" value="{{ business_reg|default:'' }}" style="background:#2c2e33; border-color:#444; color:#fff;">
+            <small class="text-muted" style="font-size:11px;">Provide if your business is officially registered.</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" style="font-size:12px; color:#6c7293; font-weight:600;">Desired House / Loan Amount (TZS)</label>
+            <input type="text" inputmode="numeric" name="loan_amount" id="eligibilityAmount" class="form-control money-input" placeholder="50,000,000" value="{{ loan_amount|default:'' }}" required style="background:#2c2e33; border-color:#444; color:#fff;">
+            <small class="text-muted" style="font-size:11px;">How much do you need to buy or build the house?</small>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" style="font-size:12px; color:#6c7293; font-weight:600;">Preferred Repayment Period (Months)</label>
+            <select name="repayment_period" class="form-control" style="background:#2c2e33; border-color:#444; color:#fff;">
+              <option value="60" {% if repayment_period == 60 %}selected{% endif %}>60 months (5 years)</option>
+              <option value="120" {% if repayment_period == 120 %}selected{% endif %}>120 months (10 years)</option>
+              <option value="180" {% if repayment_period == 180 %}selected{% endif %}>180 months (15 years)</option>
+              <option value="240" {% if repayment_period == 240 %}selected{% endif %}>240 months (20 years)</option>
+              <option value="300" {% if repayment_period == 300 %}selected{% endif %}>300 months (25 years)</option>
+              <option value="360" {% if repayment_period == 360 %}selected{% endif %}>360 months (30 years)</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary w-100" style="background:#0077B6; border-color:#0077B6;"><i class="mdi mdi-calculator me-1"></i> Check Eligibility</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-5 grid-margin stretch-card">
+    <div class="card" style="background: linear-gradient(135deg, #0A2B4E 0%, #0077B6 100%); border:none;">
+      <div class="card-body text-white">
+        <h5 class="mb-3"><i class="mdi mdi-lightbulb-outline me-2"></i> Why check first?</h5>
+        <p class="mb-2" style="opacity:0.9; font-size:13px;">Avoid wasting time applying to a bank whose limits or affordability rules you do not meet.</p>
+        <ul class="list-unstyled" style="font-size:13px; opacity:0.9;">
+          <li class="mb-2"><i class="mdi mdi-check-circle me-2" style="color:#00d25b;"></i> No credit bureau check</li>
+          <li class="mb-2"><i class="mdi mdi-check-circle me-2" style="color:#00d25b;"></i> Takes 30 seconds</li>
+          <li class="mb-2"><i class="mdi mdi-check-circle me-2" style="color:#00d25b;"></i> See bank options instantly</li>
+          <li><i class="mdi mdi-check-circle me-2" style="color:#00d25b;"></i> Apply directly or start full form</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if submitted %}
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="card-title">Eligibility Result</h4>
+        <div class="row g-3 mb-4">
+          <div class="col-6 col-md-3"><div class="p-3 rounded text-center" style="background:#0f0f0f; border:1px solid #2c2e33;"><p class="text-muted mb-1" style="font-size:11px;">Monthly Payment</p><p class="mb-0" style="font-weight:800;">TZS {{ installment|floatformat:0|intcomma }}</p></div></div>
+          <div class="col-6 col-md-3"><div class="p-3 rounded text-center" style="background:#0f0f0f; border:1px solid #2c2e33;"><p class="text-muted mb-1" style="font-size:11px;">Affordability</p><p class="mb-0" style="font-weight:800;">{{ affordability_score|floatformat:0 }}/100</p></div></div>
+          <div class="col-6 col-md-3"><div class="p-3 rounded text-center" style="background:#0f0f0f; border:1px solid #2c2e33;"><p class="text-muted mb-1" style="font-size:11px;">DTI Ratio</p><p class="mb-0" style="font-weight:800;">{{ dti_ratio|floatformat:1 }}%</p></div></div>
+          <div class="col-6 col-md-3"><div class="p-3 rounded text-center" style="background:#0f0f0f; border:1px solid #2c2e33;"><p class="text-muted mb-1" style="font-size:11px;">Risk Score</p><p class="mb-0" style="font-weight:800;">{{ risk_score|floatformat:0 }}/100</p></div></div>
+        </div>
+
+        {% if can_apply %}
+        <div class="alert mb-4" style="background:rgba(0,210,91,0.12); border:1px solid rgba(0,210,91,0.25); color:#e5e6ea;">
+          <i class="mdi mdi-check-decagram me-2" style="color:#00d25b;"></i> <strong>Good news!</strong> Based on the short information you provided, you may qualify for a mortgage. See the matching banks below.
+        </div>
+        {% else %}
+        <div class="alert mb-4" style="background:rgba(252,66,74,0.12); border:1px solid rgba(252,66,74,0.25); color:#e5e6ea;">
+          <i class="mdi mdi-alert-circle me-2" style="color:#fc424a;"></i> <strong>Affordability is tight.</strong> Your DTI is {{ dti_ratio|floatformat:1 }}% and we suggest reducing the loan amount or increasing the repayment period, then trying again.
+        </div>
+        {% endif %}
+
+        <h5 class="mb-3">Matching Banks</h5>
+        <div class="row g-3">
+          {% for item in qualifying_banks %}
+          <div class="col-12 col-md-6">
+            <div class="p-3 rounded" style="background:#191c24; border:1px solid {% if item.can_apply %}#00d25b{% else %}#2c2e33{% endif %}; {% if item.can_apply %}border-left:4px solid #00d25b;{% endif %}">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="mb-0" style="font-weight:700;">{{ item.bank.get_full_name }}</h6>
+                {% if item.can_apply %}<span class="badge bg-success">Qualify</span>{% else %}<span class="badge" style="background:#44454a; color:#fff; border:1px solid #555;">Not a match</span>{% endif %}
+              </div>
+              <p class="text-muted mb-2" style="font-size:12px;">Interest: {{ item.interest_rate }}% p.a. • Min: TZS {{ item.bank.min_loan_amount|default:"—"|intcomma }} • Max: TZS {{ item.bank.max_loan_amount|default:"—"|intcomma }}</p>
+              <p class="mb-2" style="font-size:12px; {% if item.can_apply %}color:#00d25b;{% else %}color:#fc424a;{% endif %}"><i class="mdi mdi-{% if item.can_apply %}check-circle{% else %}close-circle{% endif %} me-1"></i> {{ item.reason }}</p>
+              {% if item.can_apply %}
+              <div class="d-flex gap-2 mt-2">
+                <a href="/customer/apply/?bank={{ item.bank.id }}&type=residential" class="btn btn-sm btn-primary" style="background:#0077B6; border-color:#0077B6;"><i class="mdi mdi-send me-1"></i> Apply Direct</a>
+                <a href="/customer/apply/?type=residential" class="btn btn-sm btn-outline-secondary">Start Full Form</a>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          {% empty %}
+          <div class="col-12"><p class="text-muted">No banks are registered yet. Please check back later.</p></div>
+          {% endfor %}
+        </div>
+
+        <div class="mt-4 p-3 rounded" style="background:rgba(0,119,182,0.08); border:1px solid rgba(0,119,182,0.15);">
+          <p class="mb-0" style="font-size:12px;"><i class="mdi mdi-information-outline me-1" style="color:#0077B6;"></i> This is only a short qualification. The bank will still verify your documents, credit history and property value before final approval.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function(){
+  function formatMoney(el){
+    var raw = String(el.value).replace(/[^0-9]/g, '');
+    var formatted = raw ? parseInt(raw, 10).toLocaleString('en-US') : '';
+    if(formatted !== el.value) el.value = formatted;
+  }
+
+  function formatMoneyPreserveCursor(el){
+    var start = el.selectionStart || 0;
+    var end = el.selectionEnd || 0;
+    var oldLen = String(el.value).length;
+    formatMoney(el);
+    var newLen = String(el.value).length;
+    var diff = newLen - oldLen;
+    el.setSelectionRange(start + diff, end + diff);
+  }
+
+  function updateTypeFields(){
+    var radios = document.querySelectorAll('input[name="customer_type"]');
+    var selected = 'employed';
+    radios.forEach(function(r){ if(r.checked) selected = r.value; });
+
+    var employedFields = document.getElementById('employedFields');
+    var businessFields = document.getElementById('businessFields');
+    var businessRegField = document.getElementById('businessRegField');
+    var incomeLabel = document.getElementById('incomeLabel');
+    var incomeHelp = document.getElementById('incomeHelp');
+
+    if(selected === 'business'){
+      if(employedFields) employedFields.style.display = 'none';
+      if(businessFields) businessFields.style.display = 'block';
+      if(businessRegField) businessRegField.style.display = 'block';
+      if(incomeLabel) incomeLabel.textContent = 'Monthly Business Revenue (TZS)';
+      if(incomeHelp) incomeHelp.textContent = 'Average monthly revenue the business generates before expenses.';
+    } else {
+      if(employedFields) employedFields.style.display = 'block';
+      if(businessFields) businessFields.style.display = 'none';
+      if(businessRegField) businessRegField.style.display = 'none';
+      if(incomeLabel) incomeLabel.textContent = 'Monthly Gross Salary (TZS)';
+      if(incomeHelp) incomeHelp.textContent = 'Your total gross salary before any deductions.';
+    }
+  }
+
+  document.querySelectorAll('.money-input').forEach(function(el){
+    formatMoney(el);
+    el.addEventListener('input', function(){ formatMoneyPreserveCursor(el); });
+    el.addEventListener('blur', function(){ formatMoney(el); });
+  });
+
+  document.querySelectorAll('input[name="customer_type"]').forEach(function(r){
+    r.addEventListener('change', updateTypeFields);
+  });
+
+  updateTypeFields();
+})();
+</script>
+{% endblock %}

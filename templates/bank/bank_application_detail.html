@@ -306,10 +306,27 @@
           {% csrf_token %}
           <button type="submit" class="w-full px-4 py-2.5 rounded-lg text-sm font-bold text-white" style="background:#0077B6" onclick="return confirm('Mark this loan as disbursed? Repayment schedule and disbursement records will be created.')">Disburse Loan</button>
         </form>
-        <a href="{% url 'bank_application_pdf' application.id %}" target="_blank" class="mt-2 block text-center px-4 py-2.5 rounded-lg text-sm font-bold text-white" style="background:#00a344">Download PDF</a>
+        <a href="{% url 'bank_application_pdf' application.id %}" target="_blank" class="mt-2 block text-center px-4 py-2.5 rounded-lg text-sm font-bold text-white" style="background:#00a344">Download Application PDF</a>
+        <hr class="my-3 border-[var(--morgi-border)]">
+        <h4 class="text-sm font-semibold mb-2">Sale Contract</h4>
+        {% if application.contract %}
+        <div class="mb-2 p-2 rounded-lg bg-[var(--morgi-border)]/20 text-xs">
+          <p class="text-[var(--morgi-muted)]">Status: <span class="font-semibold {% if application.contract.is_fully_signed %}text-emerald-600{% else %}text-amber-500{% endif %}">{{ application.contract.status_display }}</span></p>
+          {% if application.contract.physical_signing_date %}
+          <p class="text-[var(--morgi-muted)] mt-1">Signing: {{ application.contract.physical_signing_date }} @ {{ application.contract.physical_signing_location }}</p>
+          {% endif %}
+          {% if application.contract.file_url %}<a href="{{ application.contract.file_url }}" target="_blank" class="inline-block mt-1 font-semibold" style="color:#0077B6">View current PDF →</a>{% endif %}
+        </div>
+        {% endif %}
+        <form method="post" action="{% url 'bank_application_contract_generate' application.id %}" class="space-y-2">
+          {% csrf_token %}
+          <div><label class="text-xs text-[var(--morgi-muted)]">Physical signing date</label><input type="date" name="physical_signing_date" required class="morgi-input w-full rounded-lg px-3 py-2 text-sm mt-1"></div>
+          <div><label class="text-xs text-[var(--morgi-muted)]">Physical signing location</label><input type="text" name="physical_signing_location" placeholder="e.g. CRDB Branch, Dar es Salaam" required class="morgi-input w-full rounded-lg px-3 py-2 text-sm mt-1"></div>
+          <button type="submit" class="w-full px-4 py-2.5 rounded-lg text-sm font-bold text-white" style="background:#0A2B4E"><i data-lucide="file-signature" class="w-4 h-4 inline"></i> {% if application.contract %}Regenerate{% else %}Generate{% endif %} Sale Contract PDF</button>
+        </form>
       {% elif application.status == 'disbursed' %}
         <p class="text-sm px-3 py-2 rounded-lg font-semibold" style="background:rgba(0,119,182,0.15); color:#0077B6;">Disbursed ✓</p>
-        <a href="{% url 'bank_application_pdf' application.id %}" target="_blank" class="mt-2 block text-center px-4 py-2.5 rounded-lg text-sm font-bold text-white" style="background:#00a344">Download PDF</a>
+        <a href="{% url 'bank_application_pdf' application.id %}" target="_blank" class="mt-2 block text-center px-4 py-2.5 rounded-lg text-sm font-bold text-white" style="background:#00a344">Download Application PDF</a>
       {% elif application.status == 'rejected' %}
         <p class="text-sm px-3 py-2 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 font-semibold">❌ Rejected</p>
       {% else %}
@@ -318,10 +335,23 @@
         <button onclick="document.getElementById('rejectModal').classList.remove('hidden')" class="px-4 py-2.5 rounded-lg text-sm font-semibold text-white" style="background:#DC3545">Reject</button>
       </div>
       <a href="{% url 'bank_application_review' application.id|default:1024 %}" class="mt-2 block text-center px-4 py-2.5 rounded-lg text-sm font-medium border border-[var(--morgi-border)] hover:bg-[var(--morgi-border)]/30">Request More Documents</a>
+      <hr class="my-3 border-[var(--morgi-border)]">
+      {% if application.customer_is_held %}
+      <div class="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-200 mb-2">
+        <i data-lucide="pause-circle" class="w-3 h-3 inline"></i> Customer is on hold by your bank.
+      </div>
+      <form method="post" action="{% url 'bank_application_release_hold' application.id|default:1024 %}">
+        {% csrf_token %}
+        <button type="submit" class="w-full px-4 py-2.5 rounded-lg text-sm font-semibold text-white" style="background:#f59e0b">Release Hold</button>
+      </form>
+      {% else %}
+      <button onclick="document.getElementById('holdModal').classList.remove('hidden')" class="w-full px-4 py-2.5 rounded-lg text-sm font-semibold text-white" style="background:#6c757d"><i data-lucide="pause-circle" class="w-4 h-4 inline"></i> Hold Customer</button>
+      {% endif %}
       {% endif %}
      </div>
-   </div>
+    </div>
  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
@@ -390,6 +420,23 @@ function showRiskDetail(){
       <div class="flex gap-2 pt-1">
         <button type="submit" class="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white" style="background:#DC3545">Confirm Rejection</button>
         <button type="button" onclick="document.getElementById('rejectModal').classList.add('hidden')" class="flex-1 py-2.5 rounded-lg text-sm font-medium btn-secondary">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- HOLD CUSTOMER MODAL -->
+<div id="holdModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+  <div class="morgi-card w-full max-w-md p-6">
+    <h3 class="font-bold text-lg">Place Hold on Customer</h3>
+    <p class="text-sm text-[var(--morgi-muted)] mt-1">{{ application.ref|default:application.id }} • {{ application.customer }}</p>
+    <p class="text-xs text-[var(--morgi-muted)] mt-2">While held, the customer will be blocked from deleting their MorgiHome account.</p>
+    <form method="post" action="{% url 'bank_application_hold' application.id|default:1024 %}" class="mt-4 space-y-3">
+      {% csrf_token %}
+      <div><label class="text-xs font-semibold">Reason for hold</label><textarea name="reason" class="morgi-input w-full rounded-lg p-3 text-sm mt-1" placeholder="e.g. Awaiting corrected documents..."></textarea></div>
+      <div class="flex gap-2 pt-1">
+        <button type="submit" class="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white" style="background:#6c757d">Place Hold</button>
+        <button type="button" onclick="document.getElementById('holdModal').classList.add('hidden')" class="flex-1 py-2.5 rounded-lg text-sm font-medium btn-secondary">Cancel</button>
       </div>
     </form>
   </div>

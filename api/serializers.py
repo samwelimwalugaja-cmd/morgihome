@@ -86,7 +86,7 @@ class MortgageApplicationDetailSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'repayment_period': f"Repayment period exceeds bank maximum {bank.max_repayment_period} months ({bank.max_repayment_period/12:.0f} years)"})
         prop = attrs.get('property') or (self.instance.property if self.instance else None)
         mtype = attrs.get('mortgage_type') or (self.instance.mortgage_type if self.instance else None)
-        if prop and loan and mtype in ('residential', 'commercial', 'land'):
+        if prop and loan and mtype in ('residential', 'commercial'):
             try:
                 price = float(prop.price or 0)
             except (TypeError, ValueError):

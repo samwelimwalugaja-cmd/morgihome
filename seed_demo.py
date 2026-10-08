@@ -152,7 +152,7 @@ def seed(bank_email):
     # 1) Pending (mwezi huu)
     a1 = make_app(customers[0], props[0], 'residential', 200000000, 240, 6500000, 2200000, 'employed', 'pending', 6)
     # 2) Pending (wiki iliyopita)
-    a2 = make_app(customers[1], props[2], 'land', 60000000, 120, 3200000, 1100000, 'self_employed', 'pending', 12)
+    a2 = make_app(customers[1], props[2], 'commercial', 60000000, 120, 3200000, 1100000, 'self_employed', 'pending', 12)
     # 3) Approved + schedule (miezi 2 iliyopita)
     a3 = make_app(customers[2], props[1], 'residential', 120000000, 180, 5800000, 1900000, 'employed', 'approved', 65)
     make_schedules(a3, monthly=round(float(a3.monthly_installment)), count=12, start_months_ago=2, paid_first=2)
@@ -188,7 +188,7 @@ def seed(bank_email):
 if __name__ == '__main__':
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument('--bank', default='crdbbank@gmail.com')
+    ap.add_argument('--bank', default='ncba@gmail.com')
     ap.add_argument('--clean', action='store_true')
     args = ap.parse_args()
     if args.clean:

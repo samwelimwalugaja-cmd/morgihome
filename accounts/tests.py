@@ -67,7 +67,7 @@ class AuthTests(TestCase):
             'first_name': 'John',
             'last_name': 'Doe',
             'email': 'customer@morgihome.com',
-            'phone_number': '+255712345678',
+            'phone_number': '0712345678',
             'password': 'TestPassword123',
             'confirm_password': 'TestPassword123',
             'role': 'customer',
@@ -96,18 +96,20 @@ class AuthTests(TestCase):
 
     @override_settings(DEBUG=True, EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend', EMAIL_HOST_PASSWORD='invalid-password')
     def test_signup_email_failure_reported(self):
-        # Simulate SMTP failure (bad credentials). The view should NOT pretend success.
+        # SMTP ikishindwa: account lazima iundwe DB, na API irudishe 201
+        # (sio 500) pamoja na redirect_url ili frontend isionyeshe error
+        # na user asijaribu kujisajili tena ("already exist").
         response = self.client.post(reverse('signup'), {
             'first_name': 'Jane',
             'last_name': 'Doe',
             'email': 'jane@morgihome.com',
-            'phone_number': '+255712345679',
+            'phone_number': '0712345679',
             'password': 'TestPassword123',
             'confirm_password': 'TestPassword123',
             'role': 'customer',
         }, format='json')
-        self.assertEqual(response.status_code, 500)
-        self.assertIn('error', response.data)
+        self.assertEqual(response.status_code, 201)
+        self.assertIn('redirect_url', response.data)
         self.assertIn('debug_verification_url', response.data)
         user = User.objects.filter(email='jane@morgihome.com').first()
         self.assertIsNotNone(user)

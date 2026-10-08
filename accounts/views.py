@@ -97,7 +97,33 @@ class RegisterView(generics.CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as exc:
+            # UX fix: kama email tayari ipo lakini account haija-verify,
+            # mwelekeze user kwenye ukurasa wa verify badala ya "already exist" tu.
+            email = (request.data.get('email') or '').strip().lower()
+            existing = User.objects.filter(email__iexact=email).first() if email else None
+            if existing is not None and not existing.email_verified:
+                # Jaribu kutuma tena verification email (na token mpya)
+                existing.email_verification_token = secrets.token_urlsafe(32)
+                existing.email_verification_sent_at = timezone.now()
+                existing.save(update_fields=['email_verification_token', 'email_verification_sent_at'])
+                sent, _send_err = _send_verification_email(existing, request)
+                payload = {
+                    'message': 'This email is already registered but not yet verified. We have sent you a new verification link. Please check your inbox (and spam) to continue.',
+                    'redirect_url': f'/verify/email/sent/?email={existing.email}',
+                    'resend_url': '/api/auth/resend-verification/',
+                    'email': existing.email,
+                    'already_registered': True,
+                }
+                if not sent and settings.DEBUG:
+                    try:
+                        payload['debug_verification_url'] = request.build_absolute_uri(f"/verify/email/{existing.email_verification_token}/")
+                    except Exception:
+                        pass
+                return Response(payload, status=status.HTTP_200_OK)
+            raise
         user = serializer.save()
         # Require email verification before first login
         user.email_verified = False
@@ -112,11 +138,14 @@ class RegisterView(generics.CreateAPIView):
                 'message': 'Account created successfully. Please verify your email address before logging in.',
                 'redirect_url': f'/verify/email/sent/?email={user.email}',
             }, status=status.HTTP_201_CREATED, headers=headers)
-        # Email failed to send: do not pretend it succeeded. Surface a clear
-        # error so the user/admin can fix SMTP credentials and resend.
-        logger.error(f"New user registered {user.id} role={user.role} - verification email FAILED")
+        # Email imeshindwa (SMTP / network): account TAYARI imeundwa kwenye DB,
+        # kwa hiyo TUNARUDISHA 201 (sio 500) ili frontend isionyeshe "error"
+        # na user asijaribu kujisajili tena ("already exist").
+        logger.error(f"New user registered {user.id} role={user.role} - verification email FAILED: {send_error}")
         response_data = {
-            'error': 'Account was created, but we could not send the verification email. Please check the email settings (EMAIL_HOST_PASSWORD) and try resending.',
+            'message': 'Account created successfully. However, we could not send the verification email. Please click Resend on the next page.',
+            'warning': 'Verification email could not be sent. Please use Resend.',
+            'redirect_url': f'/verify/email/sent/?email={user.email}',
             'resend_url': '/api/auth/resend-verification/',
             'email': user.email,
         }
@@ -129,7 +158,7 @@ class RegisterView(generics.CreateAPIView):
                 verify_url = f"https://morgihome.co.tz{verify_path}"
             response_data['debug_verification_url'] = verify_url
             response_data['debug_smtp_error'] = send_error
-        return Response(response_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR, headers=headers)
+        return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LoginView(generics.GenericAPIView):
@@ -274,7 +303,10 @@ class BankDocumentUploadView(APIView):
 class BankListView(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
-        banks = User.objects.filter(role='bank', is_active=True)
+        # PILOT: rudisha NCBA pekee kwa customer/users. Website inabaki vile vile.
+        banks = User.get_pilot_banks_qs()
+        if not list(banks[:1]):
+            banks = User.objects.filter(role='bank', is_active=True)[:1]
         # Only show verified banks? Show all but mark verification
         data = []
         for b in banks:
@@ -368,7 +400,7 @@ class RealEstateNotificationsApiView(APIView):
                 'link': '/realestate/applications/',
                 'read': a.status != 'pending',
             })
-        for c in Contract.objects.filter(seller=user).select_related('mortgage__property').order_by('-created_at')[:3]:
+        for c in Contract.objects.filter(seller=user, is_published=True).select_related('mortgage__property').order_by('-created_at')[:3]:
             ptitle = c.mortgage.property.title if c.mortgage and c.mortgage.property else '-'
             items.append({
                 'title': f"Contract #{c.id} - {c.get_status_display()}",
@@ -380,7 +412,7 @@ class RealEstateNotificationsApiView(APIView):
         # Use seen timestamp to determine unread - same as seller/customer
         seen = getattr(user, 'notifications_seen_at', None)
         if seen:
-            for it, obj in zip(items, list(MortgageApplication.objects.filter(property__seller=user).order_by('-created_at')[:5]) + list(Contract.objects.filter(seller=user).order_by('-created_at')[:3])):
+            for it, obj in zip(items, list(MortgageApplication.objects.filter(property__seller=user).order_by('-created_at')[:5]) + list(Contract.objects.filter(seller=user, is_published=True).order_by('-created_at')[:3])):
                 try:
                     if getattr(obj, 'created_at', None) and obj.created_at <= seen:
                         it['read'] = True
@@ -422,7 +454,7 @@ class SellerNotificationsApiView(APIView):
                 'link': '/seller/buyers/',
                 'read': a.status != 'pending',
             })
-        for c in Contract.objects.filter(seller=user).order_by('-created_at')[:5]:
+        for c in Contract.objects.filter(seller=user, is_published=True).order_by('-created_at')[:5]:
             try:
                 ptitle = c.mortgage.property.title if c.mortgage and c.mortgage.property else '-'
             except Exception:
@@ -437,7 +469,7 @@ class SellerNotificationsApiView(APIView):
             })
         seen = getattr(user, 'notifications_seen_at', None)
         if seen:
-            for it, obj in zip(items, list(MortgageApplication.objects.filter(property__seller=user).order_by('-created_at')[:8]) + list(Contract.objects.filter(seller=user).order_by('-created_at')[:5])):
+            for it, obj in zip(items, list(MortgageApplication.objects.filter(property__seller=user).order_by('-created_at')[:8]) + list(Contract.objects.filter(seller=user, is_published=True).order_by('-created_at')[:5])):
                 try:
                     if getattr(obj, 'created_at', None) and obj.created_at <= seen:
                         it['read'] = True

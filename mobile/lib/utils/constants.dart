@@ -13,11 +13,16 @@ class AppConstants {
 
   static const String loginEndpoint = '/auth/login/';
   static const String registerEndpoint = '/auth/signup/';
+  static const String resendVerificationEndpoint = '/auth/resend-verification/';
   static const String logoutEndpoint = '/auth/logout/';
   static const String changePasswordEndpoint = '/auth/change-password/';
+  static const String forgotPasswordEndpoint = '/auth/forgot-password/';
+  static const String notificationsEndpoint = '/auth/notifications/';
+  static const String sellerNotificationsEndpoint = '/auth/notifications/seller/';
   static const String propertiesEndpoint = '/properties/';
   static const String propertySearchEndpoint = '/properties/search/';
   static const String mortgagesEndpoint = '/mortgages/';
+  static const String mortgageDraftEndpoint = '/mortgages/draft/';
   static const String contractsEndpoint = '/contracts/';
   static const String transactionsEndpoint = '/transactions/';
   static const String banksEndpoint = '/banks/';

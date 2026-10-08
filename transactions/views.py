@@ -34,8 +34,8 @@ class ContractViewSet(viewsets.ModelViewSet):
             return Contract.objects.all()
         elif user.role == 'customer':
             return Contract.objects.filter(customer=user)
-        elif user.role == 'seller':
-            return Contract.objects.filter(seller=user)
+        elif user.role in ('seller', 'realestate'):
+            return Contract.objects.filter(seller=user, is_published=True)
         elif user.role == 'bank':
             return Contract.objects.filter(bank=user)
         return Contract.objects.none()
@@ -50,7 +50,7 @@ class ContractViewSet(viewsets.ModelViewSet):
 
         if user.role == 'customer':
             contract.customer_signed = True
-        elif user.role == 'seller':
+        elif user.role in ('seller', 'realestate'):
             contract.seller_signed = True
         elif user.role == 'bank':
             contract.bank_signed = True
@@ -110,8 +110,8 @@ class TransactionViewSet(viewsets.ModelViewSet):
             return Transaction.objects.all()
         elif user.role == 'customer':
             return Transaction.objects.filter(contract__customer=user)
-        elif user.role == 'seller':
-            return Transaction.objects.filter(contract__seller=user)
+        elif user.role in ('seller', 'realestate'):
+            return Transaction.objects.filter(contract__seller=user, contract__is_published=True)
         return Transaction.objects.none()
 
     def perform_create(self, serializer):

@@ -14,11 +14,17 @@ class Contract(models.Model):
 
     mortgage = models.ForeignKey(MortgageApplication, on_delete=models.CASCADE, related_name='contracts')
     customer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='customer_contracts', limit_choices_to={'role': 'customer'})
-    seller = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='seller_contracts', limit_choices_to={'role': 'seller'})
+    seller = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='seller_contracts', limit_choices_to={'role__in': ['seller', 'realestate']})
     bank = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bank_contracts', limit_choices_to={'role': 'bank'})
 
     contract_file = models.FileField(upload_to='contracts/', blank=True, null=True)
+    signed_contract_file = models.FileField(upload_to='contracts/signed/', blank=True, null=True,
+                                            help_text="Final scanned/executed signed contract PDF")
     status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='draft')
+
+    # Publishing control: bank publishes the contract to seller/real estate and buyer
+    is_published = models.BooleanField(default=False, help_text="Bank has published this contract to seller/real estate and buyer")
+    published_at = models.DateTimeField(null=True, blank=True)
 
     # Signatures tracking - Lawyer removed, now Admin/Bank handles creation and execution
     customer_signed = models.BooleanField(default=False)
@@ -27,6 +33,10 @@ class Contract(models.Model):
 
     signed_date = models.DateField(null=True, blank=True)
     executed_date = models.DateField(null=True, blank=True)
+
+    # Physical signing arrangement set by the bank
+    physical_signing_date = models.DateField(null=True, blank=True, help_text="Date agreed by the bank for physical signing")
+    physical_signing_location = models.CharField(max_length=255, blank=True, default='', help_text="Location agreed by the bank for physical signing")
 
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -167,10 +167,12 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js" async></script>
 <script>
-  const ctx = document.getElementById('appsChart');
-  if (ctx) {
+  function morgiInitChart(){
+    if(typeof Chart === 'undefined') return false;
+    const ctx = document.getElementById('appsChart');
+    if (!ctx) return true;
     const isDark = document.documentElement.classList.contains('dark');
     new Chart(ctx, {
       type: 'bar',
@@ -190,6 +192,17 @@
         }
       }
     });
+    return true;
   }
+  // Chart.js loads async; retry until ready
+  (function waitChart(){
+    if(!morgiInitChart()){
+      var attempts = 0;
+      var t = setInterval(function(){
+        attempts++;
+        if(morgiInitChart() || attempts > 50){ clearInterval(t); }
+      }, 100);
+    }
+  })();
 </script>
 {% endblock %}

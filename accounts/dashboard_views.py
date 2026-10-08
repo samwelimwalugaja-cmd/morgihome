@@ -9,6 +9,8 @@ from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from django.shortcuts import get_object_or_404, redirect
 
+from mortgages.models import COUNTRY_CHOICES
+
 # Prevent back button after logout - no cache for all dashboards
 class NoCacheMixin:
     def dispatch(self, request, *args, **kwargs):
@@ -193,7 +195,7 @@ class RealEstateProfileView(ProfileView):
         if user.is_authenticated and user.role == 'realestate':
             ctx['my_properties_count'] = Property.objects.filter(is_deleted=False, seller=user).count()
             ctx['my_applications_count'] = MortgageApplication.objects.filter(property__seller=user).count()
-            ctx['my_contracts_count'] = Contract.objects.filter(seller=user).count()
+            ctx['my_contracts_count'] = Contract.objects.filter(seller=user, is_published=True).count()
             ctx['my_pending_count'] = MortgageApplication.objects.filter(property__seller=user, status='pending').count()
         return ctx
 
@@ -303,46 +305,29 @@ class CustomerApplyViewApex(NoCacheMixin, TemplateView):
         bank_param = self.request.GET.get('bank','').strip()
         mortgage_type_param = self.request.GET.get('type') or self.request.GET.get('mortgage_type')
         ctx['properties'] = Property.objects.filter(is_deleted=False, status='available').order_by('-created_at')[:100]
-        # Deduplicate banks - keep one per canonical bank name (CRDB/NMB/NCBA/NBC/TCB/MWANQA)
-        raw_banks = list(User.objects.filter(role='bank', is_active=True).order_by('id'))
-        seen = set()
-        deduped = []
-        for b in raw_banks:
-            raw = (b.get_full_name() or b.email).strip().lower()
-            # canonical key
-            if 'crdb' in raw:
-                key='crdb'
-            elif 'nmb' in raw:
-                key='nmb'
-            elif 'ncba' in raw:
-                key='ncba'
-            elif 'nbc' in raw:
-                key='nbc'
-            elif 'tcb' in raw:
-                key='tcb'
-            elif 'mwanqa' in raw:
-                key='mwanqa'
-            else:
-                key=raw
-            if key not in seen:
-                seen.add(key)
-                deduped.append(b)
-        # If less than 6, ensure sample banks are included
+        # PILOT: bank moja tu (NCBA). Mfumo unauzwa bank moja moja, customer
+        # anaomba kupitia bank husika ya pilot. Website ya mbele inabaki vile vile.
+        deduped = list(User.get_pilot_banks_qs())
+        # Fallback: kama NCBA haipo DB, chukua bank yoyote ili form isivunjike
+        if not deduped:
+            deduped = list(User.objects.filter(role='bank', is_active=True).order_by('id')[:1])
         ctx['banks'] = deduped
         if prop_id:
             try: ctx['selected_property'] = Property.objects.get(id=prop_id, is_deleted=False)
             except: ctx['selected_property'] = None
         else:
             ctx['selected_property'] = None
-        # Bank preselect - support ?bank=crdb (slug) or id
+        # Bank preselect - pilot ni NCBA pekee, auto-select kama hakuna ?bank
         ctx['selected_bank'] = None
         ctx['selected_bank_slug'] = bank_param
         if bank_param:
             try:
                 if bank_param.isdigit():
-                    ctx['selected_bank'] = User.objects.filter(id=int(bank_param), role='bank').first()
+                    cand = User.objects.filter(id=int(bank_param), role='bank').first()
+                    # Kubali tu kama ni pilot bank, vinginevyo tumia pilot
+                    if cand and 'ncba' in ((cand.get_full_name() or '') + ' ' + (cand.email or '')).lower():
+                        ctx['selected_bank'] = cand
                 else:
-                    # slug -> search by name/email (username field was removed - email is the identifier)
                     slug = bank_param.lower()
                     for b in ctx['banks']:
                         if slug in (b.get_full_name() or '').lower() or slug in (b.email or '').lower():
@@ -350,10 +335,14 @@ class CustomerApplyViewApex(NoCacheMixin, TemplateView):
                             break
             except:
                 pass
+        if ctx['selected_bank'] is None and ctx['banks']:
+            # Default: pilot bank (NCBA) ichaguliwe moja kwa moja
+            ctx['selected_bank'] = ctx['banks'][0]
         # Mortgage type label for header
-        type_labels = {'residential':'Residential Mortgage','construction':'Home Construction Mortgage','renovation':'Renovation Mortgage','land':'Land Purchase Mortgage','commercial':'Commercial Property Mortgage'}
+        type_labels = {'residential':'Residential Mortgage','construction':'Home Construction Mortgage','renovation':'Renovation Mortgage','commercial':'Commercial Property Mortgage'}
         ctx['selected_mortgage_type'] = mortgage_type_param
         ctx['selected_mortgage_label'] = type_labels.get(mortgage_type_param, mortgage_type_param.title() + ' Mortgage' if mortgage_type_param else 'Mortgage Application')
+        ctx['countries'] = COUNTRY_CHOICES
         return ctx
 
 class CustomerApplicationsView(NoCacheMixin, TemplateView):
@@ -523,17 +512,22 @@ class CustomerBankRequirementsView(NoCacheMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         from accounts.models import User
-        # REAL DATA from DB - banks registered in the system (interest/fees/limits edited in bank settings)
-        # Support ?bank=crdb/nmb/... (slug matched against bank name/email) or ?bank=<id>
+        # PILOT: bank moja tu (NCBA). ?bank filter ya bank nyingine inapuuzwa.
         bank_filter = self.request.GET.get('bank','').strip()
         slug = bank_filter.lower()
-        qs = User.objects.filter(role='bank', is_active=True).order_by('id')
+        qs = User.get_pilot_banks_qs()
+        if not list(qs[:1]):
+            qs = User.objects.filter(role='bank', is_active=True).order_by('id')[:1]
         banks = list(qs)
         if slug:
             if slug.isdigit():
-                banks = [b for b in banks if str(b.id) == slug]
+                cand = [b for b in banks if str(b.id) == slug]
+                banks = cand if cand else banks
+            elif 'ncba' not in slug:
+                # Mteja akitafuta bank nyingine (crdb/nmb...), mwonyeshe pilot tu
+                pass
             else:
-                banks = [b for b in banks if slug in (b.get_full_name() or '').lower() or slug in (b.email or '').lower()]
+                banks = [b for b in banks if slug in (b.get_full_name() or '').lower() or slug in (b.email or '').lower()] or banks
         # Split comma/newline-separated requirements into a clean bullet list
         # so they render as points, not one cramped paragraph.
         import re as _re
@@ -541,9 +535,10 @@ class CustomerBankRequirementsView(NoCacheMixin, TemplateView):
             raw = (b.bank_requirements or '')
             b.req_list = [p.strip(' .') for p in _re.split(r'[,\n;]+', raw) if p.strip(' .')]
         ctx['banks'] = banks
-        ctx['all_banks'] = list(qs)
+        ctx['all_banks'] = banks
         ctx['bank_filter'] = slug
         ctx['bank_filter_name'] = bank_filter
+        ctx['pilot_bank'] = banks[0] if banks else None
         return ctx
 
 class CustomerNotificationsView(NoCacheMixin, TemplateView):
@@ -611,8 +606,8 @@ class CustomerSearchView(NoCacheMixin, TemplateView):
             for c in Contract.objects.filter(customer=self.request.user).select_related('mortgage__property')[:10]:
                 if q.lower() in c.mortgage.property.title.lower() or q.lower() in str(c.id):
                     results.append({'type':'Contract','title':f'Contract #CTR-{c.id} - {c.mortgage.property.title}','desc':c.get_status_display(),'url':'/customer/contracts/','icon':'mdi-file-document-box','badged':'Contract'})
-        # Bank requirements static
-        banks = ['CRDB Bank','NMB Bank','NCBA Bank','NBC Bank','TCB Bank','Mwanqa Hakika Bank']
+        # Bank requirements - PILOT: NCBA pekee
+        banks = ['NCBA Bank']
         for b in banks:
             if q.lower() in b.lower():
                 results.append({'type':'Bank','title':b,'desc':'Bank Requirements • Interest & fees','url':'/customer/bank-requirements/','icon':'mdi-bank','badged':'Bank'})
@@ -624,7 +619,7 @@ class CustomerSearchView(NoCacheMixin, TemplateView):
             ('My Applications','/customer/applications/','mdi-file-document'),
             ('My Contracts','/customer/contracts/','mdi-file-document-box'),
             ('Repayment Schedule','/customer/repayment/','mdi-calendar-clock'),
-            ('Property Verification','/customer/verify-property/','mdi-home-search'),
+            ('Check Eligibility','/customer/eligibility/','mdi-shield-check'),
             ('Bank Requirements','/customer/bank-requirements/','mdi-bank'),
             ('Profile','/customer/profile/','mdi-account'),
             ('Notifications','/customer/notifications/','mdi-bell'),
@@ -637,6 +632,126 @@ class CustomerSearchView(NoCacheMixin, TemplateView):
         ctx['results'] = results
         ctx['total'] = len(results)
         return ctx
+
+class CustomerEligibilityView(NoCacheMixin, TemplateView):
+    """GET/POST /customer/eligibility/ - Short qualification check.
+    Customer answers a few questions about employment/business and the desired
+    house amount, then sees which banks they likely qualify for."""
+    template_name = 'customer/customer_eligibility.html'
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        from accounts.models import User
+        ctx['banks'] = User.get_pilot_banks_qs()
+        ctx['pilot_bank'] = User.get_pilot_bank()
+        return ctx
+
+    def post(self, request, *args, **kwargs):
+        from django.contrib import messages
+        from django.shortcuts import redirect
+        from accounts.models import User
+        from mortgages.ai_utils import calculate_affordability, calculate_risk_score
+        data = request.POST
+        customer_type = (data.get('customer_type') or '').strip()
+        monthly_income = float(str(data.get('monthly_income') or '0').replace(',', '')) or 0
+        loan_amount = float(str(data.get('loan_amount') or '0').replace(',', '')) or 0
+        years_in_role = (data.get('years_in_role') or '').strip()
+        business_reg = (data.get('business_reg') or '').strip()
+        try:
+            repayment_period = int(data.get('repayment_period') or 180)
+        except (ValueError, TypeError):
+            repayment_period = 180
+        employment_status = 'employed' if customer_type == 'employed' else 'business_owner'
+
+        # Basic validation
+        if monthly_income <= 0 or loan_amount <= 0:
+            messages.error(request, 'Please enter a valid monthly income and desired loan amount.')
+            return redirect('/customer/eligibility/')
+
+        # Calculate monthly installment using a representative 14% interest rate
+        annual_rate = 0.14
+        monthly_rate = annual_rate / 12
+        try:
+            installment = (loan_amount * monthly_rate * (1 + monthly_rate) ** repayment_period) / \
+                          (((1 + monthly_rate) ** repayment_period) - 1)
+        except Exception:
+            installment = loan_amount / repayment_period
+
+        affordability_score, dti_ratio = calculate_affordability(monthly_income, 0, installment)
+        risk_score = calculate_risk_score(affordability_score, employment_status)
+        can_apply = dti_ratio <= 40 and affordability_score >= 40 and risk_score <= 80
+
+        # Find qualifying banks - PILOT: NCBA pekee
+        banks = User.get_pilot_banks_qs()
+        if not list(banks[:1]):
+            banks = User.objects.filter(role='bank', is_active=True).order_by('id')[:1]
+        qualifying = []
+        for bank in banks:
+            min_loan = float(bank.min_loan_amount or 0)
+            max_loan = float(bank.max_loan_amount or 0)
+            max_period = bank.max_repayment_period or 360
+            fits_amount = (max_loan <= 0 or loan_amount <= max_loan) and loan_amount >= min_loan
+            fits_period = repayment_period <= max_period
+            bank_can = can_apply and fits_amount and fits_period
+            qualifying.append({
+                'bank': bank,
+                'interest_rate': bank.interest_rate or 14.0,
+                'can_apply': bank_can,
+                'reason': 'You meet the basic criteria for this bank.' if bank_can else
+                          ('Loan amount is outside this bank\'s range.' if not fits_amount else
+                           ('Repayment period exceeds this bank\'s maximum.' if not fits_period else
+                            'Affordability/DTI does not meet this bank\'s criteria.')),
+            })
+
+        ctx = self.get_context_data(**kwargs)
+        ctx.update({
+            'submitted': True,
+            'customer_type': customer_type,
+            'monthly_income': int(monthly_income) if monthly_income == int(monthly_income) else monthly_income,
+            'loan_amount': int(loan_amount) if loan_amount == int(loan_amount) else loan_amount,
+            'years_in_role': years_in_role,
+            'business_reg': business_reg,
+            'repayment_period': repayment_period,
+            'installment': installment,
+            'affordability_score': affordability_score,
+            'dti_ratio': dti_ratio,
+            'risk_score': risk_score,
+            'can_apply': can_apply,
+            'qualifying_banks': qualifying,
+        })
+        return self.render_to_response(ctx)
+
+
+class CustomerDeleteAccountView(NoCacheMixin, TemplateView):
+    """POST /customer/profile/delete/ - Delete customer account if allowed."""
+    def post(self, request, *args, **kwargs):
+        from django.contrib import messages
+        from django.contrib.auth import logout
+        from django.shortcuts import redirect
+        user = request.user
+        if not user.is_authenticated:
+            return redirect('/login/')
+        if user.role != 'customer':
+            messages.error(request, 'This action is only available for customer accounts.')
+            return redirect('/customer/profile/')
+        blockers = user.get_account_deletion_blockers()
+        if blockers:
+            for b in blockers:
+                messages.error(request, b)
+            return redirect('/customer/profile/')
+        confirm = request.POST.get('confirm', '').strip()
+        if confirm != 'DELETE':
+            messages.error(request, 'Please type DELETE to confirm account deletion.')
+            return redirect('/customer/profile/')
+        try:
+            user.delete()
+            logout(request)
+            messages.success(request, 'Your account has been deleted successfully.')
+            return redirect('/')
+        except Exception as e:
+            messages.error(request, f'Failed to delete account: {str(e)}')
+            return redirect('/customer/profile/')
+
 
 class CustomerRepaymentView(NoCacheMixin, TemplateView):
     template_name = 'customer/customer_repayment.html'
@@ -1006,10 +1121,42 @@ class SellerContractsViewApex(NoCacheMixin, TemplateView):
         from transactions.models import Contract
         user = self.request.user
         if user.is_authenticated:
-            ctx['contracts'] = Contract.objects.filter(seller=user).select_related('mortgage__property','customer','bank').order_by('-created_at')
+            ctx['contracts'] = Contract.objects.filter(seller=user, is_published=True).select_related('mortgage__property','customer','bank').order_by('-created_at')
         else:
             ctx['contracts'] = []
         return ctx
+
+
+class SellerContractSignView(NoCacheMixin, TemplateView):
+    """POST /seller/contracts/<id>/sign/ - Seller marks their signature on a contract.
+    Fully signed contracts move to 'signed' status."""
+    template_name = 'seller/seller_contracts.html'
+    def post(self, request, *args, **kwargs):
+        from django.contrib import messages
+        from django.shortcuts import redirect
+        from transactions.models import Contract
+        from datetime import date
+        contract_id = kwargs.get('pk')
+        user = request.user
+        try:
+            contract = Contract.objects.select_related('mortgage__property').get(pk=contract_id, seller=user)
+            if contract.status in ('executed',):
+                messages.info(request, "This contract is already executed.")
+                return redirect('/seller/contracts/')
+            contract.seller_signed = True
+            contract.signed_date = contract.signed_date or date.today()
+            if contract.is_fully_signed():
+                contract.status = 'signed'
+            else:
+                contract.status = 'pending_signature'
+            contract.save(update_fields=['seller_signed', 'signed_date', 'status', 'updated_at'])
+            messages.success(request, "Your signature has been recorded. Waiting for buyer and bank signatures.")
+        except Contract.DoesNotExist:
+            messages.error(request, "Contract not found.")
+        except Exception:
+            messages.error(request, "Failed to record signature.")
+        return redirect('/seller/contracts/')
+
 
 class SellerSalesView(NoCacheMixin, TemplateView):
     template_name = 'seller/seller_sales.html'
@@ -1018,7 +1165,7 @@ class SellerSalesView(NoCacheMixin, TemplateView):
         from transactions.models import Contract
         user = self.request.user
         if user.is_authenticated:
-            qs = Contract.objects.filter(seller=user, status='executed').select_related('mortgage__property','customer')
+            qs = Contract.objects.filter(seller=user, status='executed', is_published=True).select_related('mortgage__property','customer')
             ctx['sales'] = qs.order_by('-executed_date','-created_at')
             total = qs.aggregate(s=Sum('mortgage__loan_amount'))['s'] or 0
             ctx['total_revenue'] = total
@@ -1043,7 +1190,7 @@ class RealEstateDashboardView(NoCacheMixin, TemplateView):
         if user.is_authenticated and user.role == 'realestate':
             qs_props = Property.objects.filter(is_deleted=False, seller=user)
             qs_apps = MortgageApplication.objects.filter(property__seller=user)
-            qs_contracts = Contract.objects.filter(seller=user)
+            qs_contracts = Contract.objects.filter(seller=user, is_published=True)
             ctx['stats'] = {
                 'total_properties': qs_props.count(),
                 'total_applications': qs_apps.count(),
@@ -1221,10 +1368,10 @@ class RealEstateContractsView(NoCacheMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         from transactions.models import Contract
         user = self.request.user
+        qs = Contract.objects.filter(is_published=True).select_related('mortgage__property','customer','seller')
         if user.is_authenticated and user.role == 'realestate':
-            ctx['contracts'] = Contract.objects.filter(seller=user).select_related('mortgage__property','customer','seller').order_by('-created_at')[:50]
-        else:
-            ctx['contracts'] = Contract.objects.select_related('mortgage__property','customer','seller').order_by('-created_at')[:50]
+            qs = qs.filter(seller=user)
+        ctx['contracts'] = qs.order_by('-created_at')[:50]
         return ctx
 
 class RealEstateBuyersView(NoCacheMixin, TemplateView):
@@ -1274,7 +1421,10 @@ class RealEstateBanksView(NoCacheMixin, TemplateView):
         from accounts.models import User
         from mortgages.models import MortgageApplication
         import re as _re
-        banks = list(User.objects.filter(role='bank', is_active=True).order_by('first_name'))
+        # PILOT: watumiaji wengine (realestate/seller) wanaona NCBA pekee
+        banks = list(User.get_pilot_banks_qs())
+        if not banks:
+            banks = list(User.objects.filter(role='bank', is_active=True).order_by('first_name')[:1])
         user = self.request.user
         own_apps = None
         if user.is_authenticated and getattr(user, 'role', '') == 'realestate':
@@ -1295,10 +1445,11 @@ class RealEstateBanksView(NoCacheMixin, TemplateView):
         except Exception:
             apps_total = 0
         ctx['stats'] = {
-            'total': User.objects.filter(role='bank').count(),
-            'active': User.objects.filter(role='bank', is_verified=True).count(),
+            'total': len(banks),
+            'active': len(banks),
             'applications': apps_total,
         }
+        ctx['pilot_bank'] = banks[0] if banks else None
         return ctx
 
 class RealEstateReportsView(NoCacheMixin, TemplateView):
@@ -1313,7 +1464,7 @@ class RealEstateReportsView(NoCacheMixin, TemplateView):
         if user.is_authenticated and user.role == 'realestate':
             props = Property.objects.filter(is_deleted=False, seller=user)
             apps = MortgageApplication.objects.filter(property__seller=user)
-            contracts = Contract.objects.filter(seller=user)
+            contracts = Contract.objects.filter(seller=user, is_published=True)
         else:
             props = Property.objects.filter(is_deleted=False)
             apps = MortgageApplication.objects.all()
@@ -1359,7 +1510,7 @@ class RealEstateNotificationsView(NoCacheMixin, TemplateView):
                     'text': f"{a.customer.get_full_name() if a.customer else '-'} applied for {a.property.title if a.property else '-'} • TZS {a.loan_amount}",
                     'date': a.created_at, 'link': '/realestate/applications/',
                 })
-            for c in Contract.objects.filter(seller=user).select_related('mortgage__property').order_by('-created_at')[:3]:
+            for c in Contract.objects.filter(seller=user, is_published=True).select_related('mortgage__property').order_by('-created_at')[:3]:
                 items.append({
                     'icon': 'mdi-file-sign', 'color': '#00d25b',
                     'title': f"Contract #{c.id} • {c.get_status_display()}",
@@ -1396,7 +1547,7 @@ class RealEstateSearchView(NoCacheMixin, TemplateView):
             Q(customer__first_name__icontains=q) | Q(customer__last_name__icontains=q) |
             Q(customer__email__icontains=q) | Q(property__title__icontains=q)
         ).select_related('customer', 'property').order_by('-created_at')[:10])
-        cons = Contract.objects.filter(seller=user) if is_re else Contract.objects.all()
+        cons = Contract.objects.filter(seller=user, is_published=True) if is_re else Contract.objects.filter(is_published=True)
         try:
             con_q = cons.filter(Q(id=int(q)) | Q(customer__first_name__icontains=q) | Q(customer__last_name__icontains=q))
         except (ValueError, TypeError):
@@ -1683,7 +1834,7 @@ class SellerNotificationsView(NoCacheMixin, TemplateView):
                     'date': a.created_at, 'link': '/seller/buyers/',
                     'read': a.status != 'pending',
                 })
-            for c in Contract.objects.filter(seller=user).order_by('-created_at')[:10]:
+            for c in Contract.objects.filter(seller=user, is_published=True).order_by('-created_at')[:10]:
                 ptitle = '-'
                 try:
                     ptitle = c.mortgage.property.title if c.mortgage and c.mortgage.property else '-'

@@ -45,10 +45,15 @@
                 <td style="padding:16px 20px; border-bottom:1px solid #2c2e33;"><p class="mb-0" style="font-weight:600; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px;">{{ c.mortgage.property.title }}</p><p class="text-muted mb-0" style="font-size:11px;">{{ c.mortgage.property.location }}</p></td>
                 <td style="padding:16px 20px; border-bottom:1px solid #2c2e33; font-size:12px;"><p class="mb-1"><span class="text-muted">Seller:</span> {{ c.seller.get_full_name }}</p><p class="mb-0"><span class="text-muted">Bank:</span> {{ c.bank.get_full_name }}</p></td>
                 <td style="padding:16px 20px; border-bottom:1px solid #2c2e33; font-weight:700; font-size:13px; color:#0077B6;">TZS {{ c.mortgage.loan_amount|intcomma }}</td>
-                <td style="padding:16px 20px; border-bottom:1px solid #2c2e33;"><span class="badge" style="padding:6px 12px; border-radius:20px; font-size:11px; {% if c.status == 'executed' %}background:rgba(0,210,91,0.15); color:#00d25b; border:1px solid rgba(0,210,91,0.3);{% elif c.status == 'signed' %}background:rgba(0,119,182,0.15); color:#0077B6; border:1px solid rgba(0,119,182,0.3);{% elif c.status == 'pending_signature' %}background:rgba(255,193,7,0.15); color:#ffc107; border:1px solid rgba(255,193,7,0.3);{% else %}background:#2c2e33; color:#6c7293;{% endif %}">{{ c.get_status_display }}</span></td>
+                <td style="padding:16px 20px; border-bottom:1px solid #2c2e33;">
+                  <span class="badge" style="padding:6px 12px; border-radius:20px; font-size:11px; {% if c.status == 'executed' %}background:rgba(0,210,91,0.15); color:#00d25b; border:1px solid rgba(0,210,91,0.3);{% elif c.status == 'signed' %}background:rgba(0,119,182,0.15); color:#0077B6; border:1px solid rgba(0,119,182,0.3);{% elif c.status == 'pending_signature' %}background:rgba(255,193,7,0.15); color:#ffc107; border:1px solid rgba(255,193,7,0.3);{% else %}background:#2c2e33; color:#6c7293;{% endif %}">{{ c.get_status_display }}</span>
+                  {% if c.status == 'pending_signature' and c.physical_signing_date %}
+                    <p class="mb-0 mt-1 text-muted" style="font-size:11px;">Sign on {{ c.physical_signing_date|date:"d M Y" }}<br>{{ c.physical_signing_location|default:"" }}</p>
+                  {% endif %}
+                </td>
                 <td style="padding:16px 20px; border-bottom:1px solid #2c2e33; text-align:right;">
-                  {% if c.contract_file %}<a href="{{ c.contract_file.url }}" class="btn btn-outline-secondary btn-sm" style="border-radius:6px; padding:4px 8px;"><i class="mdi mdi-download"></i></a>{% endif %}
-                  <a href="#" class="btn btn-primary btn-sm" style="border-radius:6px; padding:4px 8px;"><i class="mdi mdi-eye"></i></a>
+                  {% if c.signed_contract_file %}<a href="{{ c.signed_contract_file.url }}" download class="btn btn-sm" style="border-radius:6px; padding:4px 10px; background:rgba(0,210,91,0.15); color:#00d25b; border:1px solid rgba(0,210,91,0.3);"><i class="mdi mdi-download mr-1"></i> Download Signed</a>
+                  {% elif c.contract_file %}<a href="{{ c.contract_file.url }}" target="_blank" class="btn btn-outline-secondary btn-sm" style="border-radius:6px; padding:4px 8px;"><i class="mdi mdi-eye"></i></a>{% endif %}
                 </td>
               </tr>
               {% empty %}

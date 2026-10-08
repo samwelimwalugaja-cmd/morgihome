@@ -14,6 +14,7 @@ class ApplicationStatusScreen extends StatefulWidget {
 class _ApplicationStatusScreenState extends State<ApplicationStatusScreen> {
   final _api = ApiService();
   List<MortgageApplication> _apps = [];
+  List<MortgageApplication> _drafts = [];
   bool _loading = true;
 
   @override
@@ -26,9 +27,30 @@ class _ApplicationStatusScreenState extends State<ApplicationStatusScreen> {
     setState(() => _loading = true);
     try {
       final apps = await _api.getMyApplications();
-      setState(() { _apps = apps; _loading = false; });
+      List<MortgageApplication> drafts = [];
+      try {
+        drafts = await _api.getDrafts();
+      } catch (_) {}
+      if (!mounted) return;
+      setState(() {
+        _apps = apps;
+        _drafts = drafts;
+        _loading = false;
+      });
     } catch (e) {
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _discardDraft(int id) async {
+    try {
+      await _api.deleteDraft(id);
+      _load();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.toString().replaceAll('Exception:', '').trim())));
+      }
     }
   }
 
@@ -61,7 +83,7 @@ class _ApplicationStatusScreenState extends State<ApplicationStatusScreen> {
       drawer: const CustomerDrawer(active: 'applications'),
       body: _loading
           ? const LoadingSpinner()
-          : _apps.isEmpty
+          : (_apps.isEmpty && _drafts.isEmpty)
               ? Center(
                   child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                     const Icon(Icons.description_outlined, size: 64, color: Colors.grey),
@@ -73,12 +95,57 @@ class _ApplicationStatusScreenState extends State<ApplicationStatusScreen> {
                 )
               : RefreshIndicator(
                   onRefresh: _load,
-                  child: ListView.builder(
+                  child: ListView(
                     padding: const EdgeInsets.all(12),
-                    itemCount: _apps.length,
-                    itemBuilder: (context, i) {
-                      final app = _apps[i];
-                      return InkWell(
+                    children: [
+                      if (_drafts.isNotEmpty) ...[
+                        const Padding(
+                          padding: EdgeInsets.fromLTRB(4, 0, 4, 8),
+                          child: Text('Drafts — continue where you left off',
+                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                        ),
+                        ..._drafts.map((d) => Container(
+                              margin: const EdgeInsets.only(bottom: 10),
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                  color: const Color(0xFFFFFBEB),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFFFDE68A))),
+                              child: Row(children: [
+                                const Icon(Icons.edit_note,
+                                    color: Color(AppConstants.primaryColorValue)),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                    child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                      Text(
+                                          '${d.mortgageType ?? 'Mortgage'} draft${d.propertyTitle != null ? ' • ${d.propertyTitle}' : ''}',
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 13)),
+                                      Text('TZS ${d.loanAmount}',
+                                          style: const TextStyle(
+                                              color: Colors.grey, fontSize: 12)),
+                                    ])),
+                                TextButton(
+                                    onPressed: () => Navigator.pushNamed(
+                                        context, '/mortgage-apply', arguments: {
+                                          'mortgage_type':
+                                              d.mortgageType ?? 'residential'
+                                        }),
+                                    child: const Text('Resume')),
+                                IconButton(
+                                    tooltip: 'Discard',
+                                    icon: const Icon(Icons.delete_outline,
+                                        size: 20, color: Colors.grey),
+                                    onPressed: () => _discardDraft(d.id)),
+                              ]),
+                            )),
+                        const SizedBox(height: 8),
+                      ],
+                      ..._apps.map((app) => InkWell(
                         onTap: () => Navigator.pushNamed(context, '/application-detail', arguments: app.id),
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
@@ -118,8 +185,8 @@ class _ApplicationStatusScreenState extends State<ApplicationStatusScreen> {
                           ),
                         ),
                         ),
-                      );
-                    },
+                      )),
+                    ],
                   ),
                 ),
       bottomNavigationBar: BottomNavigationBar(

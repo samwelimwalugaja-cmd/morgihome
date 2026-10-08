@@ -24,6 +24,7 @@ class MortgageApplication {
   final String? reviewMessage;
   final String? reviewNote;
   final List<TimelineEntry> timeline;
+  final List<CorrectionEntry> corrections;
 
   MortgageApplication({
     required this.id,
@@ -51,6 +52,7 @@ class MortgageApplication {
     this.reviewMessage,
     this.reviewNote,
     this.timeline = const [],
+    this.corrections = const [],
   });
 
   factory MortgageApplication.fromJson(Map<String, dynamic> json) {
@@ -79,6 +81,12 @@ class MortgageApplication {
       timeline = rawTimeline.whereType<Map>().map((e) => TimelineEntry.fromJson(Map<String, dynamic>.from(e))).toList();
     }
 
+    List<CorrectionEntry> corrections = [];
+    final rawCorr = json['corrections'];
+    if (rawCorr is List) {
+      corrections = rawCorr.whereType<Map>().map((e) => CorrectionEntry.fromJson(Map<String, dynamic>.from(e))).toList();
+    }
+
     return MortgageApplication(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
       applicationNumber: json['application_number'] ?? json['applicationNumber'] ?? 'APP-${json['id']}',
@@ -105,6 +113,7 @@ class MortgageApplication {
       reviewMessage: json['review_message']?.toString(),
       reviewNote: json['review_note']?.toString(),
       timeline: timeline,
+      corrections: corrections,
     );
   }
 
@@ -188,4 +197,31 @@ class TimelineEntry {
         return stage;
     }
   }
+}
+
+/// Bank correction request — like web track page correction box.
+class CorrectionEntry {
+  final int id;
+  final String kind;
+  final String target;
+  final String instructions;
+  final String status;
+
+  CorrectionEntry(
+      {required this.id,
+      required this.kind,
+      required this.target,
+      required this.instructions,
+      required this.status});
+
+  factory CorrectionEntry.fromJson(Map<String, dynamic> json) =>
+      CorrectionEntry(
+        id: json['id'] is int
+            ? json['id']
+            : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+        kind: json['kind']?.toString() ?? 'document',
+        target: json['target']?.toString() ?? '',
+        instructions: json['instructions']?.toString() ?? '',
+        status: json['status']?.toString() ?? 'pending',
+      );
 }

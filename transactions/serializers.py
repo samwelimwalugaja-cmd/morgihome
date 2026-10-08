@@ -14,8 +14,11 @@ class ContractSerializer(serializers.ModelSerializer):
         model = Contract
         fields = ['id', 'mortgage', 'mortgage_details', 'customer', 'customer_name',
                   'seller', 'seller_name', 'bank', 'bank_name',
-                  'contract_file', 'status', 'customer_signed', 'seller_signed',
-                  'bank_signed', 'signed_date', 'executed_date',
+                  'contract_file', 'signed_contract_file', 'status',
+                  'is_published', 'published_at',
+                  'customer_signed', 'seller_signed', 'bank_signed',
+                  'signed_date', 'executed_date',
+                  'physical_signing_date', 'physical_signing_location',
                   'notes', 'created_at', 'updated_at']
         read_only_fields = ['created_at', 'updated_at']
 

@@ -89,6 +89,15 @@
     .sidebar .nav .nav-link .menu-icon i { font-size:18px !important; line-height:1; display:inline-block !important; visibility:visible !important; opacity:1 !important; }
     .sidebar .nav .nav-link .menu-title { font-size:13px; }
     .count.bg-danger { background:#ff3b30 !important; }
+    /* SweetAlert dark theme - make select/options readable */
+    .morgi-swal-dark { background:#191c24 !important; color:#fff !important; }
+    .morgi-swal-dark .swal2-title, .morgi-swal-dark .swal2-html-container { color:#fff !important; }
+    .morgi-swal-input, .morgi-swal-dark select, .morgi-swal-dark input, .morgi-swal-dark textarea {
+      background:#2c2e33 !important; color:#fff !important; border-color:#444 !important;
+    }
+    .morgi-swal-input option, .morgi-swal-dark option { background:#2c2e33 !important; color:#fff !important; }
+    .swal2-popup { background:#191c24 !important; color:#fff !important; }
+    .swal2-popup .swal2-title, .swal2-popup .swal2-html-container { color:#fff !important; }
     /* file input fix for profile */
     input[type="file"].form-control, .form-control[type="file"] { background:#2c2e33 !important; border-color:#444 !important; color:#fff !important; }
     input[type="file"].form-control::file-selector-button, .form-control[type="file"]::file-selector-button,
@@ -172,6 +181,9 @@
             </ul>
           </div>
         </li>
+        <li class="nav-item menu-items {% if request.path == '/customer/eligibility/' %}active{% endif %}">
+          <a class="nav-link" href="/customer/eligibility/"><span class="menu-icon"><i class="mdi mdi-shield-check"></i></span><span class="menu-title">Check Eligibility</span></a>
+        </li>
         <li class="nav-item menu-items {% if request.path == '/customer/properties/' or '/properties/' in request.path %}active{% endif %}">
           <a class="nav-link" href="/customer/properties/"><span class="menu-icon"><i class="mdi mdi-home"></i></span><span class="menu-title">Properties</span></a>
         </li>
@@ -195,9 +207,6 @@
         </li>
         <li class="nav-item menu-items {% if request.path == '/customer/repayment/' or '/customer/pay' in request.path %}active{% endif %}">
           <a class="nav-link" href="/customer/repayment/"><span class="menu-icon"><i class="mdi mdi-calendar-clock"></i></span><span class="menu-title">Repayment Schedule</span></a>
-        </li>
-        <li class="nav-item menu-items {% if request.path == '/customer/verify-property/' %}active{% endif %}">
-          <a class="nav-link" href="/customer/verify-property/"><span class="menu-icon"><i class="mdi mdi-home-search"></i></span><span class="menu-title">Property Verification</span></a>
         </li>
         <li class="nav-item nav-category"><span class="nav-link">System</span></li>
         <li class="nav-item menu-items"><a class="nav-link" href="#" onclick="coronaLogout(); return false;"><span class="menu-icon"><i class="mdi mdi-logout"></i></span><span class="menu-title">Logout</span></a></li>
@@ -425,7 +434,6 @@
               'residential': 'Residential Mortgage — Buy house/apartment',
               'construction': 'Home Construction — Build new house',
               'renovation': 'Renovation — Semi Finish',
-              'land': 'Land Purchase — Buy land/plot',
               'commercial': 'Commercial Property'
             },
             inputPlaceholder: 'Select mortgage type',
@@ -433,6 +441,12 @@
             confirmButtonText: 'Continue',
             confirmButtonColor: '#0077B6',
             cancelButtonText: 'Cancel',
+            customClass: {
+              popup: 'morgi-swal-dark',
+              input: 'morgi-swal-input',
+              confirmButton: 'btn btn-primary',
+              cancelButton: 'btn btn-outline-secondary'
+            },
             inputValidator: (value) => { if(!value) return 'Please select a type'; }
           }).then((result)=>{
             if(result.isConfirmed && result.value){
@@ -451,7 +465,7 @@
           s.src='https://cdn.jsdelivr.net/npm/sweetalert2@11';
           s.onload=doSwal;
           s.onerror=function(){
-            const v = prompt('Enter mortgage type: residential, construction, renovation, land, commercial','residential');
+            const v = prompt('Enter mortgage type: residential, construction, renovation, commercial','residential');
             if(v){
               let url = href;
               const sep = url.includes('?') ? '&' : '?';

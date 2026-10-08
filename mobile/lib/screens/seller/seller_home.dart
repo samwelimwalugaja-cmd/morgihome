@@ -188,6 +188,7 @@ class _SellerHomeScreenState extends State<SellerHomeScreen> {
           _drawerItem(context, Icons.group, 'Interested Buyers', '/seller-buyers'),
           _drawerItem(context, Icons.handshake, 'My Contracts', '/contracts'),
           _drawerItem(context, Icons.trending_up, 'Sales', '/seller-sales'),
+          _drawerItem(context, Icons.notifications, 'Notifications', '/notifications'),
           _drawerItem(context, Icons.person, 'Profile', '/profile'),
           const Divider(),
           ListTile(leading: const Icon(Icons.logout, color: Colors.red), title: const Text('Logout'), onTap: _logout),

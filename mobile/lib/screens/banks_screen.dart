@@ -63,7 +63,7 @@ class _BanksScreenState extends State<BanksScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
-      appBar: AppBar(backgroundColor: const Color(AppConstants.secondaryColorValue), title: Text(_filter.isEmpty ? 'Bank Requirements' : 'Bank Requirements • ${_filter.toUpperCase()}', style: const TextStyle(color: Colors.white, fontSize: 16)), iconTheme: const IconThemeData(color: Colors.white)),
+      appBar: AppBar(backgroundColor: const Color(AppConstants.secondaryColorValue), title: Text(_filter.isEmpty ? 'Bank Requirements (NCBA Pilot)' : 'Bank Requirements • ${_filter.toUpperCase()}', style: const TextStyle(color: Colors.white, fontSize: 16)), iconTheme: const IconThemeData(color: Colors.white)),
       drawer: const CustomerDrawer(active: 'banks'),
       body: _loading
           ? const Center(child: CircularProgressIndicator())

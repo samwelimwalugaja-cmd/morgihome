@@ -3,9 +3,9 @@ import '../services/api_service.dart';
 import '../utils/constants.dart';
 
 /// Mortgage-applicant sidebar — mirrors web (customer_base.html) exactly:
-/// Dashboard, Properties, Apply Mortgage (5 types), My Applications,
-/// My Contracts, Repayment Schedule, Property Verification,
-/// Bank Requirements (All + 6 banks), Search, Notifications, Profile, Logout.
+/// Dashboard, Bank Requirements (pilot: NCBA only), Check Eligibility, Properties,
+/// Apply Mortgage (4 types), My Applications, My Contracts, Repayment Schedule,
+/// Search, Notifications, Profile, Logout.
 class CustomerDrawer extends StatelessWidget {
   final String active;
   const CustomerDrawer({super.key, this.active = ''});
@@ -14,18 +14,11 @@ class CustomerDrawer extends StatelessWidget {
     {'label': 'Residential Mortgage', 'value': 'residential'},
     {'label': 'Home Construction', 'value': 'construction'},
     {'label': 'Renovation Mortgage', 'value': 'renovation'},
-    {'label': 'Land Purchase', 'value': 'land'},
     {'label': 'Commercial Property', 'value': 'commercial'},
   ];
 
   static const bankFilters = [
-    {'label': 'All Banks', 'value': ''},
-    {'label': 'CRDB Bank', 'value': 'crdb'},
-    {'label': 'NMB Bank', 'value': 'nmb'},
-    {'label': 'NCBA Bank', 'value': 'ncba'},
-    {'label': 'NBC Bank', 'value': 'nbc'},
-    {'label': 'TCB Bank', 'value': 'tcb'},
-    {'label': 'Mwanqa Hakika Bank', 'value': 'mwanqa'},
+    {'label': 'NCBA Bank (Pilot)', 'value': 'ncba'},
   ];
 
   @override
@@ -50,6 +43,8 @@ class CustomerDrawer extends StatelessWidget {
           ),
           const Padding(padding: EdgeInsets.fromLTRB(16, 8, 16, 4), child: Text('MAIN', style: TextStyle(color: Colors.grey, fontSize: 11, letterSpacing: 1))),
           _item(context, Icons.dashboard, 'Dashboard', '/dashboard', isActive: active == 'dashboard'),
+          _item(context, Icons.account_balance, 'Bank Requirements (NCBA)', '/banks', isActive: active == 'banks'),
+          _item(context, Icons.verified_user, 'Check Eligibility', '/eligibility', isActive: active == 'eligibility'),
           _item(context, Icons.home, 'Properties', '/home', isActive: active == 'home'),
           ExpansionTile(
             leading: const Icon(Icons.add_circle, color: Color(AppConstants.primaryColorValue)),
@@ -70,23 +65,6 @@ class CustomerDrawer extends StatelessWidget {
           _item(context, Icons.description, 'My Applications', '/applications', isActive: active == 'applications'),
           _item(context, Icons.handshake, 'My Contracts', '/contracts', isActive: active == 'contracts'),
           _item(context, Icons.calendar_month, 'Repayment Schedule', '/repayment', isActive: active == 'repayment'),
-          _item(context, Icons.home_work, 'Property Verification', '/verify-property', isActive: active == 'verify'),
-          ExpansionTile(
-            leading: const Icon(Icons.account_balance, color: Color(AppConstants.primaryColorValue)),
-            title: const Text('Bank Requirements', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-            initiallyExpanded: active == 'banks',
-            children: bankFilters
-                .map((b) => ListTile(
-                      contentPadding: const EdgeInsets.only(left: 56, right: 16),
-                      title: Text(b['label']!, style: const TextStyle(fontSize: 13)),
-                      trailing: const Icon(Icons.chevron_right, size: 16, color: Colors.grey),
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.pushNamed(context, '/banks', arguments: {'filter': b['value']});
-                      },
-                    ))
-                .toList(),
-          ),
           const Padding(padding: EdgeInsets.fromLTRB(16, 8, 16, 4), child: Text('SYSTEM', style: TextStyle(color: Colors.grey, fontSize: 11, letterSpacing: 1))),
           _item(context, Icons.search, 'Search', '/search', isActive: active == 'search'),
           _item(context, Icons.notifications, 'Notifications', '/notifications', isActive: active == 'notifications'),

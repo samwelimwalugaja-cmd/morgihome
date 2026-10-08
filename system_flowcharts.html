@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MorgiHome — System Flowcharts</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true, theme: 'default' });</script>
+<style>
+  body { font-family: Segoe UI, Arial, sans-serif; background: #f1f5f9; margin: 0; padding: 24px; }
+  h1 { color: #0A2B4E; }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+  .card h2 { color: #0077B6; margin-top: 0; }
+  .mermaid { overflow-x: auto; }
+</style>
+</head>
+<body>
+
+<h1>MorgiHome — Flowchart ya System Nzima</h1>
+<p>Kuanzia register &amp; login hadi kila user anachofanya. (Pilot bank: <strong>NCBA</strong>)</p>
+
+<div class="card">
+<h2>1. Kuingia kwenye System — Register &amp; Login</h2>
+<pre class="mermaid">
+flowchart TD
+  A["Mgeni anaingia MorgiHome"] --> B["Browse: homepage, properties, banks, FAQ, calculator"]
+  B --> C{"Ana account?"}
+  C -- "Hana" --> D["Signup: customer au seller"]
+  D --> E["Email ya verification inatumwa"]
+  E --> F{"Click link?"}
+  F -- "Ndiyo" --> G["Account verified"]
+  F -- "Hapana" --> H["Resend verification"]
+  H --> E
+  C -- "Anayo" --> I["Login: email + password"]
+  G --> I
+  I --> J{"Role?"}
+  J -- "customer" --> K["Customer dashboard"]
+  J -- "seller" --> L["Seller dashboard"]
+  J -- "bank" --> M["Bank portal: web only"]
+  J -- "realestate" --> N["RealEstate portal: web only"]
+  J -- "admin" --> O["Admin panel"]
+</pre>
+</div>
+
+<div class="card">
+<h2>2. Customer — Mwombaji wa Mortgage</h2>
+<pre class="mermaid">
+flowchart TD
+  A["Customer dashboard"] --> B["Angalia NCBA requirements"]
+  A --> C["Check eligibility: sekunde 30"]
+  C --> D{"Qualify?"}
+  D -- "Ndiyo" --> E["Apply mortgage"]
+  D -- "Hapana" --> F["Punguza mkopo au ongeza period"]
+  F --> C
+  A --> G["Browse property + verify e-Ardhi"]
+  G --> E
+  E --> H["Fomu: personal, NIDA, kazi/biashara, NCBA + account, mkopo, docs. Auto-save draft"]
+  H --> I["Submit: status pending"]
+  I --> J["Track live: stages 5 za bank"]
+  J --> K{"Bank correction?"}
+  K -- "Ndiyo" --> L["Jibu correction"] --> J
+  K -- "Hapana" --> M{"Decision?"}
+  M -- "Approved" --> N["Sign contract"] --> O["Repayment schedule"]
+  M -- "Rejected" --> P["Chagua nyumba nyingine"]
+</pre>
+</div>
+
+<div class="card">
+<h2>3. Seller — Muuzaji wa Nyumba</h2>
+<pre class="mermaid">
+flowchart TD
+  A["Seller dashboard"] --> B["Add property: pics 5, docs, NAPA"]
+  B --> C["Property available sokoni"]
+  C --> D["Buyer ana-apply: Interested Buyers"]
+  D --> E["Contract inatengenezwa baada ya approval"]
+  E --> F["Seller sign"]
+  F --> G["Customer + Bank sign: executed"]
+  G --> H["Sales + revenue"]
+  A --> I["Edit au delete property"]
+  A --> J["Notifications + profile"]
+</pre>
+</div>
+
+<div class="card">
+<h2>4. Bank — NCBA Pilot</h2>
+<pre class="mermaid">
+flowchart TD
+  A["Bank dashboard NCBA"] --> B["All applications"]
+  B --> C["Fungua: docs + AI assessment"]
+  C --> D["Confirm: docs, CRB, valuation, credit, decision"]
+  D --> E{"Docs kamili?"}
+  E -- "Hapana" --> F["Request correction"] --> G["Customer anajibu"] --> D
+  E -- "Ndiyo" --> H{"Decision?"}
+  H -- "Approve" --> I["Schedule + contract: property sold"]
+  H -- "Reject + sababu" --> J["Property available tena"]
+  I --> K["Sign contract"] --> L["Execute: disbursed"]
+  A --> M["Settings: interest, fees, limits, requirements"]
+  A --> N["Reports + PDF export"]
+</pre>
+</div>
+
+<div class="card">
+<h2>5. Hali za Application — State Machine</h2>
+<pre class="mermaid">
+flowchart LR
+  A["draft"] --> B["pending"]
+  B --> C["document_verification"]
+  C --> D["crb_check"]
+  D --> E["valuation"]
+  E --> F["credit_assessment"]
+  F --> G["approved"]
+  F --> H["rejected"]
+  G --> I["disbursed"]
+</pre>
+</div>
+
+<div class="card">
+<h2>6. Hali za Contract — State Machine</h2>
+<pre class="mermaid">
+flowchart LR
+  A["draft"] --> B["pending_signature"]
+  B --> C["signed: wote wamesign"]
+  C --> D["executed: bank"]
+</pre>
+</div>
+
+<div class="card">
+<h2>7. RealEstate + Admin — Kifupi</h2>
+<pre class="mermaid">
+flowchart TD
+  A["RealEstate dashboard: web only"] --> B["Manage properties za kampuni"]
+  A --> C["Buyers + applications + contracts"]
+  A --> D["Partner banks: NCBA + reports"]
+  E["Admin panel"] --> F["Manage users wote"]
+  E --> G["Verify docs za bank na realestate"]
+  E --> H["Tengeneza bank account: role bank"]
+  E --> I["Ona applications na contracts zote"]
+</pre>
+</div>
+
+</body>
+</html>

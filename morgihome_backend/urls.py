@@ -22,8 +22,8 @@ from accounts.views import (
 from accounts.dashboard_views import (
     DashboardRedirectView,
     ProfileView, CustomerProfileView, SellerProfileView, RealEstateProfileView,
-    CustomerDashboardView, CustomerPropertiesView, CustomerApplyViewApex, CustomerApplicationsView, CustomerTrackView, CustomerCorrectionRespondView, CustomerContractsView, CustomerVerifyPropertyView, CustomerBankRequirementsView, CustomerRepaymentView, CustomerNotificationsView, CustomerSearchView,
-    SellerDashboardView, SellerPropertiesView, SellerAddPropertyViewApex, SellerEditPropertyView, SellerBuyersViewApex, SellerContractsViewApex, SellerSalesView, SellerPropertyDetailView, SellerPropertyDeleteView, SellerNotificationsView,
+    CustomerDashboardView, CustomerPropertiesView, CustomerApplyViewApex, CustomerApplicationsView, CustomerTrackView, CustomerCorrectionRespondView, CustomerContractsView, CustomerVerifyPropertyView, CustomerBankRequirementsView, CustomerRepaymentView, CustomerNotificationsView, CustomerSearchView, CustomerEligibilityView, CustomerDeleteAccountView,
+    SellerDashboardView, SellerPropertiesView, SellerAddPropertyViewApex, SellerEditPropertyView, SellerBuyersViewApex, SellerContractsViewApex, SellerContractSignView, SellerSalesView, SellerPropertyDetailView, SellerPropertyDeleteView, SellerNotificationsView,
     RealEstateDashboardView, RealEstatePropertiesView, RealEstateAddPropertyView, RealEstateEditPropertyView, RealEstateApplicationsView, RealEstateContractsView, RealEstateBuyersView, RealEstateBuyerDetailView, RealEstateBanksView, RealEstateReportsView, RealEstateNotificationsView, RealEstateSearchView, RealEstatePropertyDeleteView,
     PropertyDetailCoronaView, PublicPropertyDetailView, CustomerPropertyDetailView,
 )
@@ -69,6 +69,7 @@ urlpatterns = [
     path('customer/repayment/', CustomerRepaymentView.as_view(), name='customer_repayment_apex'),
     path('customer/notifications/', CustomerNotificationsView.as_view(), name='customer_notifications'),
     path('customer/search/', CustomerSearchView.as_view(), name='customer_search'),
+    path('customer/eligibility/', CustomerEligibilityView.as_view(), name='customer_eligibility'),
     path('customer/properties/<int:id>/', CustomerPropertyDetailView.as_view(), name='customer_property_detail'),
     path('customer/pay/<int:id>/', CustomerRepaymentView.as_view(), name='customer_pay_apex'),
     path('customer/pay/', CustomerRepaymentView.as_view(), name='customer_pay_generic_apex'),
@@ -82,6 +83,7 @@ urlpatterns = [
     path('seller/properties/', SellerPropertiesView.as_view(), name='seller_properties_apex'),
     path('seller/buyers/', SellerBuyersViewApex.as_view(), name='seller_buyers_apex'),
     path('seller/contracts/', SellerContractsViewApex.as_view(), name='seller_contracts_apex'),
+    path('seller/contracts/<int:pk>/sign/', SellerContractSignView.as_view(), name='seller_contract_sign_apex'),
     path('seller/sales/', SellerSalesView.as_view(), name='seller_sales_apex'),
     path('seller/notifications/', SellerNotificationsView.as_view(), name='seller_notifications'),
     # Legacy seller routes (keep for backwards compat - point to old plainadmin)
@@ -112,6 +114,7 @@ urlpatterns = [
     # ========== Profile - KILA ROLE ANA YAKWE (wasishare) - Corona style ==========
     path('profile/', ProfileView.as_view(), name='profile_page'),
     path('customer/profile/', CustomerProfileView.as_view(), name='customer_profile'),
+    path('customer/profile/delete/', CustomerDeleteAccountView.as_view(), name='customer_delete_account'),
     path('seller/profile/', SellerProfileView.as_view(), name='seller_profile'),
     path('realestate/profile/', RealEstateProfileView.as_view(), name='realestate_profile'),
     # Bank Shadcn Admin - 7 pages (kutoka sampleweb) - production Tailwind + theme toggle

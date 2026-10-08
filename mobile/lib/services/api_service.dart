@@ -643,6 +643,162 @@ class ApiService {
     }
   }
 
+  /// Mortgage drafts — like web 8-step wizard auto-save (POST/PATCH) + resume list (GET).
+  /// GET /api/mortgages/draft/ [?mortgage_type=&property=]
+  Future<List<MortgageApplication>> getDrafts({String? mortgageType, int? propertyId}) async {
+    var url = '$baseUrl${AppConstants.mortgageDraftEndpoint}';
+    final query = <String, String>{};
+    if (mortgageType != null && mortgageType.isNotEmpty) query['mortgage_type'] = mortgageType;
+    if (propertyId != null) query['property'] = propertyId.toString();
+    if (query.isNotEmpty) url += '?${Uri(queryParameters: query).query}';
+    try {
+      final res = await http.get(Uri.parse(url), headers: await _headers(auth: true)).timeout(_timeout);
+      if (res.statusCode == 200) {
+        final decoded = jsonDecode(res.body);
+        final list = decoded is List ? decoded : (decoded is Map && decoded['results'] is List ? decoded['results'] : []);
+        return (list as List).map((e) => MortgageApplication.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+      }
+      throw Exception(_msg(res.body, 'Failed to load drafts (${res.statusCode})'));
+    } catch (e) {
+      if (_isNetworkError(e)) _throwConnectionError(e);
+      rethrow;
+    }
+  }
+
+  /// Save (create/update) a draft — same payload as web wizard autosave.
+  Future<Map<String, dynamic>> saveDraft(Map<String, dynamic> data) async {
+    final url = Uri.parse('$baseUrl${AppConstants.mortgageDraftEndpoint}');
+    try {
+      final res = await http.post(url, headers: await _headers(auth: true), body: jsonEncode(data)).timeout(_timeout);
+      final body = res.body.isNotEmpty ? jsonDecode(res.body) : <String, dynamic>{};
+      if ((res.statusCode == 200 || res.statusCode == 201) && body is Map<String, dynamic>) return body;
+      throw Exception(_msg(res.body, 'Failed to save draft (${res.statusCode})'));
+    } catch (e) {
+      if (_isNetworkError(e)) _throwConnectionError(e);
+      rethrow;
+    }
+  }
+
+  /// Delete one draft — like web "Discard Draft".
+  Future<void> deleteDraft(int id) async {
+    final url = Uri.parse('$baseUrl${AppConstants.mortgagesEndpoint}$id/');
+    try {
+      final res = await http.delete(url, headers: await _headers(auth: true)).timeout(_timeout);
+      if (res.statusCode == 200 || res.statusCode == 204) return;
+      throw Exception(_msg(res.body, 'Failed to discard draft (${res.statusCode})'));
+    } catch (e) {
+      if (_isNetworkError(e)) _throwConnectionError(e);
+      rethrow;
+    }
+  }
+
+  /// Answer a bank correction request — like web track page respond box.
+  /// `POST mortgages/<id>/respond_correction/` with `correction_id` + `response_text`.
+  /// File upload variant uses multipart (`response_file`, max 5MB).
+  Future<Map<String, dynamic>> respondCorrection({required int applicationId, required int correctionId, required String text, XFile? file}) async {
+    final url = Uri.parse('$baseUrl${AppConstants.mortgagesEndpoint}$applicationId/respond_correction/');
+    try {
+      if (file == null) {
+        final res = await http.post(url,
+            headers: await _headers(auth: true),
+            body: jsonEncode({'correction_id': correctionId, 'response_text': text})).timeout(_timeout);
+        final body = res.body.isNotEmpty ? jsonDecode(res.body) : <String, dynamic>{};
+        if (res.statusCode == 200 && body is Map<String, dynamic>) return body;
+        throw Exception(_msg(res.body, 'Failed to send response (${res.statusCode})'));
+      }
+      final req = http.MultipartRequest('POST', url);
+      req.headers.addAll(await _headers(auth: true));
+      req.fields['correction_id'] = correctionId.toString();
+      req.fields['response_text'] = text;
+      req.files.add(await http.MultipartFile.fromPath('response_file', file.path));
+      final streamed = await req.send().timeout(_timeout);
+      final res = await http.Response.fromStream(streamed);
+      final body = res.body.isNotEmpty ? jsonDecode(res.body) : <String, dynamic>{};
+      if (res.statusCode == 200 && body is Map<String, dynamic>) return body;
+      throw Exception(_msg(res.body, 'Failed to send response (${res.statusCode})'));
+    } catch (e) {
+      if (_isNetworkError(e)) _throwConnectionError(e);
+      rethrow;
+    }
+  }
+
+  /// Notifications — like web bell (role-aware endpoint + persisted mark-read).
+  /// GET returns {notifications: [...], unread: n}
+  Future<Map<String, dynamic>> getNotifications() async {
+    final user = await getStoredUser();
+    final ep = (user?.role == 'seller') ? AppConstants.sellerNotificationsEndpoint : AppConstants.notificationsEndpoint;
+    final url = Uri.parse('$baseUrl$ep');
+    try {
+      final res = await http.get(url, headers: await _headers(auth: true)).timeout(_timeout);
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data is Map<String, dynamic>) return data;
+      }
+      throw Exception(_msg(res.body, 'Failed to load notifications (${res.statusCode})'));
+    } catch (e) {
+      if (_isNetworkError(e)) _throwConnectionError(e);
+      rethrow;
+    }
+  }
+
+  /// Mark all notifications as read — badge clears and stays cleared (server-persisted).
+  Future<void> markNotificationsRead() async {
+    final user = await getStoredUser();
+    final ep = (user?.role == 'seller') ? AppConstants.sellerNotificationsEndpoint : AppConstants.notificationsEndpoint;
+    final url = Uri.parse('$baseUrl$ep');
+    try {
+      await http.post(url, headers: await _headers(auth: true)).timeout(_timeout);
+    } catch (e) {
+      if (_isNetworkError(e)) _throwConnectionError(e);
+      rethrow;
+    }
+  }
+
+  /// Forgot password — like web forgot-password page (reset link sent by email).
+  Future<String> forgotPassword(String email) async {
+    final url = Uri.parse('$baseUrl${AppConstants.forgotPasswordEndpoint}');
+    try {
+      final res = await http.post(url, headers: await _headers(), body: jsonEncode({'email': email})).timeout(_timeout);
+      final body = res.body.isNotEmpty ? jsonDecode(res.body) : <String, dynamic>{};
+      if (res.statusCode == 200) {
+        return (body is Map && body['message'] != null) ? body['message'].toString() : 'Reset link sent. Check your inbox.';
+      }
+      throw Exception(_msg(res.body, 'Failed (${res.statusCode})'));
+    } catch (e) {
+      if (_isNetworkError(e)) _throwConnectionError(e);
+      rethrow;
+    }
+  }
+
+  /// Resend email-verification link — like web resend-verification page.
+  Future<String> resendVerification(String email) async {
+    final url = Uri.parse('$baseUrl${AppConstants.resendVerificationEndpoint}');
+    try {
+      final res = await http.post(url, headers: await _headers(), body: jsonEncode({'email': email})).timeout(_timeout);
+      final body = res.body.isNotEmpty ? jsonDecode(res.body) : <String, dynamic>{};
+      if (res.statusCode == 200) {
+        return (body is Map && body['message'] != null) ? body['message'].toString() : 'Verification email resent.';
+      }
+      throw Exception(_msg(res.body, 'Failed (${res.statusCode})'));
+    } catch (e) {
+      if (_isNetworkError(e)) _throwConnectionError(e);
+      rethrow;
+    }
+  }
+
+  /// Set property cover photo — like web gallery set-cover.
+  Future<void> setCoverImage(int propertyId, int imageId) async {
+    final url = Uri.parse('$baseUrl/properties/$propertyId/set-cover/');
+    try {
+      final res = await http.post(url, headers: await _headers(auth: true), body: jsonEncode({'image_id': imageId})).timeout(_timeout);
+      if (res.statusCode == 200 || res.statusCode == 201) return;
+      throw Exception(_msg(res.body, 'Failed to set cover (${res.statusCode})'));
+    } catch (e) {
+      if (_isNetworkError(e)) _throwConnectionError(e);
+      rethrow;
+    }
+  }
+
   /// Extract error message from server JSON.
   String _msg(String body, String fallback) {
     try {

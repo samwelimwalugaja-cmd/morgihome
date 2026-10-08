@@ -254,7 +254,7 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'accounts.email_backend.EmailBackend'
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
@@ -264,6 +264,9 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@morgihome.co.tz')
 EMAIL_TIMEOUT = 30
 EMAIL_SSL_KEYFILE = os.getenv('EMAIL_SSL_KEYFILE', None)
 EMAIL_SSL_CERTFILE = os.getenv('EMAIL_SSL_CERTFILE', None)
+# Optional explicit hostname for SMTP EHLO. Useful when the machine name
+# contains spaces/special characters that Gmail rejects.
+EMAIL_LOCALHOSTNAME = os.getenv('EMAIL_LOCALHOSTNAME', None)
 
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'

@@ -436,8 +436,8 @@ class ContractViewSet(viewsets.ModelViewSet):
             return Contract.objects.all()
         elif user.role == 'customer':
             return Contract.objects.filter(customer=user)
-        elif user.role == 'seller':
-            return Contract.objects.filter(seller=user)
+        elif user.role in ('seller', 'realestate'):
+            return Contract.objects.filter(seller=user, is_published=True)
         elif user.role == 'bank':
             return Contract.objects.filter(bank=user)
         return Contract.objects.none()

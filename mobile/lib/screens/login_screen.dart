@@ -31,10 +31,19 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final data = await _api.login(email: _emailCtrl.text.trim(), password: _passCtrl.text);
       if (!mounted) return;
-      Fluttertoast.showToast(msg: 'Login successful');
       // Role-based home like web (customer -> /home, seller -> /seller)
       final user = data['user'];
       final role = user is Map ? user['role']?.toString() : null;
+      if (role == 'bank' || role == 'realestate') {
+        await _api.logout();
+        if (!mounted) return;
+        Fluttertoast.showToast(
+            msg: 'The $role portal is available on web only. Please use a customer or seller account.',
+            toastLength: Toast.LENGTH_LONG,
+            backgroundColor: const Color(AppConstants.errorColorValue));
+        return;
+      }
+      Fluttertoast.showToast(msg: 'Login successful');
       Navigator.pushReplacementNamed(context, role == 'seller' ? '/seller' : '/home');
     } catch (e) {
       Fluttertoast.showToast(
@@ -122,7 +131,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 24),
                     CustomButton(text: 'Login', onPressed: _login, isLoading: _loading),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
+                    Center(
+                      child: GestureDetector(
+                          onTap: () => Navigator.pushNamed(context, '/forgot-password'),
+                          child: const Text('Forgot password? Get help',
+                              style: TextStyle(
+                                  color: Color(AppConstants.primaryColorValue),
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13))),
+                    ),
+                    const SizedBox(height: 12),
                     Wrap(alignment: WrapAlignment.center, crossAxisAlignment: WrapCrossAlignment.center, spacing: 4, children: [
                       const Text("Don't have an account? "),
                       GestureDetector(onTap: () => Navigator.pushNamed(context, '/register'), child: const Text('Sign Up', style: TextStyle(color: Color(AppConstants.primaryColorValue), fontWeight: FontWeight.w700))),

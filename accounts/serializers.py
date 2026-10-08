@@ -41,16 +41,22 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ['first_name', 'last_name', 'email', 'phone_number', 'password', 'confirm_password', 'role']
 
     def validate_email(self, value):
-        if User.objects.filter(email__iexact=value.strip()).exists():
-            raise serializers.ValidationError("Email already registered.")
+        existing = User.objects.filter(email__iexact=value.strip()).first()
+        if existing:
+            if existing.email_verified:
+                raise serializers.ValidationError("This email is already registered. Please Log In instead.")
+            # Haija-verify: RegisterView.create itashika kesi hii na kutuma link mpya.
+            raise serializers.ValidationError("This email is already registered but not yet verified. Please check your inbox for the verification link or request a new one from the Login page.")
         return value.strip().lower()
 
     def validate_phone_number(self, value):
         import re
-        cleaned = re.sub(r'\s+', '', value or '')
-        if not re.match(r'^\+?\d{9,15}$', cleaned):
-            raise serializers.ValidationError("Phone number invalid. Use e.g. +255 712 345 678")
-        return value.strip()
+        raw = (value or '').strip()
+        if ' ' in raw or '\t' in raw:
+            raise serializers.ValidationError("No spaces allowed. Use e.g. 0712345678")
+        if not re.match(r'^0[67]\d{8}$', raw):
+            raise serializers.ValidationError("Enter a valid phone number starting with 07 or 06, e.g. 0712345678 (10 digits, no spaces)")
+        return raw
 
     def validate(self, attrs):
         if attrs['password'] != attrs['confirm_password']:

@@ -21,10 +21,14 @@
 
   <!-- Tailwind Production Build - cache-bust v=4 (fix Confirm buttons + receipt + property sold) -->
   <link rel="stylesheet" href="{% static 'bank/css/tailwind.css' %}?v=20260903-4">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <!-- Preconnect to external hosts to reduce DNS/TCP handshake time -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Lucide Icons - async load so it never blocks first paint -->
+  <script src="https://unpkg.com/lucide@latest" async></script>
 
   <!-- Favicon - prevent 404 -->
   <link href="{% static 'images/favicon.png' %}?v=5" rel="icon" type="image/png">
@@ -246,7 +250,7 @@
   </div>
 
   <!-- Action feedback: every button action shows a SweetAlert - nothing happens silently. -->
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" async></script>
   {% if messages %}
   <script>
     document.addEventListener('DOMContentLoaded', function(){
@@ -267,18 +271,21 @@
   <script>
     function morgiRenderIcons(){
       try{
-        if(window.lucide && lucide.createIcons){ lucide.createIcons(); }
+        if(window.lucide && lucide.createIcons){ lucide.createIcons(); return true; }
       }catch(e){}
-      // Safety net: any icon name the lucide version does not know would stay
-      // blank - swap it for a generic dot so no empty holes remain.
-      try{
-        document.querySelectorAll('i[data-lucide]').forEach(function(el){
-          el.setAttribute('data-lucide', 'circle');
-        });
-        if(window.lucide && lucide.createIcons){ lucide.createIcons(); }
-      }catch(e){}
+      return false;
     }
-    morgiRenderIcons();
+    // Try immediately, then retry until lucide loads (async script)
+    (function tryRenderIcons(){
+      if(!morgiRenderIcons()){
+        var attempts = 0;
+        var timer = setInterval(function(){
+          attempts++;
+          if(morgiRenderIcons() || attempts > 30){ clearInterval(timer); }
+        }, 100);
+      }
+    })();
+    window.addEventListener('load', morgiRenderIcons);
     // Mobile sidebar logic
     const openBtn = document.getElementById('open-sidebar');
     const closeBtn = document.getElementById('close-sidebar');
